@@ -13,10 +13,8 @@ local extlibs = {
 	flac       = { "FLAC",      "3rdparty/libflac/include" },
 	sqlite3    = { "sqlite3",   "3rdparty/sqlite3" },
 	portmidi   = { "portmidi",  "3rdparty/portmidi/pm_common" },
-	portaudio  = { "portaudio", "3rdparty/portaudio/include" },
 	lua        = { "lua",       "3rdparty/lua/src" },
 	utf8proc   = { "utf8proc",  "3rdparty/utf8proc" },
-	glm        = { "glm",       "3rdparty/glm" },
 	rapidjson  = { "rapidjson", "3rdparty/rapidjson/include" },
 	pugixml    = { "pugixml",   "3rdparty/pugixml/src" },
 }
@@ -58,11 +56,6 @@ newoption {
 }
 
 newoption {
-	trigger = 'with-system-portaudio',
-	description = 'Use system PortAudio library',
-}
-
-newoption {
 	trigger = "with-system-lua",
 	description = "Use system LUA library",
 }
@@ -70,11 +63,6 @@ newoption {
 newoption {
 	trigger = "with-system-utf8proc",
 	description = "Use system utf8proc library",
-}
-
-newoption {
-	trigger = "with-system-glm",
-	description = "Use system glm library",
 }
 
 newoption {

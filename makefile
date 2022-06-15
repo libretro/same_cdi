@@ -394,16 +394,8 @@ ifdef USE_SYSTEM_LIB_PORTMIDI
 PARAMS += --with-system-portmidi='$(USE_SYSTEM_LIB_PORTMIDI)'
 endif
 
-ifdef USE_SYSTEM_LIB_PORTAUDIO
-PARAMS += --with-system-portaudio='$(USE_SYSTEM_LIB_PORTAUDIO)'
-endif
-
 ifdef USE_SYSTEM_LIB_UTF8PROC
 PARAMS += --with-system-utf8proc='$(USE_SYSTEM_LIB_UTF8PROC)'
-endif
-
-ifdef USE_SYSTEM_LIB_GLM
-PARAMS += --with-system-glm='$(USE_SYSTEM_LIB_GLM)'
 endif
 
 ifdef USE_SYSTEM_LIB_RAPIDJSON
@@ -609,10 +601,6 @@ endif
 
 ifdef NO_USE_MIDI
 PARAMS += --NO_USE_MIDI='$(NO_USE_MIDI)'
-endif
-
-ifdef NO_USE_PORTAUDIO
-PARAMS += --NO_USE_PORTAUDIO='$(NO_USE_PORTAUDIO)'
 endif
 
 ifdef NO_USE_PULSEAUDIO
@@ -1014,7 +1002,7 @@ endif
 
 .PHONY: vs2019_clang
 vs2019_clang: generate
-	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --vs=clangcl --NO_USE_PORTAUDIO=1 vs2019
+	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --vs=clangcl vs2019
 ifdef MSBUILD
 	$(SILENT) msbuild.exe $(PROJECTDIR_WIN)/vs2019-clang/$(PROJECT_NAME).sln $(MSBUILD_PARAMS)
 endif

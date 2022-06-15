@@ -126,10 +126,6 @@ function osdmodulesbuild()
 		}
 
 	defines {
-			"NO_USE_PORTAUDIO",
-		}
-
-	defines {
 			"USE_QTDEBUG=0",
 		}
 
@@ -210,15 +206,6 @@ if not _OPTIONS["NO_USE_MIDI"] then
 		_OPTIONS["NO_USE_MIDI"] = "0"
 	end
 end
-
-newoption {
-	trigger = "NO_USE_PORTAUDIO",
-	description = "Disable PortAudio interface",
-	allowed = {
-		{ "0",  "Enable PortAudio"  },
-		{ "1",  "Disable PortAudio" },
-	},
-}
 
 newoption {
 	trigger = "MODERN_WIN_API",

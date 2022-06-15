@@ -723,7 +723,6 @@ def write_project(options, f, mappings, sources):
             '        MAME_DIR .. "3rdparty",\n' \
             '        GEN_DIR  .. "mame/layout",\n' \
             '        ext_includedir("flac"),\n' \
-            '        ext_includedir("glm"),\n' \
             '        ext_includedir("jpeg"),\n' \
             '        ext_includedir("rapidjson"),\n' \
             '        ext_includedir("zlib"),\n' \

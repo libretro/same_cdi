@@ -131,14 +131,7 @@ const options_entry osd_options::s_option_entries[] =
 	{ OSDOPTION_SOUND,                        OSDOPTVAL_AUTO,   OPTION_STRING,    "sound output method: " },
 	{ OSDOPTION_AUDIO_LATENCY "(0-5)",        "2",              OPTION_INTEGER,   "set audio latency (increase to reduce glitches, decrease for responsiveness)" },
 
-#ifndef NO_USE_PORTAUDIO
-	{ nullptr,                                nullptr,          OPTION_HEADER,    "PORTAUDIO OPTIONS" },
-	{ OSDOPTION_PA_API,                       OSDOPTVAL_NONE,   OPTION_STRING,    "PortAudio API" },
-	{ OSDOPTION_PA_DEVICE,                    OSDOPTVAL_NONE,   OPTION_STRING,    "PortAudio device" },
-	{ OSDOPTION_PA_LATENCY "(0-0.25)",        "0",              OPTION_FLOAT,     "suggested latency in seconds, 0 for default" },
-#endif
-
-		// End of list
+	// End of list
 	{ nullptr }
 };
 
@@ -198,101 +191,31 @@ void osd_common_t::register_options()
 #endif
 	REGISTER_MODULE(m_mod_man, FONT_NONE);
 
-#ifndef __LIBRETRO__
-	REGISTER_MODULE(m_mod_man, SOUND_DSOUND);
-	REGISTER_MODULE(m_mod_man, SOUND_XAUDIO2);
-	REGISTER_MODULE(m_mod_man, SOUND_COREAUDIO);
-	REGISTER_MODULE(m_mod_man, SOUND_JS);
-	REGISTER_MODULE(m_mod_man, SOUND_SDL);
-#ifndef NO_USE_PORTAUDIO
-	REGISTER_MODULE(m_mod_man, SOUND_PORTAUDIO);
-#endif
-#ifndef NO_USE_PULSEAUDIO
-	REGISTER_MODULE(m_mod_man, SOUND_PULSEAUDIO);
-#endif 
-#else
 	REGISTER_MODULE(m_mod_man, SOUND_RETRO);
-#endif
 	REGISTER_MODULE(m_mod_man, SOUND_NONE);
-#ifndef __LIBRETRO__
-	REGISTER_MODULE(m_mod_man, MONITOR_SDL);
-	REGISTER_MODULE(m_mod_man, MONITOR_WIN32);
-	REGISTER_MODULE(m_mod_man, MONITOR_DXGI);
-	REGISTER_MODULE(m_mod_man, MONITOR_MAC);
-#else
 	REGISTER_MODULE(m_mod_man, MONITOR_RETRO);
-#endif
 
-#ifndef __LIBRETRO__
-#ifdef SDLMAME_MACOSX
-	REGISTER_MODULE(m_mod_man, DEBUG_OSX);
-#endif
-#ifndef OSD_MINI
-	REGISTER_MODULE(m_mod_man, DEBUG_WINDOWS);
-	REGISTER_MODULE(m_mod_man, DEBUG_QT);
-	REGISTER_MODULE(m_mod_man, DEBUG_IMGUI);
-	REGISTER_MODULE(m_mod_man, DEBUG_GDBSTUB);
 	REGISTER_MODULE(m_mod_man, DEBUG_NONE);
-#endif
-#else
-	REGISTER_MODULE(m_mod_man, DEBUG_NONE);
-#endif
 
-#ifndef __LIBRETRO__
-	REGISTER_MODULE(m_mod_man, NETDEV_TAPTUN);
-	REGISTER_MODULE(m_mod_man, NETDEV_PCAP);
-#endif
 	REGISTER_MODULE(m_mod_man, NETDEV_NONE);
 
 #ifndef NO_USE_MIDI
 	REGISTER_MODULE(m_mod_man, MIDI_PM);
 #endif
 	REGISTER_MODULE(m_mod_man, MIDI_NONE);
-#ifndef __LIBRETRO__
-	REGISTER_MODULE(m_mod_man, KEYBOARDINPUT_SDL);
-	REGISTER_MODULE(m_mod_man, KEYBOARDINPUT_RAWINPUT);
-	REGISTER_MODULE(m_mod_man, KEYBOARDINPUT_DINPUT);
-	REGISTER_MODULE(m_mod_man, KEYBOARDINPUT_WIN32);
-#else
 	REGISTER_MODULE(m_mod_man, KEYBOARDINPUT_RETRO);
-#endif
 	REGISTER_MODULE(m_mod_man, KEYBOARD_NONE);
-#ifndef __LIBRETRO__
-	REGISTER_MODULE(m_mod_man, MOUSEINPUT_SDL);
-	REGISTER_MODULE(m_mod_man, MOUSEINPUT_RAWINPUT);
-	REGISTER_MODULE(m_mod_man, MOUSEINPUT_DINPUT);
-	REGISTER_MODULE(m_mod_man, MOUSEINPUT_WIN32);
-#else
 	REGISTER_MODULE(m_mod_man, MOUSEINPUT_RETRO);
-#endif
 	REGISTER_MODULE(m_mod_man, MOUSE_NONE);
-#ifndef __LIBRETRO__
-	REGISTER_MODULE(m_mod_man, LIGHTGUN_X11);
-	REGISTER_MODULE(m_mod_man, LIGHTGUNINPUT_RAWINPUT);
-	REGISTER_MODULE(m_mod_man, LIGHTGUNINPUT_WIN32);
-#else
 	REGISTER_MODULE(m_mod_man, LIGHTGUNINPUT_RETRO);
-#endif
 	REGISTER_MODULE(m_mod_man, LIGHTGUN_NONE);
-#ifndef __LIBRETRO__
-	REGISTER_MODULE(m_mod_man, JOYSTICKINPUT_SDL);
-	REGISTER_MODULE(m_mod_man, JOYSTICKINPUT_WINHYBRID);
-	REGISTER_MODULE(m_mod_man, JOYSTICKINPUT_DINPUT);
-	REGISTER_MODULE(m_mod_man, JOYSTICKINPUT_XINPUT);
-#else
 	REGISTER_MODULE(m_mod_man, JOYSTICKINPUT_RETRO);
-#endif
 	REGISTER_MODULE(m_mod_man, JOYSTICK_NONE);
 
 	REGISTER_MODULE(m_mod_man, OUTPUT_NONE);
 //#ifndef __LIBRETRO__
 	REGISTER_MODULE(m_mod_man, OUTPUT_CONSOLE);
 	REGISTER_MODULE(m_mod_man, OUTPUT_NETWORK);
-#ifndef __LIBRETRO__
-	REGISTER_MODULE(m_mod_man, OUTPUT_WIN32);
-#else
-	//FIXME LIBRETRO OUTPUT
-#endif
 
 	// after initialization we know which modules are supported
 
