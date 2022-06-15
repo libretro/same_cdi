@@ -10,21 +10,7 @@
 #include "osdwindow.h"
 
 #include "render/drawnone.h"
-#ifndef __LIBRETRO__
-#include "render/drawbgfx.h"
-#if (USE_OPENGL)
-#include "render/drawogl.h"
-#endif
-#if defined(OSD_WINDOWS)
-#include "render/drawgdi.h"
-#include "render/drawd3d.h"
-#elif defined(OSD_SDL)
-#include "render/draw13.h"
-#include "render/drawsdl.h"
-#endif
-#else
 #include "render/drawretro.h"
-#endif
 
 osd_window::osd_window(running_machine &machine, int index, std::shared_ptr<osd_monitor_info> monitor, const osd_window_config &config) :
 #ifdef OSD_WINDOWS
@@ -65,35 +51,13 @@ std::unique_ptr<osd_renderer> osd_renderer::make_for_type(int mode, std::shared_
 {
 	switch(mode)
 	{
-#ifdef __LIBRETRO__
 		case VIDEO_MODE_SOFT:
 			return std::make_unique<renderer_retro>(window);
-#else
-#if defined(OSD_WINDOWS)
-		case VIDEO_MODE_NONE:
-			return std::make_unique<renderer_none>(window);
-#endif
-		case VIDEO_MODE_BGFX:
-			return std::make_unique<renderer_bgfx>(window);
-#if (USE_OPENGL)
-		case VIDEO_MODE_OPENGL:
-			return std::make_unique<renderer_ogl>(window);
-#endif
-#if defined(OSD_WINDOWS)
-		case VIDEO_MODE_GDI:
-			return std::make_unique<renderer_gdi>(window);
-		case VIDEO_MODE_D3D:
-			return std::make_unique<renderer_d3d9>(window);
-#elif defined(OSD_SDL)
-		case VIDEO_MODE_SDL2ACCEL:
-			return std::make_unique<renderer_sdl2>(window, extra_flags);
-		case VIDEO_MODE_SOFT:
-			return std::make_unique<renderer_sdl1>(window, extra_flags);
-#endif
-#endif //LIBRETRO
 		default:
-			return nullptr;
+			break;
 	}
+
+	return nullptr;
 }
 
 std::shared_ptr<osd_monitor_info> osd_window::monitor_from_rect(const osd_rect *proposed) const

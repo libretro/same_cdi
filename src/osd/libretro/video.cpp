@@ -198,15 +198,7 @@ void retro_osd_interface::extract_video_config()
 	// d3d options: extract the data
 	stemp = options().video();
 	if (strcmp(stemp, "auto") == 0)
-	{
-#if (defined SDLMAME_MACOSX || defined SDLMAME_WIN32)
-		stemp = "opengl";
-#elif (defined __STEAMLINK__)
-		stemp = "bgfx";
-#else
 		stemp = "soft";
-#endif
-	}
 	if (strcmp(stemp, RETROOPTVAL_SOFT) == 0)
 		video_config.mode = VIDEO_MODE_SOFT;
 	else if (strcmp(stemp, OSDOPTVAL_NONE) == 0)

@@ -145,11 +145,6 @@ newoption {
 }
 
 newoption {
-	trigger = 'with-bundled-sdl2',
-	description = 'Build bundled SDL2 library',
-}
-
-newoption {
 	trigger = "distro",
 	description = "Choose distribution",
 	allowed = {
@@ -523,21 +518,6 @@ configuration { "Release", "vs20*" }
 		}
 	end
 
--- Force Visual Studio targets to use bundled SDL2
-if string.sub(_ACTION,1,4) == "vs20" and _OPTIONS["osd"]=="sdl" then
-	if _OPTIONS["with-bundled-sdl2"]==nil then
-		_OPTIONS["with-bundled-sdl2"] = "1"
-	end
-end
--- Build SDL2 for Android
-if _OPTIONS["osd"] == "retro" then
--- RETRO HACK no sdl for libretro android
-else
-if _OPTIONS["targetos"] == "android" then
-	_OPTIONS["with-bundled-sdl2"] = "1"
-end
-end
--- RETRO HACK END no sdl for libretro android
 configuration {}
 
 if _OPTIONS["osd"] == "uwp" then
@@ -1207,10 +1187,6 @@ configuration { "asmjs" }
 		"-s GL_UNSAFE_OPTS=0",
 		"--pre-js " .. _MAKE.esc(MAME_DIR) .. "src/osd/modules/sound/js_sound.js",
 		"--post-js " .. _MAKE.esc(MAME_DIR) .. "scripts/resources/emscripten/emscripten_post.js",
-		"--embed-file " .. _MAKE.esc(MAME_DIR) .. "bgfx/chains@bgfx/chains",
-		"--embed-file " .. _MAKE.esc(MAME_DIR) .. "bgfx/effects@bgfx/effects",
-		"--embed-file " .. _MAKE.esc(MAME_DIR) .. "bgfx/shaders/essl@bgfx/shaders/essl",
-		"--embed-file " .. _MAKE.esc(MAME_DIR) .. "artwork/bgfx@artwork/bgfx",
 		"--embed-file " .. _MAKE.esc(MAME_DIR) .. "artwork/slot-mask.png@artwork/slot-mask.png",
 	}
 	if _OPTIONS["SYMBOLS"]~=nil and _OPTIONS["SYMBOLS"]~="0" then
@@ -1281,18 +1257,12 @@ configuration { "osx*" }
 		}
 
 configuration { "mingw*" }
-		if _OPTIONS["osd"]=="sdl" then
-			linkoptions {
-				"-Wl,--start-group",
-			}
-		else
 			linkoptions {
 				"-static",
 			}
 			flags {
 				"LinkSupportCircularDependencies",
 			}
-		end
 		links {
 			"user32",
 			"winmm",

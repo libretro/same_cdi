@@ -153,7 +153,6 @@ bool mfi_format::load(util::random_read &io, uint32_t form_factor, const std::ve
 
 			uLongf size = ent->uncompressed_size;
 			if(uncompress((Bytef *)&trackbuf[0], &size, &compressed[0], ent->compressed_size) != Z_OK) {
-				fprintf(stderr, "fail1\n");
 				return false;
 			}
 
@@ -164,14 +163,12 @@ bool mfi_format::load(util::random_read &io, uint32_t form_factor, const std::ve
 				cur_time = next_cur_time;
 			}
 			if(cur_time != 200000000) {
-				fprintf(stderr, "fail2 %d\n", cur_time);
 				return false;
 			}
 
 			ent++;
 		}
 
-	fprintf(stderr, "tick\n");
 	return true;
 }
 

@@ -44,17 +44,7 @@ end
 			"EGL",
 			"GLESv1_CM",
 			"GLESv2",
--- RETRO HACK no sdl for libretro android
---			"SDL2",
 		}
-if _OPTIONS["osd"] == "retro" then
-
-else
-               links {
-                        "SDL2",
-                }
-end
--- RETRO HACK END no sdl for libretro android
 
 	configuration {  }
 
@@ -110,10 +100,6 @@ else
 				.. " -s GL_UNSAFE_OPTS=0"
 				.. " --pre-js " .. _MAKE.esc(MAME_DIR) .. "src/osd/modules/sound/js_sound.js"
 				.. " --post-js " .. _MAKE.esc(MAME_DIR) .. "scripts/resources/emscripten/emscripten_post.js"
-				.. " --embed-file " .. _MAKE.esc(MAME_DIR) .. "bgfx/chains@bgfx/chains"
-				.. " --embed-file " .. _MAKE.esc(MAME_DIR) .. "bgfx/effects@bgfx/effects"
-				.. " --embed-file " .. _MAKE.esc(MAME_DIR) .. "bgfx/shaders/essl@bgfx/shaders/essl"
-				.. " --embed-file " .. _MAKE.esc(MAME_DIR) .. "artwork/bgfx@artwork/bgfx"
 				.. " --embed-file " .. _MAKE.esc(MAME_DIR) .. "artwork/slot-mask.png@artwork/slot-mask.png"
 
 			if _OPTIONS["SYMBOLS"]~=nil and _OPTIONS["SYMBOLS"]~="0" then
@@ -205,36 +191,9 @@ end
 
 	if _OPTIONS["targetos"]=="android" then
 -- RETRO HACK no sdl for libretro android
-if _OPTIONS["osd"] == "retro" then
-
 		if _OPTIONS["SEPARATE_BIN"]~="1" then
 			targetdir(MAME_DIR)
 		end
-else
-		includedirs {
-			MAME_DIR .. "3rdparty/SDL2/include",
-		}
-
-		files {
-			MAME_DIR .. "3rdparty/SDL2/src/main/android/SDL_android_main.c",
-		}
-
-		targetsuffix ""
-		if _OPTIONS["SEPARATE_BIN"]~="1" then
-			if _OPTIONS["PLATFORM"]=="arm" then
-				targetdir(MAME_DIR .. "android-project/app/src/main/libs/armeabi-v7a")
-			end
-			if _OPTIONS["PLATFORM"]=="arm64" then
-				targetdir(MAME_DIR .. "android-project/app/src/main/libs/arm64-v8a")
-			end
-			if _OPTIONS["PLATFORM"]=="x86" then
-				targetdir(MAME_DIR .. "android-project/app/src/main/libs/x86")
-			end
-			if _OPTIONS["PLATFORM"]=="x64" then
-				targetdir(MAME_DIR .. "android-project/app/src/main/libs/x86_64")
-			end
-		end
-end
 -- RETRO HACK END no sdl for libretro android
 	else
 		if _OPTIONS["SEPARATE_BIN"]~="1" then
@@ -248,15 +207,6 @@ end
 	links {
 		"osd_" .. _OPTIONS["osd"],
 	}
--- RETRO HACK no qt
-if _OPTIONS["osd"]=="retro" then
-
-else
-	links {
-		"qtdbg_" .. _OPTIONS["osd"],
-	}
-end
--- RETRO HACK END
 if (STANDALONE~=true) then
 	links {
 		"frontend",
@@ -329,9 +279,6 @@ end
 		}
 	end
 	links {
-		"bgfx",
-		"bimg",
-		"bx",
 		"ocore_" .. _OPTIONS["osd"],
 	}
 
@@ -368,8 +315,6 @@ end
 			MAME_DIR .. "src/osd/libretro",
 			MAME_DIR .. "src/osd/modules/render",
 			MAME_DIR .. "3rdparty",
-			MAME_DIR .. "3rdparty/bgfx/include",
-			MAME_DIR .. "3rdparty/bx/include",
 			MAME_DIR .. "src/osd/libretro/libretro-internal",
 		}
 

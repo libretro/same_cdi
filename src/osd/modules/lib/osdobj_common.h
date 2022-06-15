@@ -85,14 +85,6 @@
 #define OSDOPTVAL_AUTO                  "auto"
 #define OSDOPTVAL_NONE                  "none"
 
-#define OSDOPTION_BGFX_PATH             "bgfx_path"
-#define OSDOPTION_BGFX_BACKEND          "bgfx_backend"
-#define OSDOPTION_BGFX_DEBUG            "bgfx_debug"
-#define OSDOPTION_BGFX_SCREEN_CHAINS    "bgfx_screen_chains"
-#define OSDOPTION_BGFX_SHADOW_MASK      "bgfx_shadow_mask"
-#define OSDOPTION_BGFX_LUT              "bgfx_lut"
-#define OSDOPTION_BGFX_AVI_NAME         "bgfx_avi_name"
-
 //============================================================
 //  TYPE DEFINITIONS
 //============================================================
@@ -159,15 +151,6 @@ public:
 	// CoreAudio specific options
 	const char *audio_output() const { return value(OSDOPTION_AUDIO_OUTPUT); }
 	const char *audio_effect(int index) const { return value(string_format("%s%d", OSDOPTION_AUDIO_EFFECT, index)); }
-
-	// BGFX specific options
-	const char *bgfx_path() const { return value(OSDOPTION_BGFX_PATH); }
-	const char *bgfx_backend() const { return value(OSDOPTION_BGFX_BACKEND); }
-	bool bgfx_debug() const { return bool_value(OSDOPTION_BGFX_DEBUG); }
-	const char *bgfx_screen_chains() const { return value(OSDOPTION_BGFX_SCREEN_CHAINS); }
-	const char *bgfx_shadow_mask() const { return value(OSDOPTION_BGFX_SHADOW_MASK); }
-	const char *bgfx_lut() const { return value(OSDOPTION_BGFX_LUT); }
-	const char *bgfx_avi_name() const { return value(OSDOPTION_BGFX_AVI_NAME); }
 
 	// PortAudio options
 	const char *pa_api() const { return value(OSDOPTION_PA_API); }

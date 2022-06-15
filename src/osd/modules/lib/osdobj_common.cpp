@@ -138,30 +138,6 @@ const options_entry osd_options::s_option_entries[] =
 	{ OSDOPTION_PA_LATENCY "(0-0.25)",        "0",              OPTION_FLOAT,     "suggested latency in seconds, 0 for default" },
 #endif
 
-#ifdef SDLMAME_MACOSX
-	{ nullptr,                                nullptr,          OPTION_HEADER,    "CoreAudio-SPECIFIC OPTIONS" },
-	{ OSDOPTION_AUDIO_OUTPUT,                 OSDOPTVAL_AUTO,   OPTION_STRING,    "audio output device" },
-	{ OSDOPTION_AUDIO_EFFECT "0",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 0" },
-	{ OSDOPTION_AUDIO_EFFECT "1",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 1" },
-	{ OSDOPTION_AUDIO_EFFECT "2",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 2" },
-	{ OSDOPTION_AUDIO_EFFECT "3",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 3" },
-	{ OSDOPTION_AUDIO_EFFECT "4",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 4" },
-	{ OSDOPTION_AUDIO_EFFECT "5",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 5" },
-	{ OSDOPTION_AUDIO_EFFECT "6",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 6" },
-	{ OSDOPTION_AUDIO_EFFECT "7",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 7" },
-	{ OSDOPTION_AUDIO_EFFECT "8",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 8" },
-	{ OSDOPTION_AUDIO_EFFECT "9",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 9" },
-#endif
-
-	{ nullptr,                                nullptr,           OPTION_HEADER, "BGFX POST-PROCESSING OPTIONS" },
-	{ OSDOPTION_BGFX_PATH,                    "bgfx",            OPTION_STRING, "path to BGFX-related files" },
-	{ OSDOPTION_BGFX_BACKEND,                 "auto",            OPTION_STRING, "BGFX backend to use (d3d9, d3d11, d3d12, metal, opengl, gles, vulkan)" },
-	{ OSDOPTION_BGFX_DEBUG,                   "0",               OPTION_BOOLEAN, "enable BGFX debugging statistics" },
-	{ OSDOPTION_BGFX_SCREEN_CHAINS,           "default",         OPTION_STRING, "comma-delimited list of screen chain JSON names, colon-delimited per-window" },
-	{ OSDOPTION_BGFX_SHADOW_MASK,             "slot-mask.png",   OPTION_STRING, "shadow mask texture name" },
-	{ OSDOPTION_BGFX_LUT,                     "",                OPTION_STRING, "LUT texture name" },
-	{ OSDOPTION_BGFX_AVI_NAME,                OSDOPTVAL_AUTO,    OPTION_STRING, "filename for BGFX output logging" },
-
 		// End of list
 	{ nullptr }
 };

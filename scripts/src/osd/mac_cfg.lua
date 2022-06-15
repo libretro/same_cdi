@@ -30,11 +30,5 @@ defines {
 	"SDLMAME_DARWIN"
 }
 
-configuration { "osx*" }
-	includedirs {
-		MAME_DIR .. "3rdparty/bx/include/compat/osx",
-	}
-
-
 configuration { }
 

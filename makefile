@@ -12,109 +12,6 @@
 #################   BEGIN USER-CONFIGURABLE OPTIONS   #####################
 ###########################################################################
 
-# REGENIE = 1
-# VERBOSE = 1
-# NOWERROR = 1
-# IGNORE_GIT = 1
-
-# TARGET = mame
-# SUBTARGET = tiny
-# TOOLS = 1
-# TESTS = 1
-# BENCHMARKS = 1
-# OSD = sdl
-
-# NO_OPENGL = 0
-# USE_DISPATCH_GL = 0
-# MODERN_WIN_API = 0
-# USE_SDL = 1
-# SDL_INI_PATH = .;$HOME/.mame/;ini;
-# SDL2_MULTIAPI = 1
-# NO_USE_MIDI = 1
-# NO_USE_PORTAUDIO = 1
-# NO_USE_PULSEAUDIO = 1
-# USE_TAPTUN = 1
-# USE_PCAP = 1
-# USE_QTDEBUG = 1
-# NO_X11 = 1
-# NO_USE_XINPUT = 1
-# NO_USE_XINPUT_WII_LIGHTGUN_HACK = 1
-# FORCE_DRC_C_BACKEND = 1
-
-# DEBUG = 1
-# PROFILER = 1
-# SANITIZE =
-
-# PTR64 = 1
-# BIGENDIAN = 1
-# NOASM = 1
-
-# OPTIMIZE = 3
-# SYMBOLS = 1
-# SYMLEVEL = 2
-# MAP = 1
-# PROFILE = 1
-# ARCHOPTS =
-# ARCHOPTS_C =
-# ARCHOPTS_CXX =
-# ARCHOPTS_OBJC =
-# ARCHOPTS_OBJCXX =
-# OPT_FLAGS =
-# LDOPTS =
-
-# USE_SYSTEM_LIB_ASIO = 1
-# USE_SYSTEM_LIB_EXPAT = 1
-# USE_SYSTEM_LIB_ZLIB = 1
-# USE_SYSTEM_LIB_JPEG = 1
-# USE_SYSTEM_LIB_FLAC = 1
-# USE_SYSTEM_LIB_LUA = 1
-# USE_SYSTEM_LIB_SQLITE3 = 1
-# USE_SYSTEM_LIB_PORTMIDI = 1
-# USE_SYSTEM_LIB_PORTAUDIO = 1
-# USE_BUNDLED_LIB_SDL2 = 1
-# USE_SYSTEM_LIB_UTF8PROC = 1
-# USE_SYSTEM_LIB_GLM = 1
-# USE_SYSTEM_LIB_RAPIDJSON = 1
-# USE_SYSTEM_LIB_PUGIXML = 1
-
-# MESA_INSTALL_ROOT = /opt/mesa
-# SDL_INSTALL_ROOT = /opt/sdl2
-# SDL_FRAMEWORK_PATH = $(HOME)/Library/Frameworks
-# USE_LIBSDL = 1
-# CYGWIN_BUILD = 1
-
-# BUILDDIR = build
-# TARGETOS = windows
-# CROSS_BUILD = 1
-# TOOLCHAIN =
-# OVERRIDE_CC = cc
-# OVERRIDE_CXX = c++
-# OVERRIDE_LD = ld
-# OVERRIDE_AR = ar
-
-# DEPRECATED = 0
-# LTO = 1
-# SSE2 = 1
-# OPENMP = 1
-
-# SEPARATE_BIN = 1
-# PYTHON_EXECUTABLE = python3
-# SHADOW_CHECK = 1
-# STRIP_SYMBOLS = 0
-
-# QT_HOME = /usr/lib64/qt48/
-
-# SOURCES = src/mame/drivers/asteroid.cpp,src/mame/audio/llander.cpp
-
-# FORCE_VERSION_COMPILE = 1
-
-# MSBUILD = 1
-# IGNORE_BAD_LOCALISATION = 1
-# PRECOMPILE = 0
-
-# DEBUG_DIR=c:\test\location
-# DEBUG_ARGS= -window -video bgfx
-
 ifdef PREFIX_MAKEFILE
 include $(PREFIX_MAKEFILE)
 else
@@ -458,40 +355,7 @@ endif
 #-------------------------------------------------
 
 ifndef OSD
-
-OSD := sdl
-
-ifeq ($(TARGETOS),windows)
-OSD := windows
-endif
-
-ifeq ($(TARGETOS),linux)
-OSD := sdl
-endif
-
-ifeq ($(TARGETOS),freebsd)
-OSD := sdl
-endif
-
-ifeq ($(TARGETOS),netbsd)
-OSD := sdl
-endif
-
-ifeq ($(TARGETOS),openbsd)
-OSD := sdl
-endif
-
-ifeq ($(TARGETOS),solaris)
-OSD := sdl
-endif
-
-ifeq ($(TARGETOS),macosx)
-OSD := sdl
-endif
-
-ifeq ($(TARGETOS),asmjs)
-OSD := sdl
-endif
+OSD := retro
 endif
 
 #-------------------------------------------------
@@ -548,14 +412,6 @@ endif
 
 ifdef USE_SYSTEM_LIB_PUGIXML
 PARAMS += --with-system-pugixml='$(USE_SYSTEM_LIB_PUGIXML)'
-endif
-
-# reverse logic for this one
-
-ifdef USE_BUNDLED_LIB_SDL2
-ifneq '$(USE_BUNDLED_LIB_SDL2)' '0'
-PARAMS += --with-bundled-sdl2
-endif
 endif
 
 #-------------------------------------------------
@@ -1540,7 +1396,6 @@ clean: genieclean
 	@echo Cleaning...
 	-$(SILENT)rm -f language/*/*.mo
 	-$(SILENT)rm -rf $(BUILDDIR)
-	-$(SILENT)rm -rf 3rdparty/bgfx/.build
 
 GEN_FOLDERS := $(GENDIR)/$(TARGET)/layout/ $(GENDIR)/$(TARGET)/$(SUBTARGET_FULL)/ $(GENDIR)/mame/drivers/ $(GENDIR)/mame/machine/
 
@@ -1635,13 +1490,11 @@ ifeq (posix,$(SHELLTYPE))
 		-name \*.lst \
 		\) -exec ./srcclean {} \; >&2
 	$(SILENT) find hash    \( -name \*.hsi -o -name \*.xml  \) -exec ./srcclean {} \; >&2
-	$(SILENT) find bgfx    \( -name \*.json                 \) -exec ./srcclean {} \; >&2
 	$(SILENT) find plugins \( -name \*.lua -o -name \*.json \) -exec ./srcclean {} \; >&2
 	$(SILENT) find scripts \( -name \*.lua                  \) -exec ./srcclean {} \; >&2
 else
 	$(shell for /r src     %%i in (*.c, *.cpp, *.h, *.hpp, *.hxx, *.ipp, *.mm, *.lay, *.lst) do srcclean %%i >&2 )
 	$(shell for /r hash    %%i in (*.hsi, *.xml)  do srcclean %%i >&2 )
-	$(shell for /r bgfx    %%i in (*.json)        do srcclean %%i >&2 )
 	$(shell for /r plugins %%i in (*.lua, *.json) do srcclean %%i >&2 )
 	$(shell for /r scripts %%i in (*.lua)         do srcclean %%i >&2 )
 endif
@@ -1676,7 +1529,6 @@ endif
 ifndef USE_SYSTEM_LIB_ZLIB
 CPPCHECK_PARAMS += -I3rdparty/zlib
 endif
-CPPCHECK_PARAMS += -I3rdparty/bgfx/include
 CPPCHECK_PARAMS += -I3rdparty/bx/include
 CPPCHECK_PARAMS += -I$(BUILDDIR)/generated/emu
 CPPCHECK_PARAMS += -I$(BUILDDIR)/generated/emu/layout
@@ -1702,33 +1554,6 @@ endif
 cppcheck:
 	@echo Generate CppCheck analysis report
 	cppcheck --enable=all src/ $(CPPCHECK_PARAMS) -j9
-
-#-------------------------------------------------
-# BGFX shaders
-#
-# to build all just use : make shaders
-#
-# to build specific chain use for example : make shaders CHAIN=eagle
-# data for chain is taken from src/osd/modules/render/bgfx/shaders/chains/
-# subfolder named in CHAIN
-# NOTE: shaders can be only built on Windows for now
-# due to restrictions of way how hlsl shaders are compiled
-#-------------------------------------------------
-
-.PHONY: shaders bgfx-tools
-
-bgfx-tools:
-	$(SILENT) $(MAKE) -C 3rdparty/bgfx -f makefile shaderc CC="$(CC)" CXX="$(CXX)" MINGW="$(MINGW)" SILENT="$(SILENT)"
-
-shaders: bgfx-tools
-	-$(call MKDIR,build/shaders/dx11)
-	-$(call MKDIR,build/shaders/dx9)
-	-$(call MKDIR,build/shaders/pssl)
-	-$(call MKDIR,build/shaders/metal)
-	-$(call MKDIR,build/shaders/essl)
-	-$(call MKDIR,build/shaders/glsl)
-	-$(call MKDIR,build/shaders/spirv)
-	$(SILENT) $(MAKE) -C $(SRC)/osd/modules/render/bgfx/shaders rebuild CHAIN="$(CHAIN)" SILENT="$(SILENT)"
 
 #-------------------------------------------------
 # Translation

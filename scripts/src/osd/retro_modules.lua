@@ -118,7 +118,6 @@ function osdmodulesbuild()
 
 	}
 	includedirs {
-		MAME_DIR .. "3rdparty/bx/include",
 		MAME_DIR .. "3rdparty/rapidjson/include",
 	}
 
