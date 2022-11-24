@@ -44,18 +44,19 @@ static char option_lightgun[50];
 static char option_cheats[50];
 static char option_overclock[50];
 static char option_renderer[50];
-static char option_osd[50];
+// static char option_osd[50];
 static char option_cli[50];
-static char option_bios[50];
-static char option_softlist[50];
-static char option_softlist_media[50];
-static char option_media[50];
+// static char option_bios[50];
+// static char option_softlist[50];
+// static char option_softlist_media[50];
+// static char option_media[50];
 static char option_read_config[50];
 static char option_write_config[50];
 static char option_auto_save[50];
 static char option_throttle[50];
 static char option_nobuffer[50];
 static char option_saves[50];
+static char option_nvram_saves[50];
 static char option_buttons_profiles[50];
 static char option_mame_paths[50];
 static char option_mame_4way[50];
@@ -146,16 +147,17 @@ void retro_set_environment(retro_environment_t cb)
    sprintf(option_cheats, "%s_%s", core, "cheats_enable");
    sprintf(option_overclock, "%s_%s", core, "cpu_overclock");
    sprintf(option_renderer,"%s_%s",core,"alternate_renderer");
-   sprintf(option_osd,"%s_%s",core,"boot_to_osd");
-   sprintf(option_bios,"%s_%s",core,"boot_to_bios");
+   // sprintf(option_osd,"%sf_%s",core,"boot_to_osd");
+   // sprintf(option_bios,"%s_%s",core,"boot_to_bios");
    sprintf(option_cli,"%s_%s",core,"boot_from_cli");
-   sprintf(option_softlist,"%s_%s",core,"softlists_enable");
-   sprintf(option_softlist_media,"%s_%s",core,"softlists_auto_media");
-   sprintf(option_media,"%s_%s",core,"media_type");
+   // sprintf(option_softlist,"%s_%s",core,"softlists_enable");
+   // sprintf(option_softlist_media,"%s_%s",core,"softlists_auto_media");
+   // sprintf(option_media,"%s_%s",core,"media_type");
    sprintf(option_read_config,"%s_%s",core,"read_config");
    sprintf(option_write_config,"%s_%s",core,"write_config");
    sprintf(option_auto_save,"%s_%s",core,"auto_save");
    sprintf(option_saves,"%s_%s",core,"saves");
+   sprintf(option_nvram_saves,"%s_%s",core,"nvram_saves");
    sprintf(option_throttle,"%s_%s",core,"throttle");
    sprintf(option_nobuffer,"%s_%s",core,"nobuffer");
    sprintf(option_res,"%s_%s",core,"altres");
@@ -167,6 +169,7 @@ void retro_set_environment(retro_environment_t cb)
     { option_read_config, "Read configuration; disabled|enabled" },
     { option_write_config, "Write configuration; disabled|enabled" },
     { option_saves, "Save state naming; game|system" },
+    { option_nvram_saves, "NVRAM Saves per game; enabled|disabled" },
     { option_auto_save, "Auto save/load states; disabled|enabled" },
     { option_mouse, "Enable in-game mouse; disabled|enabled" },
     { option_lightgun, "Lightgun mode; none|touchscreen|lightgun" },
@@ -176,12 +179,12 @@ void retro_set_environment(retro_environment_t cb)
     { option_overclock, "Main CPU Overclock; default|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44|45|46|47|48|49|50|51|52|53|54|55|60|65|70|75|80|85|90|95|100|105|110|115|120|125|130|135|140|145|150" },
     { option_renderer, "Alternate render method; disabled|enabled" },
 
-    { option_softlist, "Enable softlists; enabled|disabled" },
-    { option_softlist_media, "Softlist automatic media type; enabled|disabled" },
-    { option_media, "Media type; rom|cart|flop|cdrm|cass|hard|serl|prin" },
-    { option_bios, "Boot to BIOS; disabled|enabled" },
+    // { option_softlist, "Enable softlists; enabled|disabled" },
+    // { option_softlist_media, "Softlist automatic media type; enabled|disabled" },
+    // { option_media, "Media type; rom|cart|flop|cdrm|cass|hard|serl|prin" },
+    // { option_bios, "Boot to BIOS; disabled|enabled" },
 
-    { option_osd, "Boot to OSD; disabled|enabled" },
+    // { option_osd, "Boot to OSD; disabled|enabled" },
     { option_cli, "Boot from CLI; disabled|enabled" },
     { option_res, "Resolution; 640x480|640x360|800x600|800x450|960x720|960x540|1024x768|1024x576|1280x960|1280x720|1600x1200|1600x900|1440x1080|1920x1080|1920x1440|2560x1440|2880x2160|3840x2160" },
     { option_mame_paths, "MAME INI Paths; disabled|enabled" },
@@ -355,16 +358,16 @@ video_changed=true;
 
    }
 
-   var.key   = option_osd;
-   var.value = NULL;
+   // var.key   = option_osd;
+   // var.value = NULL;
 
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-   {
-      if (!strcmp(var.value, "enabled"))
-         boot_to_osd_enable = true;
-      if (!strcmp(var.value, "disabled"))
-         boot_to_osd_enable = false;
-   }
+   // if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   // {
+   //    if (!strcmp(var.value, "enabled"))
+   //       boot_to_osd_enable = true;
+   //    if (!strcmp(var.value, "disabled"))
+   //       boot_to_osd_enable = false;
+   // }
 
    var.key = option_read_config;
    var.value = NULL;
@@ -399,46 +402,58 @@ video_changed=true;
          game_specific_saves_enable = false;
    }
 
-   var.key   = option_media;
+   var.key   = option_nvram_saves;
    var.value = NULL;
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      sprintf(mediaType,"-%s",var.value);
-   }
-
-   var.key   = option_softlist;
-   var.value = NULL;
-
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-   {
-      if (!strcmp(var.value, "enabled"))
-         softlist_enable = true;
       if (!strcmp(var.value, "disabled"))
-         softlist_enable = false;
-   }
-
-   var.key   = option_softlist_media;
-   var.value = NULL;
-
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-   {
+         game_specific_nvram_enable = false;
       if (!strcmp(var.value, "enabled"))
-         softlist_auto = true;
-      if (!strcmp(var.value, "disabled"))
-         softlist_auto = false;
+         game_specific_nvram_enable = true;
    }
 
-   var.key = option_bios;
-   var.value = NULL;
 
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-   {
-      if (!strcmp(var.value, "enabled"))
-         boot_to_bios_enable = true;
-      if (!strcmp(var.value, "disabled"))
-         boot_to_bios_enable = false;
-   }
+   // var.key   = option_media;
+   // var.value = NULL;
+
+   // if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   // {
+   //    sprintf(mediaType,"-%s",var.value);
+   // }
+
+   // var.key   = option_softlist;
+   // var.value = NULL;
+
+   // if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   // {
+   //    if (!strcmp(var.value, "enabled"))
+   //       softlist_enable = true;
+   //    if (!strcmp(var.value, "disabled"))
+   //       softlist_enable = false;
+   // }
+
+   // var.key   = option_softlist_media;
+   // var.value = NULL;
+
+   // if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   // {
+   //    if (!strcmp(var.value, "enabled"))
+   //       softlist_auto = true;
+   //    if (!strcmp(var.value, "disabled"))
+   //       softlist_auto = false;
+   // }
+
+   // var.key = option_bios;
+   // var.value = NULL;
+
+   // if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   // {
+   //    if (!strcmp(var.value, "enabled"))
+   //       boot_to_bios_enable = true;
+   //    if (!strcmp(var.value, "disabled"))
+   //       boot_to_bios_enable = false;
+   // }
 
    var.key = option_write_config;
    var.value = NULL;

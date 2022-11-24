@@ -76,6 +76,7 @@ extern bool hide_warnings;
 extern bool throttle_enable;
 extern bool auto_save_enable;
 extern bool game_specific_saves_enable;
+extern bool game_specific_nvram_enable;
 extern bool buttons_profiles;
 extern bool mame_paths_enable;
 extern bool mame_4way_enable;
