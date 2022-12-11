@@ -5,11 +5,11 @@ SAME_CDI is a ***S***ingle ***A***rcade/***M***achine ***E***mulator for libretr
 
 *GAME FILES*
 =======
-Game files can be either CHD, ISO.  Game support/functionality is whatever the MAME version included supports.
+Game files can be either CHD, ISO, or BIN/CUE.  Game support/functionality is whatever the MAME version included supports.
 
 *BIOS*
 =======
-BIOS file (cdimono1.zip) is required, and can go either in the same directory as your ```CHD|ISO``` files or in the ```retroarch_system_dir/same_cdi/bios/``` directory
+BIOS file (cdimono1.zip) is required, and can go either in the same directory as your ```CHD|ISO|CUE``` files or in the ```retroarch_system_dir/same_cdi/bios/``` directory
 
 --------
 
