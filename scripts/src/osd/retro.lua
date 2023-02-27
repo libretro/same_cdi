@@ -66,7 +66,6 @@ end
 project ("osd_" .. _OPTIONS["osd"])
 	targetsubdir(_OPTIONS["target"] .."_" .._OPTIONS["subtarget"])
 	uuid (os.uuid("osd_" .. _OPTIONS["osd"]))
---	kind (LIBTYPE)
 	kind "StaticLib"
 
 	if string.sub(_ACTION,1,4) ~= "vs20" then
@@ -96,12 +95,6 @@ project ("osd_" .. _OPTIONS["osd"])
 		MAME_DIR .. "src/osd/libretro/libretro-internal",
 	}
 
-	if _OPTIONS["targetos"]=="windows" then
-		files {
-	--		MAME_DIR .. "src/osd/windows/main.cpp",
-		}
-	end
-
 	files {
 		MAME_DIR .. "src/osd/libretro/libretro-internal/retro_init.cpp",
 		MAME_DIR .. "src/osd/libretro/osdretro.h",
@@ -121,7 +114,6 @@ project ("osd_" .. _OPTIONS["osd"])
 project ("ocore_" .. _OPTIONS["osd"])
 	targetsubdir(_OPTIONS["target"] .."_" .. _OPTIONS["subtarget"])
 	uuid (os.uuid("ocore_" .. _OPTIONS["osd"]))
---	kind (LIBTYPE)
 	kind "StaticLib"
 
 	removeflags {

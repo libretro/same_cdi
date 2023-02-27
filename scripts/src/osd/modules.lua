@@ -64,15 +64,7 @@ function osdmodulesbuild()
 		MAME_DIR .. "src/osd/modules/lib/osdobj_common.cpp",
 		MAME_DIR .. "src/osd/modules/lib/osdobj_common.h",
 		MAME_DIR .. "src/osd/modules/diagnostics/none.cpp",
-		MAME_DIR .. "src/osd/modules/diagnostics/diagnostics_win32.cpp",
 		MAME_DIR .. "src/osd/modules/debugger/none.cpp",
-		MAME_DIR .. "src/osd/modules/debugger/debugwin.cpp",
-		MAME_DIR .. "src/osd/modules/debugger/debugimgui.cpp",
-		MAME_DIR .. "src/osd/modules/debugger/debuggdbstub.cpp",
-		MAME_DIR .. "src/osd/modules/font/font_sdl.cpp",
-		MAME_DIR .. "src/osd/modules/font/font_windows.cpp",
-		MAME_DIR .. "src/osd/modules/font/font_dwrite.cpp",
-		MAME_DIR .. "src/osd/modules/font/font_osx.cpp",
 		MAME_DIR .. "src/osd/modules/font/font_none.cpp",
 		MAME_DIR .. "src/osd/modules/netdev/taptun.cpp",
 		MAME_DIR .. "src/osd/modules/netdev/pcap.cpp",
@@ -86,10 +78,6 @@ function osdmodulesbuild()
 		MAME_DIR .. "src/osd/modules/input/input_none.cpp",
 		MAME_DIR .. "src/osd/modules/output/output_module.h",
 		MAME_DIR .. "src/osd/modules/output/none.cpp",
-		MAME_DIR .. "src/osd/modules/output/console.cpp",
-		MAME_DIR .. "src/osd/modules/output/network.cpp",
-		MAME_DIR .. "src/osd/modules/output/win32_output.cpp",
-		MAME_DIR .. "src/osd/modules/output/win32_output.h",
 		MAME_DIR .. "src/osd/modules/monitor/monitor_common.h",
 		MAME_DIR .. "src/osd/modules/monitor/monitor_common.cpp",
 	}
@@ -146,8 +134,6 @@ function osdmodulesbuild()
 
 	files {
 		MAME_DIR .. "src/osd/modules/render/drawbgfx.cpp",
-		MAME_DIR .. "src/osd/modules/render/aviwrite.cpp",
-		MAME_DIR .. "src/osd/modules/render/aviwrite.h",
 		MAME_DIR .. "src/osd/modules/render/bgfxutil.cpp",
 		MAME_DIR .. "src/osd/modules/render/bgfxutil.h",
 		MAME_DIR .. "src/osd/modules/render/binpacker.cpp",
@@ -250,12 +236,6 @@ function osdmodulesbuild()
 		}
 	end
 
-	if _OPTIONS["NO_USE_PULSEAUDIO"]=="1" then
-		defines {
-			"NO_USE_PULSEAUDIO",
-		}
-	end
-
 	if _OPTIONS["NO_USE_MIDI"]=="1" then
 		defines {
 			"NO_USE_MIDI",
@@ -314,12 +294,6 @@ function osdmodulestargetconf()
 			"AudioToolbox.framework",
 			"CoreAudio.framework",
 			"CoreServices.framework",
-		}
-	end
-
-	if _OPTIONS["NO_USE_PULSEAUDIO"]=="0" then
-		links {
-			ext_lib("pulse"),
 		}
 	end
 end
@@ -396,23 +370,6 @@ if not _OPTIONS["NO_USE_PORTAUDIO"] then
 		_OPTIONS["NO_USE_PORTAUDIO"] = "0"
 	else
 		_OPTIONS["NO_USE_PORTAUDIO"] = "1"
-	end
-end
-
-newoption {
-	trigger = "NO_USE_PULSEAUDIO",
-	description = "Disable PulseAudio interface",
-	allowed = {
-		{ "0",  "Enable PulseAudio"  },
-		{ "1",  "Disable PulseAudio" },
-	},
-}
-
-if not _OPTIONS["NO_USE_PULSEAUDIO"] then
-	if _OPTIONS["targetos"]=="linux" then
-		_OPTIONS["NO_USE_PULSEAUDIO"] = "0"
-	else
-		_OPTIONS["NO_USE_PULSEAUDIO"] = "1"
 	end
 end
 

@@ -79,8 +79,6 @@ function osdmodulesbuild()
 		MAME_DIR .. "src/osd/modules/input/input_retro.h",
 		MAME_DIR .. "src/osd/modules/output/output_module.h",
 		MAME_DIR .. "src/osd/modules/output/none.cpp",
-		MAME_DIR .. "src/osd/modules/output/console.cpp",
-		MAME_DIR .. "src/osd/modules/output/network.cpp",
 		MAME_DIR .. "src/osd/modules/monitor/monitor_common.h",
 		MAME_DIR .. "src/osd/modules/monitor/monitor_common.cpp",
 		MAME_DIR .. "src/osd/modules/monitor/monitor_retro.cpp",
@@ -112,11 +110,6 @@ function osdmodulesbuild()
 		"IMGUI_DISABLE_OBSOLETE_FUNCTIONS",
 	}
 
-	files {
-		MAME_DIR .. "src/osd/modules/render/aviwrite.cpp",
-		MAME_DIR .. "src/osd/modules/render/aviwrite.h",
-
-	}
 	includedirs {
 		MAME_DIR .. "3rdparty/bx/include",
 		MAME_DIR .. "3rdparty/rapidjson/include",

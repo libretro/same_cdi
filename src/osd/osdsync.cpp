@@ -33,12 +33,6 @@
 #endif
 
 //============================================================
-//  DEBUGGING
-//============================================================
-
-#define KEEP_STATISTICS         (0)
-
-//============================================================
 //  PARAMETERS
 //============================================================
 
@@ -46,20 +40,6 @@
 #define ENV_WORKQUEUEMAXTHREADS      "OSDWORKQUEUEMAXTHREADS"
 
 #define SPIN_LOOP_TIME          (osd_ticks_per_second() / 10000)
-
-//============================================================
-//  MACROS
-//============================================================
-
-#if KEEP_STATISTICS
-#define add_to_stat(v,x)        do { (v) += (x); } while (0)
-#define begin_timing(v)         do { (v) -= get_profile_ticks(); } while (0)
-#define end_timing(v)           do { (v) += get_profile_ticks(); } while (0)
-#else
-#define add_to_stat(v,x)        do { } while (0)
-#define begin_timing(v)         do { } while (0)
-#define end_timing(v)           do { } while (0)
-#endif
 
 template<typename _AtomType, typename _MainType>
 static void spin_while(const volatile _AtomType * volatile atom, const _MainType val, const osd_ticks_t timeout, const int invert = 0)
@@ -109,27 +89,12 @@ struct work_thread_info
 	, handle(nullptr)
 	, wakeevent(true, false)  // manual reset, not signalled
 	, id(aid)
-#if KEEP_STATISTICS
-	, itemsdone(0)
-	, actruntime(0)
-	, runtime(0)
-	, spintime(0)
-	, waittime(0)
-#endif
 	{
 	}
 	osd_work_queue &    queue;          // pointer back to the queue
 	std::thread *       handle;         // handle to the thread
 	osd_event           wakeevent;      // wake event for the thread
 	uint32_t              id;
-
-#if KEEP_STATISTICS
-	int32_t               itemsdone;
-	osd_ticks_t         actruntime;
-	osd_ticks_t         runtime;
-	osd_ticks_t         spintime;
-	osd_ticks_t         waittime;
-#endif
 };
 
 
@@ -146,12 +111,6 @@ struct osd_work_queue
 	, threads(0)
 	, flags(0)
 	, doneevent(true, true)     // manual reset, signalled
-#if KEEP_STATISTICS
-	, itemsqueued(0)
-	, setevents(0)
-	, extraitems(0)
-	, spinloops(0)
-#endif
 	{
 	}
 
@@ -167,13 +126,6 @@ struct osd_work_queue
 	uint32_t              flags;          // creation flags
 	std::vector<work_thread_info *>  thread;         // array of thread information
 	osd_event           doneevent;      // event signalled when work is complete
-
-#if KEEP_STATISTICS
-	std::atomic<int32_t>  itemsqueued;    // total items queued
-	std::atomic<int32_t>  setevents;      // number of times we called SetEvent
-	std::atomic<int32_t>  extraitems;     // how many extra items we got after the first in the queue loop
-	std::atomic<int32_t>  spinloops;      // how many times spinning bought us more items
-#endif
 };
 
 
@@ -289,10 +241,6 @@ osd_work_queue *osd_work_queue_alloc(int flags)
 	else
 		allocthreadnum = queue->threads;
 
-#if KEEP_STATISTICS
-	printf("osdprocs: %d effecprocs: %d threads: %d allocthreads: %d osdthreads: %d maxthreads: %d queuethreads: %d\n", osd_num_processors, numprocs, threadnum, allocthreadnum, osdthreadnum, WORK_MAX_THREADS, queue->threads);
-#endif
-
 	for (threadnum = 0; threadnum < allocthreadnum; threadnum++)
 		queue->thread.push_back(new work_thread_info(threadnum, *queue));
 
@@ -314,11 +262,6 @@ osd_work_queue *osd_work_queue_alloc(int flags)
 			thread_adjust_priority(thread->handle, 0);
 	}
 
-	// start a timer going for "waittime" on the main thread
-	if (flags & WORK_QUEUE_FLAG_MULTI)
-	{
-		begin_timing(queue->thread[queue->threads]->waittime);
-	}
 	return queue;
 
 error:
@@ -357,8 +300,6 @@ bool osd_work_queue_wait(osd_work_queue *queue, osd_ticks_t timeout)
 	{
 		work_thread_info *thread = queue->thread[queue->threads];
 
-		end_timing(thread->waittime);
-
 		// process what we can as a worker thread
 		worker_thread_process(queue, thread);
 
@@ -366,14 +307,10 @@ bool osd_work_queue_wait(osd_work_queue *queue, osd_ticks_t timeout)
 		if (queue->flags & WORK_QUEUE_FLAG_HIGH_FREQ && queue->items != 0)
 		{
 			// spin until we're done
-			begin_timing(thread->spintime);
 			spin_while_not<std::atomic<int>,int>(&queue->items, 0, timeout);
-			end_timing(thread->spintime);
 
-			begin_timing(thread->waittime);
 			return (queue->items == 0);
 		}
-		begin_timing(thread->waittime);
 	}
 
 	// reset our done event and double-check the items before waiting
@@ -394,12 +331,6 @@ bool osd_work_queue_wait(osd_work_queue *queue, osd_ticks_t timeout)
 
 void osd_work_queue_free(osd_work_queue *queue)
 {
-	// stop the timer for "waittime" on the main thread
-	if (queue->flags & WORK_QUEUE_FLAG_MULTI)
-	{
-		end_timing(queue->thread[queue->threads]->waittime);
-	}
-
 	// signal all the threads to exit
 	queue->exiting = true;
 	for (int threadnum = 0; threadnum < queue->threads; threadnum++)
@@ -421,21 +352,6 @@ void osd_work_queue_free(osd_work_queue *queue)
 		}
 
 	}
-
-#if KEEP_STATISTICS
-	// output per-thread statistics
-	for (work_thread_info *thread : queue->thread)
-	{
-		osd_ticks_t total = thread->runtime + thread->waittime + thread->spintime;
-		printf("Thread %d:  items=%9d run=%5.2f%% (%5.2f%%)  spin=%5.2f%%  wait/other=%5.2f%% total=%9d\n",
-				thread->id, thread->itemsdone,
-				(double)thread->runtime * 100.0 / (double)total,
-				(double)thread->actruntime * 100.0 / (double)total,
-				(double)thread->spintime * 100.0 / (double)total,
-				(double)thread->waittime * 100.0 / (double)total,
-				(uint32_t) total);
-	}
-#endif
 
 	// free the list
 	for (auto & th : queue->thread)
@@ -459,13 +375,6 @@ void osd_work_queue_free(osd_work_queue *queue)
 		delete item->event;
 		delete item;
 	}
-
-#if KEEP_STATISTICS
-	printf("Items queued   = %9d\n", queue->itemsqueued.load());
-	printf("SetEvent calls = %9d\n", queue->setevents.load());
-	printf("Extra items    = %9d\n", queue->extraitems.load());
-	printf("Spin loops     = %9d\n", queue->spinloops.load());
-#endif
 
 	// free the queue itself
 	delete queue;
@@ -532,7 +441,6 @@ osd_work_item *osd_work_item_queue_multiple(osd_work_queue *queue, osd_work_call
 
 	// increment the number of items in the queue
 	queue->items += numitems;
-	add_to_stat(queue->itemsqueued, numitems);
 
 	// look for free threads to do the work
 	if (queue->livethreads < queue->threads)
@@ -547,7 +455,6 @@ osd_work_item *osd_work_item_queue_multiple(osd_work_queue *queue, osd_work_call
 			// Attempt to wake the thread
 			if (thread->wakeevent.set())
 			{
-				add_to_stat(queue->setevents, 1);
 
 				// for non-shared, the first one we find is good enough
 				if (--numitems == 0)
@@ -558,11 +465,7 @@ osd_work_item *osd_work_item_queue_multiple(osd_work_queue *queue, osd_work_call
 
 	// if no threads, run the queue now on this thread
 	if (queue->threads == 0)
-	{
-		end_timing(queue->thread[0]->waittime);
 		worker_thread_process(queue, queue->thread[0]);
-		begin_timing(queue->thread[0]->waittime);
-	}
 	// only return the item if it won't get released automatically
 	return (flags & WORK_ITEM_FLAG_AUTO_RELEASE) ? nullptr : lastitem;
 }
@@ -681,11 +584,7 @@ static void *worker_thread_entry(void *param)
 			break;
 
 		if (!queue_has_list_items(&queue))
-		{
-			begin_timing(thread->waittime);
 			thread->wakeevent.wait( OSD_EVENT_WAIT_INFINITE);
-			end_timing(thread->waittime);
-		}
 
 		if (queue.exiting)
 			break;
@@ -700,18 +599,13 @@ static void *worker_thread_entry(void *param)
 			worker_thread_process(&queue, thread);
 
 			// if we're a high frequency queue, spin for a while before giving up
+			// spin for a while looking for more work
 			if (queue.flags & WORK_QUEUE_FLAG_HIGH_FREQ && queue.list.load() == nullptr)
-			{
-				// spin for a while looking for more work
-				begin_timing(thread->spintime);
 				spin_while<std::atomic<osd_work_item *>, osd_work_item *>(&queue.list, (osd_work_item *)nullptr, SPIN_LOOP_TIME);
-				end_timing(thread->spintime);
-			}
 
 			// if nothing more, release the processor
 			if (!queue_has_list_items(&queue))
 				break;
-			add_to_stat(queue.spinloops, 1);
 		}
 
 		// decrement the live thread count
@@ -730,8 +624,6 @@ static void *worker_thread_entry(void *param)
 static void worker_thread_process(osd_work_queue *queue, work_thread_info *thread)
 {
 	int threadid = thread->id;
-
-	begin_timing(thread->runtime);
 
 	// loop until everything is processed
 	while (true)
@@ -768,14 +660,11 @@ static void worker_thread_process(osd_work_queue *queue, work_thread_info *threa
 		if (item != nullptr)
 		{
 			// call the callback and stash the result
-			begin_timing(thread->actruntime);
 			item->result = (*item->callback)(item->param, threadid);
-			end_timing(thread->actruntime);
 
 			// decrement the item count after we are done
 			--queue->items;
 			item->done = true;
-			add_to_stat(thread->itemsdone, 1);
 
 			// if it's an auto-release item, release it
 			if (item->flags & WORK_ITEM_FLAG_AUTO_RELEASE)
@@ -787,26 +676,14 @@ static void worker_thread_process(osd_work_queue *queue, work_thread_info *threa
 				std::lock_guard<std::mutex> lock(queue->lock);
 
 				if (item->event != nullptr)
-				{
 					item->event->set();
-					add_to_stat(item->queue.setevents, 1);
-				}
 			}
-
-			// if we removed an item and there's still work to do, bump the stats
-			if (queue_has_list_items(queue))
-				add_to_stat(queue->extraitems, 1);
 		}
 	}
 
 	// we don't need to set the doneevent for multi queues because they spin
 	if (queue->waiting)
-	{
 		queue->doneevent.set();
-		add_to_stat(queue->setevents, 1);
-	}
-
-	end_timing(thread->runtime);
 }
 
 bool queue_has_list_items(osd_work_queue *queue)

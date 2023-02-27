@@ -25,12 +25,6 @@ end
 		"RETROMAME",
 	}
 
-
-	defines {
-		"USE_XINPUT=0",
-	}
-
-
 defines {
 	"OSD_RETRO",
 }

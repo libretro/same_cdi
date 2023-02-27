@@ -325,41 +325,6 @@ void retro_window_info::modify_prescale(int dir)
 
 void retro_window_info::update_cursor_state()
 {
-#if 0
-
-#if (USE_XINPUT)
-	// Hack for wii-lightguns:
-	// they stop working with a grabbed mouse;
-	// even a ShowCursor(SDL_DISABLE) already does this.
-	// To make the cursor disappear, we'll just set an empty cursor image.
-	unsigned char data[]={0,0,0,0,0,0,0,0};
-	SDL_Cursor *c;
-	c=SDL_CreateCursor(data, data, 8, 8, 0, 0);
-	SDL_SetCursor(c);
-#else
-	// do not do mouse capture if the debugger's enabled to avoid
-	// the possibility of losing control
-	if (!(machine().debug_flags & DEBUG_FLAG_OSD_ENABLED))
-	{
-		bool should_hide_mouse = downcast<sdl_osd_interface&>(machine().osd()).should_hide_mouse();
-
-		if (!fullscreen() && !should_hide_mouse)
-		{
-			show_pointer();
-			release_pointer();
-		}
-		else
-		{
-			hide_pointer();
-			capture_pointer();
-		}
-
-		SDL_SetCursor(nullptr); // Force an update in case the underlying driver has changed visibility
-	}
-#endif
-#else
-	return;
-#endif
 }
 
 int retro_window_info::xy_to_render_target(int x, int y, int *xt, int *yt)
