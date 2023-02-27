@@ -884,7 +884,6 @@ bool rewinder::check_size()
 
 void rewinder::report_error(save_error error, rewind_operation operation)
 {
-	const char *const opname = (operation == rewind_operation::LOAD) ? "load" : "save";
 	switch (error)
 	{
 	// internal saveload failures

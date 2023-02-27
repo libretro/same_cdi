@@ -103,29 +103,6 @@ function osdmodulesbuild()
 		}
 	end
 
-	if _OPTIONS["NO_OPENGL"]=="1" then
-		defines {
-			"USE_OPENGL=0",
-		}
-	else
-		files {
-			MAME_DIR .. "src/osd/modules/render/drawogl.cpp",
-			MAME_DIR .. "src/osd/modules/opengl/gl_shader_tool.cpp",
-			MAME_DIR .. "src/osd/modules/opengl/gl_shader_mgr.cpp",
-			MAME_DIR .. "src/osd/modules/opengl/gl_shader_mgr.h",
-			MAME_DIR .. "src/osd/modules/opengl/gl_shader_tool.h",
-			MAME_DIR .. "src/osd/modules/opengl/osd_opengl.h",
-		}
-		defines {
-			"USE_OPENGL=1",
-		}
-		if _OPTIONS["USE_DISPATCH_GL"]=="1" then
-			defines {
-				"USE_DISPATCH_GL=1",
-			}
-		end
-	end
-
 	defines {
 		"__STDC_LIMIT_MACROS",
 		"__STDC_FORMAT_MACROS",
@@ -133,96 +110,9 @@ function osdmodulesbuild()
 	}
 
 	files {
-		MAME_DIR .. "src/osd/modules/render/drawbgfx.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfxutil.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfxutil.h",
 		MAME_DIR .. "src/osd/modules/render/binpacker.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/blendreader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/blendreader.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/chain.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/chain.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/chainentry.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/chainentry.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/chainentryreader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/chainentryreader.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/chainmanager.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/chainmanager.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/chainreader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/chainreader.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/clear.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/clear.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/clearreader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/clearreader.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/cullreader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/cullreader.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/depthreader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/depthreader.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/effect.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/effect.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/effectmanager.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/effectmanager.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/effectreader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/effectreader.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/entryuniformreader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/entryuniformreader.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/inputpair.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/inputpair.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/frameparameter.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/frameparameter.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/timeparameter.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/timeparameter.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/paramreader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/paramreader.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/paramuniform.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/paramuniform.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/paramuniformreader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/paramuniformreader.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/shadermanager.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/shadermanager.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/slider.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/slider.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/sliderreader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/sliderreader.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/slideruniform.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/slideruniform.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/slideruniformreader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/slideruniformreader.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/statereader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/statereader.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/suppressor.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/suppressor.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/suppressorreader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/suppressorreader.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/target.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/target.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/targetreader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/targetreader.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/targetmanager.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/targetmanager.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/texture.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/texture.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/texturehandleprovider.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/texturemanager.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/texturemanager.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/uniform.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/uniform.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/uniformreader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/uniformreader.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/valueuniform.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/valueuniform.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/valueuniformreader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/valueuniformreader.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/view.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/view.h",
-		MAME_DIR .. "src/osd/modules/render/bgfx/writereader.cpp",
-		MAME_DIR .. "src/osd/modules/render/bgfx/writereader.h",
 	}
 	includedirs {
-		MAME_DIR .. "3rdparty/bgfx/examples/common",
-		MAME_DIR .. "3rdparty/bgfx/include",
-		MAME_DIR .. "3rdparty/bgfx/3rdparty",
-		MAME_DIR .. "3rdparty/bgfx/3rdparty/khronos",
-		MAME_DIR .. "3rdparty/bx/include",
 		ext_includedir("rapidjson")
 	}
 
@@ -249,24 +139,6 @@ end
 
 
 function osdmodulestargetconf()
-
-	if _OPTIONS["NO_OPENGL"]~="1" then
-		if _OPTIONS["targetos"]=="macosx" then
-			links {
-				"OpenGL.framework",
-			}
-		elseif _OPTIONS["USE_DISPATCH_GL"]~="1" then
-			if _OPTIONS["targetos"]=="windows" then
-				links {
-					"opengl32",
-				}
-			else
-				links {
-					"GL",
-				}
-			end
-		end
-	end
 
 	if _OPTIONS["NO_USE_MIDI"]~="1" then
 		if _OPTIONS["targetos"]=="linux" then
@@ -316,28 +188,6 @@ newoption {
 		{ "1",  "Include pcap network module" },
 	},
 }
-
-newoption {
-	trigger = "NO_OPENGL",
-	description = "Disable use of OpenGL",
-	allowed = {
-		{ "0",  "Enable OpenGL"  },
-		{ "1",  "Disable OpenGL" },
-	},
-}
-
-newoption {
-	trigger = "USE_DISPATCH_GL",
-	description = "Use GL-dispatching",
-	allowed = {
-		{ "0",  "Link to OpenGL library"  },
-		{ "1",  "Use GL-dispatching"      },
-	},
-}
-
-if not _OPTIONS["USE_DISPATCH_GL"] then
-	_OPTIONS["USE_DISPATCH_GL"] = "0"
-end
 
 newoption {
 	trigger = "NO_USE_MIDI",

@@ -24,8 +24,6 @@
 # BENCHMARKS = 1
 # OSD = sdl
 
-# NO_OPENGL = 0
-# USE_DISPATCH_GL = 0
 # MODERN_WIN_API = 0
 # USE_SDL = 1
 # SDL_INI_PATH = .;$HOME/.mame/;ini;
@@ -34,7 +32,6 @@
 # NO_USE_PORTAUDIO = 1
 # USE_TAPTUN = 1
 # USE_PCAP = 1
-# NO_X11 = 1
 # FORCE_DRC_C_BACKEND = 1
 
 # DEBUG = 1
@@ -107,7 +104,6 @@
 # PRECOMPILE = 0
 
 # DEBUG_DIR=c:\test\location
-# DEBUG_ARGS= -window -video bgfx
 
 ifdef PREFIX_MAKEFILE
 include $(PREFIX_MAKEFILE)
@@ -737,10 +733,6 @@ ifdef USE_PCAP
 PARAMS += --USE_PCAP='$(USE_PCAP)'
 endif
 
-ifdef NO_OPENGL
-PARAMS += --NO_OPENGL='$(NO_OPENGL)'
-endif
-
 ifdef USE_DISPATCH_GL
 PARAMS += --USE_DISPATCH_GL='$(USE_DISPATCH_GL)'
 endif
@@ -771,10 +763,6 @@ endif
 
 ifdef MESA_INSTALL_ROOT
 PARAMS += --MESA_INSTALL_ROOT='$(MESA_INSTALL_ROOT)'
-endif
-
-ifdef NO_X11
-PARAMS += --NO_X11='$(NO_X11)'
 endif
 
 ifdef SDL_LIBVER
@@ -1051,11 +1039,11 @@ PROJECTDIR_WIN := $(BUILDDIR)/projects/windows/$(FULLTARGET)
 
 APPLE_EXTRA_FLAGS=
 ifeq (ios-arm64,$(LIBRETRO_OS))
-APPLE_EXTRA_FLAGS += --NOASM=1 --DONT_USE_NETWORK=1  --NO_USE_MIDI=1 --NO_OPENGL=1 --LIBRETRO_IOS=1
+APPLE_EXTRA_FLAGS += --NOASM=1 --DONT_USE_NETWORK=1  --NO_USE_MIDI=1 --LIBRETRO_IOS=1
 endif
 
 ifeq (tvos-arm64,$(LIBRETRO_OS))
-APPLE_EXTRA_FLAGS += --NOASM=1 --DONT_USE_NETWORK=1  --NO_USE_MIDI=1 --NO_OPENGL=1 --LIBRETRO_TVOS=1
+APPLE_EXTRA_FLAGS += --NOASM=1 --DONT_USE_NETWORK=1  --NO_USE_MIDI=1 --LIBRETRO_TVOS=1
 endif
 
 .PHONY: all clean regenie generate FORCE
@@ -1168,7 +1156,7 @@ $(PROJECTDIR)/$(MAKETYPE)-android-arm/Makefile: makefile $(SCRIPTS) $(GENIE)
 ifndef ANDROID_NDK_ARM
 	$(error ANDROID_NDK_ARM is not set)
 endif
-	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --gcc=android-arm --gcc_version=$(CLANG_VERSION) --targetos=android --PLATFORM=arm --NO_USE_MIDI=1 --NO_OPENGL=1 --DONT_USE_NETWORK=1 --NOASM=1 $(MAKETYPE)
+	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --gcc=android-arm --gcc_version=$(CLANG_VERSION) --targetos=android --PLATFORM=arm --NO_USE_MIDI=1 --DONT_USE_NETWORK=1 --NOASM=1 $(MAKETYPE)
 
 .PHONY: android-arm
 android-arm: android-ndk generate $(PROJECTDIR)/$(MAKETYPE)-android-arm/Makefile
@@ -1179,7 +1167,7 @@ $(PROJECTDIR_SDL)/$(MAKETYPE)-android-arm/Makefile: makefile $(SCRIPTS) $(GENIE)
 ifndef ANDROID_NDK_ARM
 	$(error ANDROID_NDK_ARM is not set)
 endif
-	$(SILENT) $(GENIE) $(PARAMS) --gcc=android-arm --gcc_version=$(CLANG_VERSION) --osd=sdl --targetos=android --PLATFORM=arm --NO_USE_MIDI=1 --NO_OPENGL=1 --NO_X11=1 --USE_TAPTUN=0 --USE_PCAP=0 --NOASM=1 $(MAKETYPE)
+	$(SILENT) $(GENIE) $(PARAMS) --gcc=android-arm --gcc_version=$(CLANG_VERSION) --osd=sdl --targetos=android --PLATFORM=arm --NO_USE_MIDI=1 --USE_TAPTUN=0 --USE_PCAP=0 --NOASM=1 $(MAKETYPE)
 
 .PHONY: android-arm
 android-arm: android-ndk generate $(PROJECTDIR_SDL)/$(MAKETYPE)-android-arm/Makefile
@@ -1196,7 +1184,7 @@ $(PROJECTDIR)/$(MAKETYPE)-android-arm64/Makefile: makefile $(SCRIPTS) $(GENIE)
 ifndef ANDROID_NDK_ARM64
 	$(error ANDROID_NDK_ARM64 is not set)
 endif
-	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --gcc=android-arm64 --gcc_version=$(CLANG_VERSION) --targetos=android --PLATFORM=arm64 --NO_USE_MIDI=1 --NO_OPENGL=1 --DONT_USE_NETWORK=1 --NOASM=1 $(MAKETYPE)
+	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --gcc=android-arm64 --gcc_version=$(CLANG_VERSION) --targetos=android --PLATFORM=arm64 --NO_USE_MIDI=1 --DONT_USE_NETWORK=1 --NOASM=1 $(MAKETYPE)
 
 .PHONY: android-arm64
 android-arm64: android-ndk generate $(PROJECTDIR)/$(MAKETYPE)-android-arm64/Makefile
@@ -1207,7 +1195,7 @@ $(PROJECTDIR_SDL)/$(MAKETYPE)-android-arm64/Makefile: makefile $(SCRIPTS) $(GENI
 ifndef ANDROID_NDK_ARM64
 	$(error ANDROID_NDK_ARM64 is not set)
 endif
-	$(SILENT) $(GENIE) $(PARAMS) --gcc=android-arm64 --gcc_version=$(CLANG_VERSION) --osd=sdl --targetos=android --PLATFORM=arm64 --NO_USE_MIDI=1 --NO_OPENGL=1 --NO_X11=1 --USE_TAPTUN=0 --USE_PCAP=0 --NOASM=1 $(MAKETYPE)
+	$(SILENT) $(GENIE) $(PARAMS) --gcc=android-arm64 --gcc_version=$(CLANG_VERSION) --osd=sdl --targetos=android --PLATFORM=arm64 --NO_USE_MIDI=1 --USE_TAPTUN=0 --USE_PCAP=0 --NOASM=1 $(MAKETYPE)
 
 .PHONY: android-arm64
 android-arm64: android-ndk generate $(PROJECTDIR_SDL)/$(MAKETYPE)-android-arm64/Makefile
@@ -1223,7 +1211,7 @@ $(PROJECTDIR_SDL)/$(MAKETYPE)-android-x86/Makefile: makefile $(SCRIPTS) $(GENIE)
 ifndef ANDROID_NDK_X86
 	$(error ANDROID_NDK_X86 is not set)
 endif
-	$(SILENT) $(GENIE) $(PARAMS) --gcc=android-x86 --gcc_version=$(CLANG_VERSION) --osd=sdl --targetos=android --PLATFORM=x86 --NO_USE_MIDI=1 --NO_OPENGL=1 --NO_X11=1 --USE_TAPTUN=0 --USE_PCAP=0 $(MAKETYPE)
+	$(SILENT) $(GENIE) $(PARAMS) --gcc=android-x86 --gcc_version=$(CLANG_VERSION) --osd=sdl --targetos=android --PLATFORM=x86 --NO_USE_MIDI=1 --USE_TAPTUN=0 --USE_PCAP=0 $(MAKETYPE)
 
 .PHONY: android-x86
 android-x86: android-ndk generate $(PROJECTDIR_SDL)/$(MAKETYPE)-android-x86/Makefile
@@ -1239,7 +1227,7 @@ $(PROJECTDIR)/$(MAKETYPE)-android-x64/Makefile: makefile $(SCRIPTS) $(GENIE)
 ifndef ANDROID_NDK_X64
 	$(error ANDROID_NDK_X64 is not set)
 endif
-	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --gcc=android-x64 --gcc_version=$(CLANG_VERSION) --targetos=android --PLATFORM=x64 --NO_USE_MIDI=1 --NO_OPENGL=1 --DONT_USE_NETWORK=1 --NOASM=1 $(MAKETYPE)
+	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --gcc=android-x64 --gcc_version=$(CLANG_VERSION) --targetos=android --PLATFORM=x64 --NO_USE_MIDI=1 --DONT_USE_NETWORK=1 --NOASM=1 $(MAKETYPE)
 
 .PHONY: android-x64
 android-x64: android-ndk generate $(PROJECTDIR)/$(MAKETYPE)-android-x64/Makefile
@@ -1250,7 +1238,7 @@ $(PROJECTDIR_SDL)/$(MAKETYPE)-android-x64/Makefile: makefile $(SCRIPTS) $(GENIE)
 ifndef ANDROID_NDK_X64
 	$(error ANDROID_NDK_X64 is not set)
 endif
-	$(SILENT) $(GENIE) $(PARAMS) --gcc=android-x64 --gcc_version=$(CLANG_VERSION) --osd=sdl --targetos=android --PLATFORM=x64 --NO_USE_MIDI=1 --NO_OPENGL=1 --NO_X11=1 --USE_TAPTUN=0 --USE_PCAP=0 $(MAKETYPE)
+	$(SILENT) $(GENIE) $(PARAMS) --gcc=android-x64 --gcc_version=$(CLANG_VERSION) --osd=sdl --targetos=android --PLATFORM=x64 --NO_USE_MIDI=1 --USE_TAPTUN=0 --USE_PCAP=0 $(MAKETYPE)
 
 .PHONY: android-x64
 android-x64: android-ndk generate $(PROJECTDIR_SDL)/$(MAKETYPE)-android-x64/Makefile
@@ -1514,7 +1502,6 @@ clean: genieclean
 	@echo Cleaning...
 	-$(SILENT)rm -f language/*/*.mo
 	-$(SILENT)rm -rf $(BUILDDIR)
-	-$(SILENT)rm -rf 3rdparty/bgfx/.build
 
 GEN_FOLDERS := $(GENDIR)/$(TARGET)/layout/ $(GENDIR)/$(TARGET)/$(SUBTARGET_FULL)/ $(GENDIR)/mame/drivers/ $(GENDIR)/mame/machine/
 
@@ -1609,13 +1596,11 @@ ifeq (posix,$(SHELLTYPE))
 		-name \*.lst \
 		\) -exec ./srcclean {} \; >&2
 	$(SILENT) find hash    \( -name \*.hsi -o -name \*.xml  \) -exec ./srcclean {} \; >&2
-	$(SILENT) find bgfx    \( -name \*.json                 \) -exec ./srcclean {} \; >&2
 	$(SILENT) find plugins \( -name \*.lua -o -name \*.json \) -exec ./srcclean {} \; >&2
 	$(SILENT) find scripts \( -name \*.lua                  \) -exec ./srcclean {} \; >&2
 else
 	$(shell for /r src     %%i in (*.c, *.cpp, *.h, *.hpp, *.hxx, *.ipp, *.mm, *.lay, *.lst) do srcclean %%i >&2 )
 	$(shell for /r hash    %%i in (*.hsi, *.xml)  do srcclean %%i >&2 )
-	$(shell for /r bgfx    %%i in (*.json)        do srcclean %%i >&2 )
 	$(shell for /r plugins %%i in (*.lua, *.json) do srcclean %%i >&2 )
 	$(shell for /r scripts %%i in (*.lua)         do srcclean %%i >&2 )
 endif
@@ -1650,8 +1635,6 @@ endif
 ifndef USE_SYSTEM_LIB_ZLIB
 CPPCHECK_PARAMS += -I3rdparty/zlib
 endif
-CPPCHECK_PARAMS += -I3rdparty/bgfx/include
-CPPCHECK_PARAMS += -I3rdparty/bx/include
 CPPCHECK_PARAMS += -I$(BUILDDIR)/generated/emu
 CPPCHECK_PARAMS += -I$(BUILDDIR)/generated/emu/layout
 CPPCHECK_PARAMS += -I$(BUILDDIR)/generated/mame/layout
@@ -1683,26 +1666,12 @@ cppcheck:
 # to build all just use : make shaders
 #
 # to build specific chain use for example : make shaders CHAIN=eagle
-# data for chain is taken from src/osd/modules/render/bgfx/shaders/chains/
 # subfolder named in CHAIN
 # NOTE: shaders can be only built on Windows for now
 # due to restrictions of way how hlsl shaders are compiled
 #-------------------------------------------------
 
-.PHONY: shaders bgfx-tools
-
-bgfx-tools:
-	$(SILENT) $(MAKE) -C 3rdparty/bgfx -f makefile shaderc CC="$(CC)" CXX="$(CXX)" MINGW="$(MINGW)" SILENT="$(SILENT)"
-
-shaders: bgfx-tools
-	-$(call MKDIR,build/shaders/dx11)
-	-$(call MKDIR,build/shaders/dx9)
-	-$(call MKDIR,build/shaders/pssl)
-	-$(call MKDIR,build/shaders/metal)
-	-$(call MKDIR,build/shaders/essl)
-	-$(call MKDIR,build/shaders/glsl)
-	-$(call MKDIR,build/shaders/spirv)
-	$(SILENT) $(MAKE) -C $(SRC)/osd/modules/render/bgfx/shaders rebuild CHAIN="$(CHAIN)" SILENT="$(SILENT)"
+.PHONY:
 
 #-------------------------------------------------
 # Translation

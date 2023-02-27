@@ -99,11 +99,6 @@ function osdmodulesbuild()
 	end
 
 	defines {
-			"USE_OPENGL=0",
-		}
-
-
-	defines {
 		"__STDC_LIMIT_MACROS",
 		"__STDC_FORMAT_MACROS",
 		"__STDC_CONSTANT_MACROS",
@@ -159,28 +154,6 @@ newoption {
 	trigger = "DONT_USE_NETWORK",
 	description = "Disable network access",
 }
-
-newoption {
-	trigger = "NO_OPENGL",
-	description = "Disable use of OpenGL",
-	allowed = {
-		{ "0",  "Enable OpenGL"  },
-		{ "1",  "Disable OpenGL" },
-	},
-}
-
-newoption {
-	trigger = "USE_DISPATCH_GL",
-	description = "Use GL-dispatching",
-	allowed = {
-		{ "0",  "Link to OpenGL library"  },
-		{ "1",  "Use GL-dispatching"      },
-	},
-}
-
-if not _OPTIONS["USE_DISPATCH_GL"] then
-	_OPTIONS["USE_DISPATCH_GL"] = "0"
-end
 
 newoption {
 	trigger = "NO_USE_MIDI",

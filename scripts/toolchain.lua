@@ -478,7 +478,6 @@ function toolchain(_buildDir, _subDir)
 	configuration { "android-*" }
 		objdir (_buildDir .. "android/obj/" .. _OPTIONS["PLATFORM"])
 		includedirs {
-			MAME_DIR .. "3rdparty/bgfx/3rdparty/khronos",
 			--  LIBRETRO: don't mess with NDK includir order
 			-- "$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/libcxx/include",
 			-- "$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/include",

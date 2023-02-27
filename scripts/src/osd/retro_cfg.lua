@@ -21,7 +21,6 @@ if _OPTIONS["RETRO_INI_PATH"]~=nil then
 end
 
 	defines {
-		"SDLMAME_NO_X11",
 		"RETROMAME",
 	}
 

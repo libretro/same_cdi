@@ -53,15 +53,6 @@ static void check_osd_inputs(running_machine &machine)
 
 	auto window = osd_common_t::s_window_list.front();
 
-#if (USE_OPENGL)
-	//FIXME: on a per window basis
-	if (machine.ui_input().pressed(IPT_OSD_5))
-	{
-		video_config.filter = !video_config.filter;
-		machine.ui().popup_time(1, "Filter %s", video_config.filter? "enabled":"disabled");
-	}
-#endif
-
 	if (machine.ui_input().pressed(IPT_OSD_6))
 		std::static_pointer_cast<retro_window_info>(window)->modify_prescale(-1);
 
@@ -208,17 +199,7 @@ void retro_osd_interface::extract_video_config()
 	video_config.novideo = 0;
 
 	// d3d options: extract the data
-	stemp = options().video();
-	if (strcmp(stemp, "auto") == 0)
-	{
-#if (defined SDLMAME_MACOSX || defined SDLMAME_WIN32)
-		stemp = "opengl";
-#elif (defined __STEAMLINK__)
-		stemp = "bgfx";
-#else
-		stemp = "soft";
-#endif
-	}
+	stemp = "soft";
 	if (strcmp(stemp, RETROOPTVAL_SOFT) == 0)
 		video_config.mode = VIDEO_MODE_SOFT;
 	else if (strcmp(stemp, OSDOPTVAL_NONE) == 0)
@@ -252,64 +233,6 @@ void retro_osd_interface::extract_video_config()
 		osd_printf_warning("Invalid prescale option, reverting to '1'\n");
 		video_config.prescale = 1;
 	}
-	#if (USE_OPENGL)
-		// default to working video please
-		video_config.forcepow2texture = options().gl_force_pow2_texture();
-		video_config.allowtexturerect = !(options().gl_no_texture_rect());
-		video_config.vbo         = options().gl_vbo();
-		video_config.pbo         = options().gl_pbo();
-		video_config.glsl        = options().gl_glsl();
-		if ( video_config.glsl )
-		{
-			int i;
-
-			video_config.glsl_filter = options().glsl_filter();
-
-			video_config.glsl_shader_mamebm_num=0;
-
-			for(i=0; i<GLSL_SHADER_MAX; i++)
-			{
-				stemp = options().shader_mame(i);
-				if (stemp && strcmp(stemp, OSDOPTVAL_NONE) != 0 && strlen(stemp)>0)
-				{
-					video_config.glsl_shader_mamebm[i] = (char *) malloc(strlen(stemp)+1);
-					strcpy(video_config.glsl_shader_mamebm[i], stemp);
-					video_config.glsl_shader_mamebm_num++;
-				} else {
-					video_config.glsl_shader_mamebm[i] = nullptr;
-				}
-			}
-
-			video_config.glsl_shader_scrn_num=0;
-
-			for(i=0; i<GLSL_SHADER_MAX; i++)
-			{
-				stemp = options().shader_screen(i);
-				if (stemp && strcmp(stemp, OSDOPTVAL_NONE) != 0 && strlen(stemp)>0)
-				{
-					video_config.glsl_shader_scrn[i] = (char *) malloc(strlen(stemp)+1);
-					strcpy(video_config.glsl_shader_scrn[i], stemp);
-					video_config.glsl_shader_scrn_num++;
-				} else {
-					video_config.glsl_shader_scrn[i] = nullptr;
-				}
-			}
-		} else {
-			int i;
-			video_config.glsl_filter = 0;
-			video_config.glsl_shader_mamebm_num=0;
-			for(i=0; i<GLSL_SHADER_MAX; i++)
-			{
-				video_config.glsl_shader_mamebm[i] = nullptr;
-			}
-			video_config.glsl_shader_scrn_num=0;
-			for(i=0; i<GLSL_SHADER_MAX; i++)
-			{
-				video_config.glsl_shader_scrn[i] = nullptr;
-			}
-		}
-
-	#endif /* USE_OPENGL */
 	// misc options: sanity check values
 
 	// global options: sanity check values
