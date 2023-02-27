@@ -45,9 +45,7 @@
   // Apple recently introduced MAP_JIT flag, which we want to use.
   #if defined(__APPLE__)
     #include <TargetConditionals.h>
-    #if TARGET_OS_OSX
-      #include <sys/utsname.h>
-    #endif
+    #include <sys/utsname.h>
     // Older SDK doesn't define `MAP_JIT`.
     #ifndef MAP_JIT
       #define MAP_JIT 0x800
@@ -316,11 +314,12 @@ static ASMJIT_INLINE bool VirtMem_isHardened() noexcept {
 // MAP_JIT flag required to run unsigned JIT code is only supported by kernel
 // version 10.14+ (Mojave) and IOS.
 static ASMJIT_INLINE bool VirtMem_hasMapJitSupport() noexcept {
-#if TARGET_OS_OSX
+#if defined(__APPLE__)
   static volatile int globalVersion;
 
   int ver = globalVersion;
-  if (!ver) {
+  if (!ver)
+  {
     struct utsname osname;
     uname(&osname);
     ver = atoi(osname.release);

@@ -1465,7 +1465,6 @@ formatsProject(_OPTIONS["target"],_OPTIONS["subtarget"])
 group "3rdparty"
 dofile(path.join("src", "3rdparty.lua"))
 
-
 group "core"
 
 dofile(path.join("src", "emu.lua"))

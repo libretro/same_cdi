@@ -278,14 +278,14 @@ public:
     kPlatformDragonFlyBSD
 #elif defined(__HAIKU__)
     kPlatformHaiku
-#elif defined(__APPLE__) && TARGET_OS_OSX
-    kPlatformOSX
 #elif defined(__APPLE__) && TARGET_OS_TV
     kPlatformTVOS
 #elif defined(__APPLE__) && TARGET_OS_WATCH
     kPlatformWatchOS
 #elif defined(__APPLE__) && TARGET_OS_IPHONE
     kPlatformIOS
+#elif defined(__APPLE__)
+    kPlatformOSX
 #else
     kPlatformOther
 #endif
