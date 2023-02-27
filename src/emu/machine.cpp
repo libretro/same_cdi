@@ -944,8 +944,6 @@ void running_machine::handle_saveload()
 
 void running_machine::soft_reset(void *ptr, s32 param)
 {
-	logerror("Soft reset\n");
-
 	// temporarily in the reset phase
 	m_current_phase = machine_phase::RESET;
 

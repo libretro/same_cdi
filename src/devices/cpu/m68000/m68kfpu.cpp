@@ -1792,9 +1792,6 @@ void m68000_base_device::fmove_fpcr(u16 w2)
 	{
 		int rnd = (m_fpcr >> 4) & 3;
 		int prec = (m_fpcr >> 6) & 3;
-
-//      logerror("m68k_fpsp:fmove_fpcr fpcr=%04x prec=%d rnd=%d\n", m_fpcr, prec, rnd);
-
 #ifdef FLOATX80
 		switch (prec)
 		{

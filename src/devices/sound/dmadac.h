@@ -40,10 +40,6 @@ public:
 				src += frame_spacing;
 			}
 			m_bufin = curin;
-
-			/* log overruns */
-			if (j != total_frames)
-				logerror("dmadac_transfer: buffer overrun (short %d frames)\n", total_frames - j);
 		}
 	}
 

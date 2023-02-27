@@ -13,14 +13,7 @@
 #define LOG_LINESTATE   (1U << 3)
 #define LOG_FRAMING     (1U << 4)
 
-//#define VERBOSE (LOG_GENERAL | LOG_RXBIT | LOG_RXFLAG | LOG_LINESTATE | LOG_FRAMING)
 #include "logmacro.h"
-
-#define LOGRXBIT(...)       LOGMASKED(LOG_RXBIT, __VA_ARGS__)
-#define LOGRXFLAG(...)      LOGMASKED(LOG_RXFLAG, __VA_ARGS__)
-#define LOGLINESTATE(...)   LOGMASKED(LOG_LINESTATE, __VA_ARGS__)
-#define LOGFRAMING(...)     LOGMASKED(LOG_FRAMING, __VA_ARGS__)
-
 
 DEFINE_DEVICE_TYPE(SDLC_LOGGER, sdlc_logger_device, "sdlc_logger", "SDLC/HDLC logger")
 
@@ -177,7 +170,6 @@ void sdlc_logger_device::frame_end()
 
 void sdlc_logger_device::frame_abort()
 {
-	logerror("Frame aborted!\n");
 	shift_residual_bits();
 	log_frame(true);
 	m_frame_bits = 0U;
@@ -189,10 +181,6 @@ void sdlc_logger_device::data_bit(bool value)
 	{
 		m_buffer[m_frame_bits >> 3] >>= 1;
 		m_buffer[m_frame_bits >> 3] |= value ? 0x80U : 0x00U;
-	}
-	else if (BUFFER_BITS == m_frame_bits)
-	{
-		logerror("Frame buffer overrun!\n");
 	}
 
 	if ((16U <= m_frame_bits) && ((BUFFER_BITS + 16U) > m_frame_bits))
@@ -285,7 +273,5 @@ void sdlc_logger_device::log_frame(bool partial) const
 			util::stream_format(msg, (i & 0x000fU) ? " %02X" : "\n    %02X", m_buffer[i]);
 		if (residual_bits && (BUFFER_BITS >= m_frame_bits))
 			util::stream_format(msg, (residual_bits > 4) ? "%s %02X&%02X" : "%s %01X&%01X", (frame_bytes & 0x000fU) ? "" : "\n   ", m_buffer[frame_bytes], (1U << residual_bits) - 1);
-
-		logerror("%s\n", msg.str());
 	}
 }

@@ -120,21 +120,8 @@ static const char *const phasenames[] =
 
 #define FORMAT_UNIT_TIMEOUT         5
 
-/*
-    LOGLEVEL
-        0   no logging,
-        1   just commands
-        2   1 + data
-        3   2 + line changes
-*/
-
-#define LOGLEVEL            0
-
-#define LOG(level, ...)     if(LOGLEVEL>=level) logerror(__VA_ARGS__)
-
 void scsihle_device::data_out(uint8_t data)
 {
-//  printf( "%s data out %02x\n", tag(), data );
 	output_data0(BIT(data, 0));
 	output_data1(BIT(data, 1));
 	output_data2(BIT(data, 2));
@@ -368,7 +355,6 @@ void scsihle_device::scsi_change_phase(uint8_t newphase)
 
 WRITE_LINE_MEMBER( scsihle_device::input_sel )
 {
-//  printf( "sel %d %d %02x\n", state, m_phase, m_input_data );
 	switch (m_phase)
 	{
 	case SCSI_PHASE_BUS_FREE:

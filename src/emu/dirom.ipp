@@ -40,7 +40,6 @@ void device_rom_interface<AddrWidth, DataWidth, AddrShift, Endian>::set_rom_bank
 		throw emu_fatalerror("%s: device_rom_interface::set_rom_bank called without banking setup", device().tag());
 
 	if(bank >= m_bank_count) {
-		device().logerror("Warning: requested bank %x higher than actual bank count %x\n", bank, m_bank_count);
 		bank = bank % m_bank_count;
 	}
 
@@ -121,7 +120,6 @@ void device_rom_interface<AddrWidth, DataWidth, AddrShift, Endian>::interface_pr
 			if((&rom_target.first != &device()) || strcmp(rom_target.second, DEVICE_SELF))
 				throw emu_fatalerror("%s: device_rom_interface ROM region '%s' not found", device().tag(), rom_target.first.subtag(rom_target.second));
 
-			device().logerror("ROM region '%s' not found\n", rom_target.first.subtag(rom_target.second));
 			space().unmap_read(0, make_bitmask<offs_t>(m_rom_config.addr_width()));
 		}
 	} else {

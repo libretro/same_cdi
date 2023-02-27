@@ -18,15 +18,6 @@
 #include <algorithm>
 #include <cstring>
 
-
-//**************************************************************************
-//  DEBUGGING
-//**************************************************************************
-
-#define LOG_NATURAL_KEYBOARD    0
-
-
-
 //**************************************************************************
 //  CONSTANTS
 //**************************************************************************
@@ -417,13 +408,6 @@ void natural_keyboard::post_char(char32_t ch, bool normalize_crlf)
 			m_last_cr = (ch == '\r');
 	}
 
-	// logging
-	if (LOG_NATURAL_KEYBOARD)
-	{
-		const keycode_map_entry *code = find_code(ch);
-		machine().logerror("natural_keyboard::post_char(): code=%i (%s) field.name='%s'\n", int(ch), unicode_to_string(ch).c_str(), (code != nullptr && code->field[0] != nullptr) ? code->field[0]->name() : "<null>");
-	}
-
 	if (can_post_directly(ch))
 	{
 		// can post this key in the queue directly
@@ -661,9 +645,6 @@ void natural_keyboard::build_codes()
 	bool have_keyboard(false);
 	for (kbd_dev_info &devinfo : m_keyboards)
 	{
-		if (LOG_NATURAL_KEYBOARD)
-			machine().logerror("natural_keyboard: building codes for %s... (%u fields)\n", devinfo.device.get().tag(), devinfo.keyfields.size());
-
 		// enable all pure keypads and the first keyboard
 		if (!devinfo.keyboard || !have_keyboard)
 			devinfo.enabled = true;
@@ -683,8 +664,6 @@ void natural_keyboard::build_codes()
 					{
 						mask |= 1U << (code - UCHAR_SHIFT_BEGIN);
 						shift[code - UCHAR_SHIFT_BEGIN] = &field;
-						if (LOG_NATURAL_KEYBOARD)
-							machine().logerror("natural_keyboard: UCHAR_SHIFT_%d found\n", code - UCHAR_SHIFT_BEGIN + 1);
 					}
 				}
 			}
@@ -730,12 +709,6 @@ void natural_keyboard::build_codes()
 								}
 								else
 									found->second.emplace_back(newcode);
-
-								if (LOG_NATURAL_KEYBOARD)
-								{
-									machine().logerror("natural_keyboard: code=%u (%s) port=%p field.name='%s'\n",
-											code, unicode_to_string(code), (void *)&field.port(), field.name());
-								}
 							}
 						}
 					}

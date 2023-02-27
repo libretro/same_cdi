@@ -22,7 +22,6 @@ HNZC
 
 OP_HANDLER( illegal )
 {
-	logerror("M6805: illegal opcode\n");
 }
 
 // $00/$02/$04/$06/$08/$0A/$0C/$0E BRSET direct,relative ---*

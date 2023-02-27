@@ -268,10 +268,7 @@ void timekeeper_device::device_timer(emu_timer &timer, device_timer_id id, int p
 {
 	if ((m_seconds & SECONDS_ST) != 0 ||
 		(m_control & CONTROL_W) != 0)
-	{
-		logerror("No Tick\n");
 		return;
-	}
 
 	int carry = time_helper::inc_bcd(&m_seconds, MASK_SECONDS, 0x00, 0x59);
 	if (carry)
@@ -349,8 +346,6 @@ TIMER_CALLBACK_MEMBER(timekeeper_device::watchdog_callback)
 	}
 	else
 		m_irq_cb(ASSERT_LINE);
-
-	logerror("watchdog_callback: WD Control: %02x WD Flags: %02x\n", m_data[m_offset_watchdog], m_data[m_offset_flags]);
 }
 
 void timekeeper_device::watchdog_write(u8 data)
@@ -398,7 +393,6 @@ void timekeeper_device::write(offs_t offset, u8 data)
 			// Adjust by multiplier
 			m_watchdog_delay *= (data >> 2) & 0x1f;
 			m_watchdog_timer->adjust(m_watchdog_delay);
-			//logerror("write: setting watchdog to %s WatchdogReg = 0x%02x\n", m_watchdog_delay.as_string(), data);
 		}
 	}
 

@@ -8058,9 +8058,6 @@ void m68000_base_device::x06d0_callm_l_ai_2f()
 
 	m68ki_trace_t0();              /* auto-disable (see m68kcpu.h) */
 	m_pc += 2;
-	(void)ea;   /* just to avoid an 'unused variable' warning */
-	logerror("%s at %08x: called unimplemented instruction %04x (callm)\n",
-					tag(), m_ppc, m_ir);
 
 
 }
@@ -8071,9 +8068,6 @@ void m68000_base_device::x06e8_callm_l_di_2f()
 
 	m68ki_trace_t0();              /* auto-disable (see m68kcpu.h) */
 	m_pc += 2;
-	(void)ea;   /* just to avoid an 'unused variable' warning */
-	logerror("%s at %08x: called unimplemented instruction %04x (callm)\n",
-					tag(), m_ppc, m_ir);
 
 
 }
@@ -8084,9 +8078,6 @@ void m68000_base_device::x06f0_callm_l_ix_2f()
 
 	m68ki_trace_t0();              /* auto-disable (see m68kcpu.h) */
 	m_pc += 2;
-	(void)ea;   /* just to avoid an 'unused variable' warning */
-	logerror("%s at %08x: called unimplemented instruction %04x (callm)\n",
-					tag(), m_ppc, m_ir);
 
 
 }
@@ -8097,9 +8088,6 @@ void m68000_base_device::x06f8_callm_l_aw_2f()
 
 	m68ki_trace_t0();              /* auto-disable (see m68kcpu.h) */
 	m_pc += 2;
-	(void)ea;   /* just to avoid an 'unused variable' warning */
-	logerror("%s at %08x: called unimplemented instruction %04x (callm)\n",
-					tag(), m_ppc, m_ir);
 
 
 }
@@ -8110,9 +8098,6 @@ void m68000_base_device::x06f9_callm_l_al_2f()
 
 	m68ki_trace_t0();              /* auto-disable (see m68kcpu.h) */
 	m_pc += 2;
-	(void)ea;   /* just to avoid an 'unused variable' warning */
-	logerror("%s at %08x: called unimplemented instruction %04x (callm)\n",
-					tag(), m_ppc, m_ir);
 
 
 }
@@ -8123,10 +8108,6 @@ void m68000_base_device::x06fa_callm_l_pcdi_2f()
 
 	m68ki_trace_t0();              /* auto-disable (see m68kcpu.h) */
 	m_pc += 2;
-	(void)ea;   /* just to avoid an 'unused variable' warning */
-	logerror("%s at %08x: called unimplemented instruction %04x (callm)\n",
-					tag(), m_ppc, m_ir);
-
 
 }
 void m68000_base_device::x06fb_callm_l_pcix_2f()
@@ -8136,9 +8117,6 @@ void m68000_base_device::x06fb_callm_l_pcix_2f()
 
 	m68ki_trace_t0();              /* auto-disable (see m68kcpu.h) */
 	m_pc += 2;
-	(void)ea;   /* just to avoid an 'unused variable' warning */
-	logerror("%s at %08x: called unimplemented instruction %04x (callm)\n",
-					tag(), m_ppc, m_ir);
 
 
 }
@@ -11608,24 +11586,14 @@ void m68000_base_device::xb188_cmpm_l_071234fc()
 }
 void m68000_base_device::xf080_cpbcc_l_23()
 {
-	logerror("%s at %08x: called unimplemented instruction %04x (cpbcc)\n",
-					tag(), m_ppc, m_ir);
-
-
 }
 void m68000_base_device::xf048_cpdbcc_l_23()
 {
-	logerror("%s at %08x: called unimplemented instruction %04x (cpdbcc)\n",
-					tag(), m_ppc, m_ir);
-
-
 }
 void m68000_base_device::xf000_cpgen_l_23()
 {
 	if(m_has_fpu || m_has_pmmu)
 	{
-		logerror("%s at %08x: called unimplemented instruction %04x (cpgen)\n",
-						tag(), m_ppc, m_ir);
 	} else {
 		m68ki_exception_1111();
 	}
@@ -11634,17 +11602,9 @@ void m68000_base_device::xf000_cpgen_l_23()
 }
 void m68000_base_device::xf040_cpscc_l_23()
 {
-	logerror("%s at %08x: called unimplemented instruction %04x (cpscc)\n",
-					tag(), m_ppc, m_ir);
-
-
 }
 void m68000_base_device::xf078_cptrapcc_l_23()
 {
-	logerror("%s at %08x: called unimplemented instruction %04x (cptrapcc)\n",
-					tag(), m_ppc, m_ir);
-
-
 }
 void m68000_base_device::xf278_ftrapcc_l_23()
 {
@@ -25400,7 +25360,6 @@ void m68000_base_device::x487b_pea_l_pcix_071234fc()
 void m68000_base_device::xf518_pflusha_l_4fc()
 {
 	if(m_has_pmmu) {
-		logerror("68040: unhandled PFLUSHA (ir=%04x)\n", m_ir);
 	} else {
 		m68ki_exception_1111();
 	}
@@ -25410,7 +25369,6 @@ void m68000_base_device::xf518_pflusha_l_4fc()
 void m68000_base_device::xf510_pflushan_l_4fc()
 {
 	if(m_has_pmmu) {
-		logerror("68040: unhandled PFLUSHAN (ir=%04x)\n", m_ir);
 	} else {
 		m68ki_exception_1111();
 	}
@@ -25434,7 +25392,6 @@ void m68000_base_device::xf548_ptest_l_4()
 {
 	if(m_has_pmmu)
 	{
-		logerror("68040: unhandled PTEST\n");
 	}
 	else
 	{
@@ -26715,8 +26672,6 @@ void m68000_base_device::x4e73_rte_l_234fc()
 void m68000_base_device::x06c0_rtm_l_234fc()
 {
 	m68ki_trace_t0();              /* auto-disable (see m68kcpu.h) */
-	logerror("%s at %08x: called unimplemented instruction %04x (rtm)\n",
-					tag(), m_ppc, m_ir);
 
 
 }
@@ -31268,8 +31223,6 @@ void m68000_base_device::xf400_cinv_l_4()
 {
 	u16 ir = m_ir;
 	u8 cache = (ir >> 6) & 3;
-	//  u8 scope = (ir >> 3) & 3;
-	//  logerror("68040 %s: pc=%08x ir=%04x cache=%d scope=%d register=%d\n", ir & 0x0020 ? "cpush" : "cinv", m_ppc, ir, cache, scope, ir & 7);
 	switch (cache) {
 	case 1:
 		// TODO: data cache
@@ -31288,10 +31241,6 @@ void m68000_base_device::xf400_cinv_l_4()
 }
 void m68000_base_device::xf420_cpush_l_4()
 {
-	logerror("%s at %08x: called unimplemented instruction %04x (cpush)\n",
-					tag(), m_ppc, m_ir);
-
-
 }
 const m68000_base_device::opcode_handler_ptr m68000_base_device::m68k_handler_table[] =
 {

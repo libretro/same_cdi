@@ -47,10 +47,6 @@ void legacy_scsi_host_adapter::send_command(uint8_t *data, int bytes)
 		scsidev->SetCommand(data, bytes);
 		scsidev->ExecCommand();
 	}
-	else
-	{
-		logerror("send_command unknown SCSI id %d\n", m_selected);
-	}
 }
 
 int legacy_scsi_host_adapter::get_length(void)
@@ -62,11 +58,7 @@ int legacy_scsi_host_adapter::get_length(void)
 		scsidev->GetLength(&length);
 		return length;
 	}
-	else
-	{
-		logerror("get_length unknown SCSI id %d\n", m_selected);
-		return 0;
-	}
+	return 0;
 }
 
 int legacy_scsi_host_adapter::get_phase(void)
@@ -78,37 +70,21 @@ int legacy_scsi_host_adapter::get_phase(void)
 		scsidev->GetPhase(&phase);
 		return phase;
 	}
-	else
-	{
-		logerror("get_phase unknown SCSI id %d\n", m_selected);
-		return 0;
-	}
+	return 0;
 }
 
 void legacy_scsi_host_adapter::read_data(uint8_t *data, int bytes)
 {
 	scsihle_device *scsidev = get_device(m_selected);
 	if (scsidev != nullptr)
-	{
 		scsidev->ReadData(data, bytes);
-	}
-	else
-	{
-		logerror("read_data unknown SCSI id %d\n", m_selected);
-	}
 }
 
 void legacy_scsi_host_adapter::write_data(uint8_t *data, int bytes)
 {
 	scsihle_device *scsidev = get_device(m_selected);
 	if (scsidev != nullptr)
-	{
 		scsidev->WriteData(data, bytes);
-	}
-	else
-	{
-		logerror("write_data unknown SCSI id %d\n", m_selected);
-	}
 }
 
 uint8_t legacy_scsi_host_adapter::get_status()
@@ -124,11 +100,7 @@ uint8_t legacy_scsi_host_adapter::get_status()
 
 		return 0x02;
 	}
-	else
-	{
-		logerror("get_status unknown SCSI id %d\n", m_selected);
-		return 0;
-	}
+	return 0;
 }
 
 scsihle_device *legacy_scsi_host_adapter::get_device(int id)

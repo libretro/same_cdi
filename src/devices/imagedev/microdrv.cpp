@@ -17,8 +17,6 @@
     CONSTANTS
 ***************************************************************************/
 
-#define LOG 0
-
 #define MDV_SECTOR_COUNT            255
 #define MDV_SECTOR_LENGTH           686
 #define MDV_IMAGE_LENGTH            (MDV_SECTOR_COUNT * MDV_SECTOR_LENGTH)
@@ -125,11 +123,9 @@ void microdrive_image_device::device_timer(emu_timer &timer, device_timer_id id,
 
 WRITE_LINE_MEMBER( microdrive_image_device::clk_w )
 {
-	if (LOG) logerror("Microdrive '%s' CLK: %u\n", tag(), state);
 	if (!m_clk && state)
 	{
 		m_comms_out = m_comms_in;
-		if (LOG) logerror("Microdrive '%s' COMMS OUT: %u\n", tag(), m_comms_out);
 		m_write_comms_out(m_comms_out);
 		m_bit_timer->enable(m_comms_out);
 	}
@@ -138,19 +134,16 @@ WRITE_LINE_MEMBER( microdrive_image_device::clk_w )
 
 WRITE_LINE_MEMBER( microdrive_image_device::comms_in_w )
 {
-	if (LOG) logerror("Microdrive '%s' COMMS IN: %u\n", tag(), state);
 	m_comms_in = state;
 }
 
 WRITE_LINE_MEMBER( microdrive_image_device::erase_w )
 {
-	if (LOG) logerror("Microdrive '%s' ERASE: %u\n", tag(), state);
 	m_erase = state;
 }
 
 WRITE_LINE_MEMBER( microdrive_image_device::read_write_w )
 {
-	if (LOG) logerror("Microdrive '%s' READ/WRITE: %u\n", tag(), state);
 	m_read_write = state;
 }
 

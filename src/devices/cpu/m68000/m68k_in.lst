@@ -2036,8 +2036,6 @@ e8c0 ffc0 bftst    l ADXWLdx    234fc:13
 	m68ki_trace_t0();              /* auto-disable (see m68kcpu.h) */
 	m_pc += 2;
 	(void)ea;   /* just to avoid an 'unused variable' warning */
-	logerror("%s at %08x: called unimplemented instruction %04x (callm)\n",
-					tag(), m_ppc, m_ir);
 
 
 0ac0 ffc0 cas      b A+-DXWL    234fc:12
@@ -2906,33 +2904,23 @@ b188 f1f8 cmpm     l .          01:20 7:26 234fc:9
 
 
 f080 f180 cpbcc    l .          23:4
-	logerror("%s at %08x: called unimplemented instruction %04x (cpbcc)\n",
-					tag(), m_ppc, m_ir);
 
 
 f048 f1f8 cpdbcc   l .          23:4
-	logerror("%s at %08x: called unimplemented instruction %04x (cpdbcc)\n",
-					tag(), m_ppc, m_ir);
 
 
 f000 f1c0 cpgen    l .          23:4
 	if(m_has_fpu || m_has_pmmu)
 	{
-		logerror("%s at %08x: called unimplemented instruction %04x (cpgen)\n",
-						tag(), m_ppc, m_ir);
 	} else {
 		m68ki_exception_1111();
 	}
 
 
 f040 f1c0 cpscc    l .          23:4
-	logerror("%s at %08x: called unimplemented instruction %04x (cpscc)\n",
-					tag(), m_ppc, m_ir);
 
 
 f078 f1f8 cptrapcc l .          23:4
-	logerror("%s at %08x: called unimplemented instruction %04x (cptrapcc)\n",
-					tag(), m_ppc, m_ir);
 
 
 f278 fff8 ftrapcc  l .          23:4
@@ -6198,7 +6186,6 @@ c0c0 f1c0 mulu     w A+-DXWLdxI 0:54 7:76 1:30 234fc:27
 
 f518 fff8 pflusha  l .          4fc:4p
 	if(m_has_pmmu) {
-		logerror("68040: unhandled PFLUSHA (ir=%04x)\n", m_ir);
 	} else {
 		m68ki_exception_1111();
 	}
@@ -6206,7 +6193,6 @@ f518 fff8 pflusha  l .          4fc:4p
 
 f510 fff8 pflushan l .          4fc:4p
 	if(m_has_pmmu) {
-		logerror("68040: unhandled PFLUSHAN (ir=%04x)\n", m_ir);
 	} else {
 		m68ki_exception_1111();
 	}
@@ -6226,7 +6212,6 @@ f000 fe00 pmmu     l .          234fc:8p
 f548 ffd8 ptest    l .          4:8p
 	if(m_has_pmmu)
 	{
-		logerror("68040: unhandled PTEST\n");
 	}
 	else
 	{
@@ -7055,8 +7040,6 @@ e5c0 ffc0 roxl     w A+-DXWL    01:8 7:14 234fc:5
 
 06c0 fff0 rtm      l .          234fc:19
 	m68ki_trace_t0();              /* auto-disable (see m68kcpu.h) */
-	logerror("%s at %08x: called unimplemented instruction %04x (rtm)\n",
-					tag(), m_ppc, m_ir);
 
 
 4e77 ffff rtr      l .          01:20 7:22 234fc:14
@@ -8088,7 +8071,6 @@ f400 ff20 cinv     l .          4:16
 	u16 ir = m_ir;
 	u8 cache = (ir >> 6) & 3;
 	//  u8 scope = (ir >> 3) & 3;
-	//  logerror("68040 %s: pc=%08x ir=%04x cache=%d scope=%d register=%d\n", ir & 0x0020 ? "cpush" : "cinv", m_ppc, ir, cache, scope, ir & 7);
 	switch (cache) {
 	case 1:
 		// TODO: data cache
@@ -8105,7 +8087,5 @@ f400 ff20 cinv     l .          4:16
 
 
 f420 ff20 cpush    l .          4:16
-	logerror("%s at %08x: called unimplemented instruction %04x (cpush)\n",
-					tag(), m_ppc, m_ir);
 
 

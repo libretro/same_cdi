@@ -26,15 +26,7 @@
 #define LOG_TIMER   (1U <<  3)
 #define LOG_EPROM   (1U <<  4)
 
-//#define VERBOSE (LOG_GENERAL | LOG_IOPORT | LOG_TIMER | LOG_EPROM)
-//#define LOG_OUTPUT_FUNC printf
 #include "logmacro.h"
-
-#define LOGINT(...)     LOGMASKED(LOG_INT,    __VA_ARGS__)
-#define LOGIOPORT(...)  LOGMASKED(LOG_IOPORT, __VA_ARGS__)
-#define LOGTIMER(...)   LOGMASKED(LOG_TIMER,  __VA_ARGS__)
-#define LOGEPROM(...)   LOGMASKED(LOG_EPROM,  __VA_ARGS__)
-
 
 namespace {
 
@@ -255,11 +247,6 @@ template <offs_t B> void m68705_device::eprom_w(offs_t offset, u8 data)
 			m_pl_data = data;
 			m_pl_addr = B + offset;
 		}
-		else
-		{
-			// this causes undefined behaviour, which is bad when EPROM programming is involved
-			logerror("warning: write to EPROM when /PGE = 0 (%04X = %02X)\n", B + offset, data);
-		}
 	}
 }
 
@@ -342,7 +329,6 @@ void m68705_device::pcr_w(u8 data)
 
 u8 m6805_hmos_device::acr_r()
 {
-	logerror("unsupported read ACR\n");
 	return 0xff;
 }
 
@@ -370,20 +356,14 @@ void m6805_hmos_device::acr_w(u8 data)
 	// 30 machine cycle conversion time (input sampled during first 5 cycles)
 	// on completion, ACR7 is set, result is placed in ARR, and new conversion starts
 	// writing to ACR aborts current conversion, clears ACR7, and starts new conversion
-
-	logerror("unsupported write ACR = %02X\n", data);
 }
 
 u8 m6805_hmos_device::arr_r()
 {
-	logerror("unsupported read ARR\n");
 	return 0xff;
 }
 
-void m6805_hmos_device::arr_w(u8 data)
-{
-	logerror("unsupported write ARR = %02X\n", data);
-}
+void m6805_hmos_device::arr_w(u8 data) { }
 
 void m6805_hmos_device::device_start()
 {

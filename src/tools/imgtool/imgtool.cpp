@@ -36,15 +36,6 @@ static std::unique_ptr<imgtool::library> global_imgtool_library;
 static int global_omit_untested;
 static void (*global_warn)(const char *message);
 
-
-void CLIB_DECL ATTR_PRINTF(1,2) logerror(const char *format, ...)
-{
-	va_list arg;
-	va_start(arg, format);
-	vprintf(format, arg);
-	va_end(arg);
-}
-
 /***************************************************************************
 
     Imgtool initialization and basics

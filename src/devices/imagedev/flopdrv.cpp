@@ -21,16 +21,6 @@
 #include "util/ioprocs.h"
 #include "util/ioprocsfilter.h"
 
-
-#define VERBOSE     0
-#define LOG(x) do { if (VERBOSE) logerror x; } while (0)
-
-/***************************************************************************
-    CONSTANTS
-***************************************************************************/
-
-#define LOG_FLOPPY      0
-
 /***************************************************************************
     TYPE DEFINITIONS
 ***************************************************************************/
@@ -108,7 +98,6 @@ void legacy_floppy_image_device::log_readwrite(const char *name, int head, int t
 	int i;
 	for (i = 0; i < length; i++)
 		sprintf(membuf + i*2, "%02x", (int) (uint8_t) buf[i]);
-	logerror("%s:  head=%i track=%i sector=%i buffer='%s'\n", name, head, track, sector, membuf);
 }
 
 void legacy_floppy_image_device::floppy_drive_set_geometry_absolute(int tracks, int sides)
@@ -255,8 +244,6 @@ int legacy_floppy_image_device::floppy_drive_get_flag_state(int flag)
 
 void legacy_floppy_image_device::floppy_drive_seek(signed int signed_tracks)
 {
-	LOG(("seek from: %d delta: %d\n",m_current_track, signed_tracks));
-
 	/* update position */
 	m_current_track+=signed_tracks;
 
@@ -358,10 +345,6 @@ void legacy_floppy_image_device::floppy_drive_read_sector_data(int side, int ind
 			return;
 
 		floppy_read_indexed_sector(m_floppy, side, m_track, index1, 0, ptr, length);
-
-		if (LOG_FLOPPY)
-			log_readwrite("sector_read", side, m_track, index1, (const char *)ptr, length);
-
 	}
 }
 
@@ -371,9 +354,6 @@ void legacy_floppy_image_device::floppy_drive_write_sector_data(int side, int in
 	{
 		if (!m_floppy)
 			return;
-
-		if (LOG_FLOPPY)
-			log_readwrite("sector_write", side, m_track, index1, (const char *)ptr, length);
 
 		floppy_write_indexed_sector(m_floppy, side, m_track, index1, 0, ptr, length, ddam);
 	}

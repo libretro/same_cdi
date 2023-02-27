@@ -36,10 +36,6 @@
 
 #define VERBOSE 0
 
-#define LOG(x) do { if (VERBOSE) machine().logerror x; } while (0)
-
-
-
 //**************************************************************************
 //  CONSTANTS
 //**************************************************************************
@@ -99,8 +95,6 @@ void save_manager::allow_registration(bool allowed)
 
 		if (dupes_found)
 			fatalerror("%d duplicate save state entries found.\n", dupes_found);
-
-		dump_registry();
 
 		// everything is registered by now, evaluate the savestate size
 		m_rewind->clamp_capacity();
@@ -184,7 +178,6 @@ void save_manager::save_memory(device_t *device, const char *module, const char 
 	// check for invalid timing
 	if (!m_reg_allowed)
 	{
-		machine().logerror("Attempt to register save state entry after state registration is closed!\nModule %s tag %s name %s\n", module, tag, name);
 		if (machine().system().flags & machine_flags::SUPPORTS_SAVE)
 			fatalerror("Attempt to register save state entry after state registration is closed!\nModule %s tag %s name %s\n", module, tag, name);
 		m_illegal_regs++;
@@ -522,19 +515,6 @@ u32 save_manager::signature() const
 	return crc;
 }
 
-
-//-------------------------------------------------
-//  dump_registry - dump the registry to the
-//  logfile
-//-------------------------------------------------
-
-void save_manager::dump_registry() const
-{
-	for (auto &entry : m_entry_list)
-		LOG(("%s: %u x %u x %u (%u)\n", entry->m_name.c_str(), entry->m_typesize, entry->m_typecount, entry->m_blockcount, entry->m_stride));
-}
-
-
 //-------------------------------------------------
 //  validate_header - validate the data in the
 //  header
@@ -706,8 +686,6 @@ void rewinder::clamp_capacity()
 	if (total < single)
 	{
 		m_enabled = false;
-		m_save.machine().logerror("Rewind has been disabled, because rewind capacity is smaller than savestate size.\n");
-		m_save.machine().logerror("Rewind buffer size: %d bytes. Savestate size: %d bytes.\n", total, single);
 		m_save.machine().popmessage("Rewind has been disabled. See error.log for details");
 	}
 }
@@ -890,9 +868,6 @@ bool rewinder::check_size()
 
 		if (m_first_time_note)
 		{
-			m_save.machine().logerror("Rewind note: Capacity has been reached. Old savestates will be erased.\n");
-			m_save.machine().logerror("Capacity: %d bytes. Savestate size: %d bytes. Savestate count: %d.\n",
-				totalsize, singlesize, m_state_list.size());
 			m_first_time_note = false;
 		}
 
@@ -914,23 +889,18 @@ void rewinder::report_error(save_error error, rewind_operation operation)
 	{
 	// internal saveload failures
 	case STATERR_ILLEGAL_REGISTRATIONS:
-		m_save.machine().logerror("Rewind error: Unable to %s state due to illegal registrations.", opname);
 		m_save.machine().popmessage("Rewind error occured. See error.log for details.");
 		break;
 
 	case STATERR_INVALID_HEADER:
-		m_save.machine().logerror("Rewind error: Unable to %s state due to an invalid header. "
-			"Make sure the save state is correct for this machine.\n", opname);
 		m_save.machine().popmessage("Rewind error occured. See error.log for details.");
 		break;
 
 	case STATERR_READ_ERROR:
-		m_save.machine().logerror("Rewind error: Unable to %s state due to a read error.\n", opname);
 		m_save.machine().popmessage("Rewind error occured. See error.log for details.");
 		break;
 
 	case STATERR_WRITE_ERROR:
-		m_save.machine().logerror("Rewind error: Unable to %s state due to a write error.\n", opname);
 		m_save.machine().popmessage("Rewind error occured. See error.log for details.");
 		break;
 
@@ -938,7 +908,6 @@ void rewinder::report_error(save_error error, rewind_operation operation)
 	case STATERR_NOT_FOUND:
 		if (operation == rewind_operation::LOAD)
 		{
-			m_save.machine().logerror("Rewind error: No rewind state to load.\n");
 			m_save.machine().popmessage("Rewind error occured. See error.log for details.");
 		}
 		break;
@@ -946,7 +915,6 @@ void rewinder::report_error(save_error error, rewind_operation operation)
 	case STATERR_DISABLED:
 		if (operation == rewind_operation::LOAD)
 		{
-			m_save.machine().logerror("Rewind error: Rewind is disabled.\n");
 			m_save.machine().popmessage("Rewind error occured. See error.log for details.");
 		}
 		break;
@@ -962,16 +930,12 @@ void rewinder::report_error(save_error error, rewind_operation operation)
 			// for rewinding outside of debugger, give some indication that rewind has worked, as screen doesn't update
 			m_save.machine().popmessage("Rewind state %i %s.\n%s", m_current_index + 1, opnamed, warning);
 			if (m_first_time_warning && operation == rewind_operation::LOAD && !supported)
-			{
-				m_save.machine().logerror(warning);
 				m_first_time_warning = false;
-			}
 		}
 		break;
 
 	// something that shouldn't be allowed to happen
 	default:
-		m_save.machine().logerror("Error: Unknown error during state %s.\n", opname);
 		m_save.machine().popmessage("Rewind error occured. See error.log for details.");
 		break;
 	}

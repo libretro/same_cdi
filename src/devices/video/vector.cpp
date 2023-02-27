@@ -130,10 +130,7 @@ void vector_device::add_point(int x, int y, rgb_t color, int intensity)
 
 	m_vector_index++;
 	if (m_vector_index >= MAX_POINTS)
-	{
 		m_vector_index--;
-		logerror("*** Warning! Vector list overflow!\n");
-	}
 }
 
 

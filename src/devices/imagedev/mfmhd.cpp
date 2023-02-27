@@ -992,9 +992,6 @@ DEFINE_DEVICE_TYPE(MFMHD_ST251, mfm_hd_st251_device, "mfm_hd_st251", "Seagate ST
 //   This is a write-back LRU cache.
 // ===========================================================
 
-#define TRACE_CACHE  0
-#define TRACE_DETAIL 0
-
 mfmhd_trackimage_cache::mfmhd_trackimage_cache(running_machine &machine):
 	m_mfmhd(nullptr),
 	m_tracks(nullptr),
@@ -1005,7 +1002,6 @@ mfmhd_trackimage_cache::mfmhd_trackimage_cache(running_machine &machine):
 mfmhd_trackimage_cache::~mfmhd_trackimage_cache()
 {
 	mfmhd_trackimage* current = m_tracks;
-	if (TRACE_CACHE) m_machine.logerror("[%s:cache] MFM HD cache destroy\n", m_mfmhd->tag());
 
 	while (current != nullptr)
 	{
@@ -1035,12 +1031,10 @@ void mfmhd_trackimage_cache::write_back_one()
 void mfmhd_trackimage_cache::cleanup()
 {
 	mfmhd_trackimage* current = m_tracks;
-	if (TRACE_CACHE) m_machine.logerror("[%s:cache] MFM HD cache cleanup\n", m_mfmhd->tag());
 
 	// Still dirty?
 	while (current != nullptr)
 	{
-		if (TRACE_CACHE) m_machine.logerror("[%s:cache] MFM HD cache: evict line cylinder=%d head=%d\n", m_mfmhd->tag(), current->cylinder, current->head);
 		if (current->dirty)
 		{
 			m_mfmhd->write_track(current->encdata.get(), current->cylinder, current->head);
@@ -1067,8 +1061,6 @@ const char *encnames[] = { "MFM_BITS","MFM_BYTE","SEPARATE","SSIMPLE " };
 */
 void mfmhd_trackimage_cache::init(mfm_harddisk_device* mfmhd, int tracksize, int trackslots)
 {
-	if (TRACE_CACHE) m_machine.logerror("[%s:cache] MFM HD cache init; cache size is %d tracks\n", mfmhd->tag(), trackslots);
-
 	std::error_condition state;
 
 	mfmhd_trackimage* previous;
@@ -1083,7 +1075,6 @@ void mfmhd_trackimage_cache::init(mfm_harddisk_device* mfmhd, int tracksize, int
 
 	while (track < trackslots)
 	{
-		if (TRACE_DETAIL) m_machine.logerror("[%s:cache] MFM HD allocate cache slot\n", mfmhd->tag());
 		previous = current;
 		current = new mfmhd_trackimage;
 		current->encdata = std::make_unique<uint16_t []>(tracksize);
@@ -1163,7 +1154,6 @@ uint16_t* mfmhd_trackimage_cache::get_trackimage(int cylinder, int head)
 
 		// previous points to the second to last element
 		current = previous->next;
-		if (TRACE_CACHE) m_machine.logerror("[%s:cache] evict line (c=%d,h=%d)\n", m_mfmhd->tag(), current->cylinder, current->head);
 
 		if (current->dirty)
 		{

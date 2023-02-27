@@ -34,15 +34,7 @@ determines both the COP watchdog timeout and the real-time interrupt rate
 #define LOG_TIMER   (1U <<  3)
 #define LOG_COP     (1U <<  4)
 
-//#define VERBOSE (LOG_GENERAL | LOG_INT | LOG_IOPORT | LOG_TIMER | LOG_COP)
-//#define LOG_OUTPUT_FUNC printf
 #include "logmacro.h"
-
-#define LOGINT(...)     LOGMASKED(LOG_INT,    __VA_ARGS__)
-#define LOGIOPORT(...)  LOGMASKED(LOG_IOPORT, __VA_ARGS__)
-#define LOGTIMER(...)   LOGMASKED(LOG_TIMER,  __VA_ARGS__)
-#define LOGCOP(...)     LOGMASKED(LOG_COP,    __VA_ARGS__)
-
 
 namespace {
 
@@ -195,8 +187,6 @@ void m68hc05_device::set_port_interrupt(std::array<u8, PORT_COUNT> const &interr
 	{
 		diff |= (m_port_interrupt[i] ^ interrupt[i]) & ~m_port_ddr[i];
 		m_port_interrupt[i] = interrupt[i];
-		if (interrupt[i] && !m_port_cb_r[i].isnull())
-			logerror("PORT%c has interrupts enabled with pulled inputs, behaviour may be incorrect\n", 'A' + i);
 	}
 	if (diff) update_port_irq();
 }

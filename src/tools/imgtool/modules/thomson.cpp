@@ -267,7 +267,6 @@ static void thom_close_fd_qd(imgtool::image &img)
 	f->stream->seek(0, SEEK_SET);
 	if (f->stream->write(f->data, size) < size)
 	{
-		/* logerror( "thom_diskimage_close_fd_qd: write error\n" ); */
 	}
 	}
 
@@ -399,10 +398,8 @@ static void thom_close_sap(imgtool::image &img)
 	f->stream->seek(0, SEEK_SET);
 
 	/* image header */
-	if ( f->stream->write(sap_header, 66) < 66) {
-		/* logerror( "thom_diskimage_close_sap: write error\n" ); */
+	if ( f->stream->write(sap_header, 66) < 66)
 		return;
-	}
 
 	for ( track = 0; track < f->tracks; track++ )
 		for ( sector = 1; sector <= 16; sector++ ) {
@@ -425,7 +422,6 @@ static void thom_close_sap(imgtool::image &img)
 	/* save */
 	if (f->stream->write(buf, f->sector_size + 6) <
 			f->sector_size + 6) {
-		/* logerror( "thom_diskimage_close_sap: write error\n" ); */
 		return;
 	}
 		}

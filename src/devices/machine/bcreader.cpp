@@ -210,9 +210,6 @@ void barcode_reader_device::decode(int len)
 
 	{
 		sum = (10 - (sum % 10)) % 10;
-		if (sum != m_byte_data[len - 1])
-			logerror("WARNING: wrong checksum detected in the barcode! chksum %d last digit %d\n",
-								sum, m_byte_data[len - 1]);
 
 		for (int i = 0; i < 7; i++)
 			m_pixel_data[output++] = bcread_data_RE[sum][i];

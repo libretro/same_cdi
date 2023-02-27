@@ -384,7 +384,6 @@ private:
 			return
 					[&devbase = m_devbase, message = std::move(m_message)] (offs_t offset, std::make_unsigned_t<Result> mem_mask)
 					{
-						devbase.logerror("%s: %s\n", devbase.machine().describe_context(), message);
 						return Result(0);
 					};
 		}
@@ -2003,7 +2002,7 @@ private:
 				this->built();
 				return
 						[&devbase = m_devbase, message = std::move(m_message)] (offs_t offset, input_t data, std::make_unsigned_t<input_t> mem_mask)
-						{ if (data) devbase.logerror("%s: %s\n", devbase.machine().describe_context(), message); };
+						{ };
 			}
 
 		private:
@@ -2058,7 +2057,7 @@ private:
 			this->built();
 			return
 					[&devbase = m_devbase, message = std::move(m_message), exor = this->exor(), mask = this->mask()] (offs_t offset, input_t data, std::make_unsigned_t<input_t> mem_mask)
-					{ if ((data ^ exor) & mask) devbase.logerror("%s: %s\n", devbase.machine().describe_context(), message); };
+					{ };
 		}
 	};
 	class binder

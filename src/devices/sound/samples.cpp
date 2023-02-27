@@ -621,14 +621,9 @@ bool samples_device::load_samples()
 
 		// if opened, read it
 		if (!filerr)
-		{
 			read_sample(file, m_sample[index]);
-		}
 		else
-		{
-			logerror("Error opening sample '%s' (%s:%d %s)\n", samplename, filerr.category().name(), filerr.value(), filerr.message());
 			ok = false;
-		}
 	}
 	return ok;
 }

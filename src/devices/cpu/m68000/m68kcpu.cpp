@@ -798,18 +798,12 @@ bool m68000_base_device::memory_translate(int space, int intention, offs_t &addr
 //          u32 va=address;
 
 			if (CPU_TYPE_IS_040_PLUS())
-			{
 				address = pmmu_translate_addr_with_fc_040(address, mode, 1);
-			}
 			else
-			{
 				address = pmmu_translate_addr_with_fc<false, false>(address, mode, 1);
-			}
 
-			if ((m_mmu_tmp_sr & M68K_MMU_SR_INVALID) != 0) {
-//              logerror("cpu_translate_m68k failed with mmu_sr=%04x va=%08x pa=%08x\n",m_mmu_tmp_sr,va ,address);
+			if ((m_mmu_tmp_sr & M68K_MMU_SR_INVALID) != 0)
 				address = 0;
-			}
 
 			m_mmu_tmp_sr = temp_mmu_tmp_sr;
 		}
@@ -934,11 +928,7 @@ void m68000_base_device::execute_run()
 					for (i = 15; i >= 0; i--)
 					{
 						if (REG_DA()[i] != tmp_dar[i])
-						{
-//                          logerror("PMMU: pc=%08x sp=%08x bus error: fixed %s[%d]: %08x -> %08x\n",
-//                                  m_ppc, REG_A()[7], i < 8 ? "D" : "A", i & 7, REG_DA()[i], tmp_dar[i]);
 							REG_DA()[i] = tmp_dar[i];
-						}
 					}
 
 					sr = m68ki_init_exception(EXCEPTION_BUS_ERROR);

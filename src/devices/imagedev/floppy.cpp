@@ -33,14 +33,6 @@
 #include "util/ioprocsfilter.h"
 #include "util/zippath.h"
 
-/*
-    Debugging flags. Set to 0 or 1.
-*/
-
-// Show step operation
-#define TRACE_STEP 0
-#define TRACE_AUDIO 0
-
 #define PITCH_SEEK_SAMPLES 1
 
 #define FLUX_SCREEN 0
@@ -932,10 +924,8 @@ void floppy_image_device::index_resync()
 		idx = new_idx;
 		if(idx && ready) {
 			ready_counter--;
-			if(!ready_counter) {
-				// logerror("Drive spun up\n");
+			if(!ready_counter)
 				set_ready(false);
-			}
 		}
 		if (!cur_index_pulse_cb.isnull())
 			cur_index_pulse_cb(this, idx);
@@ -1006,7 +996,6 @@ void floppy_image_device::stp_w(int state)
 			}
 			if(ocyl != cyl)
 			{
-				if (TRACE_STEP) logerror("track %d\n", cyl);
 				// Do we want a stepper sound?
 				// We plan for 5 zones with possibly specific sounds
 				if (m_make_sound) m_sound_out->step(cyl*5/tracks);
@@ -1065,7 +1054,6 @@ void floppy_image_device::seek_phase_w(int _phases)
 	cache_clear();
 
 	if(next_pos != cur_pos) {
-		if (TRACE_STEP) logerror("track %d.%d\n", cyl, subcyl);
 		if (m_make_sound) m_sound_out->step(subcyl);
 	}
 
@@ -1687,8 +1675,6 @@ void floppy_sound_device::step(int zone)
 
 			// Changing the pitch does not always sound convincing
 			if (!PITCH_SEEK_SAMPLES) m_seek_pitch = 1;
-
-			if (TRACE_AUDIO) logerror("Seek sample = %d, pitch = %f\n", m_seek_playback_sample, m_seek_pitch);
 
 			// Set the timeout for the seek sound. When it expires,
 			// we assume that the seek process is over, and we'll play the
@@ -2812,9 +2798,6 @@ bool mac_floppy_device::wpt_r()
 	// actual_ss may have changed after the phases were set
 	m_reg = (m_reg & 7) | (actual_ss ? 8 : 0);
 
-	if(0 && (m_reg != 4 && m_reg != 12 && m_reg != 5 && m_reg != 13))
-		logerror("fdc disk sense reg %x %s %p\n", m_reg, regnames[m_reg], image.get());
-
 	switch(m_reg) {
 	case 0x0: // Step direction
 		return dir;
@@ -2892,43 +2875,35 @@ void mac_floppy_device::seek_phase_w(int phases)
 	if(m_strb && !prev_strb) {
 		switch(m_reg) {
 		case 0x0: // Step to cylinder + 1
-			logerror("cmd step dir +1\n");
 			dir_w(0);
 			break;
 
 		case 0x1: // Step on
-			logerror("cmd step on\n");
 			stp_w(0);
 			// There should be a delay, but it's not necessary
 			stp_w(1);
 			break;
 
 		case 0x2: // Motor on
-			logerror("cmd motor on\n");
 			floppy_image_device::mon_w(0);
 			break;
 
 		case 0x3: // End eject
-			logerror("cmd end eject\n");
 			break;
 
 		case 0x4: // Step to cylinder - 1
-			logerror("cmd step dir -1\n");
 			dir_w(1);
 			break;
 
 		case 0x6: // Motor off
-			logerror("cmd motor off\n");
 			floppy_image_device::mon_w(1);
 			break;
 
 		case 0x7: // Start eject
-			logerror("cmd start eject\n");
 			unload();
 			break;
 
 		case 0x9: // MFM mode on
-			logerror("cmd mfm on\n");
 			if(m_has_mfm) {
 				m_mfm = true;
 				track_changed();
@@ -2936,18 +2911,15 @@ void mac_floppy_device::seek_phase_w(int phases)
 			break;
 
 		case 0xc: // Clear dskchg
-			logerror("cmd clear dskchg\n");
 			dskchg = 1;
 			break;
 
 		case 0xd: // GCR mode on
-			logerror("cmd gcr on\n");
 			m_mfm = false;
 			track_changed();
 			break;
 
 		default:
-			logerror("cmd reg %x %s\n", m_reg, regnames[m_reg]);
 			break;
 		}
 	}

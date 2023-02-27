@@ -29,10 +29,6 @@ include:
   - project: 'libretro-infrastructure/ci-templates'
     file: '/osx-x64.yml'
     
-  # MacOS ARM 64-bit
-  - project: 'libretro-infrastructure/ci-templates'
-    file: '/osx-arm64.yml'
-
   ################################## CELLULAR ################################
   # Android
   - project: 'libretro-infrastructure/ci-templates'
@@ -104,19 +100,6 @@ libretro-build-osx-x64:
     <<: *global_cache
     key: "$CI_COMMIT_REF_SLUG-osx-x64"
     
-# MacOS ARM 64-bit
-libretro-build-osx-arm64:
-  tags:
-    - macosx-packaging
-  extends:
-    - .libretro-osx-arm64-make-default
-    - .core-defs
-  variables:
-    MACOSX_DEPLOYMENT_TARGET: "10.15"
-  cache:
-    <<: *global_cache
-    key: "$CI_COMMIT_REF_SLUG-osx-arm64"
-
 ################################### CELLULAR #################################
 # Android ARMv7a
 android-armeabi-v7a:
