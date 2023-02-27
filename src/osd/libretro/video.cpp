@@ -42,9 +42,55 @@ osd_video_config video_config;
 //  PROTOTYPES
 //============================================================
 
-static void check_osd_inputs(running_machine &machine);
+static void check_osd_inputs(running_machine &machine)
+{
+	// check for toggling fullscreen mode
+	if (machine.ui_input().pressed(IPT_OSD_1))
+	{
+		for (auto curwin : osd_common_t::s_window_list)
+			std::static_pointer_cast<retro_window_info>(curwin)->toggle_full_screen();
+	}
 
-static void get_resolution(const char *defdata, const char *data, osd_window_config *config, int report_error);
+	auto window = osd_common_t::s_window_list.front();
+
+#if (USE_OPENGL)
+	//FIXME: on a per window basis
+	if (machine.ui_input().pressed(IPT_OSD_5))
+	{
+		video_config.filter = !video_config.filter;
+		machine.ui().popup_time(1, "Filter %s", video_config.filter? "enabled":"disabled");
+	}
+#endif
+
+	if (machine.ui_input().pressed(IPT_OSD_6))
+		std::static_pointer_cast<retro_window_info>(window)->modify_prescale(-1);
+
+	if (machine.ui_input().pressed(IPT_OSD_7))
+		std::static_pointer_cast<retro_window_info>(window)->modify_prescale(1);
+
+	if (machine.ui_input().pressed(IPT_OSD_8))
+		window->renderer().record();
+}
+
+
+static void get_resolution(const char *defdata, const char *data, osd_window_config *config, int report_error)
+{
+	config->width = config->height = config->depth = config->refresh = 0;
+	if (strcmp(data, OSDOPTVAL_AUTO) == 0)
+	{
+		if (strcmp(defdata, OSDOPTVAL_AUTO) == 0)
+			return;
+		data = defdata;
+	}
+
+	if (sscanf(data, "%dx%dx%d", &config->width, &config->height, &config->depth) < 2 && report_error)
+		osd_printf_error("Illegal resolution value = %s\n", data);
+
+	const char * at_pos = strchr(data, '@');
+	if (at_pos)
+		if (sscanf(at_pos + 1, "%d", &config->refresh) < 1 && report_error)
+			osd_printf_error("Illegal refresh rate in resolution value = %s\n", data);
+}
 
 
 //============================================================
@@ -133,40 +179,6 @@ void retro_osd_interface::input_update()
 	process_events_buf();
 	poll_inputs(machine());
 	check_osd_inputs(machine());
-}
-
-//============================================================
-//  check_osd_inputs
-//============================================================
-
-static void check_osd_inputs(running_machine &machine)
-{
-	// check for toggling fullscreen mode
-	if (machine.ui_input().pressed(IPT_OSD_1))
-	{
-		for (auto curwin : osd_common_t::s_window_list)
-			std::static_pointer_cast<retro_window_info>(curwin)->toggle_full_screen();
-	}
-
-	auto window = osd_common_t::s_window_list.front();
-
-	#if (USE_OPENGL)
-		//FIXME: on a per window basis
-		if (machine.ui_input().pressed(IPT_OSD_5))
-		{
-			video_config.filter = !video_config.filter;
-			machine.ui().popup_time(1, "Filter %s", video_config.filter? "enabled":"disabled");
-		}
-	#endif
-
-	if (machine.ui_input().pressed(IPT_OSD_6))
-		std::static_pointer_cast<retro_window_info>(window)->modify_prescale(-1);
-
-	if (machine.ui_input().pressed(IPT_OSD_7))
-		std::static_pointer_cast<retro_window_info>(window)->modify_prescale(1);
-
-	if (machine.ui_input().pressed(IPT_OSD_8))
-		window->renderer().record();
 }
 
 //============================================================
@@ -321,28 +333,4 @@ void retro_osd_interface::extract_video_config()
 		osd_printf_warning("scalemode is only for -video soft, overriding\n");
 		video_config.scale_mode = VIDEO_SCALE_MODE_NONE;
 	}
-}
-
-
-//============================================================
-//  get_resolution
-//============================================================
-
-static void get_resolution(const char *defdata, const char *data, osd_window_config *config, int report_error)
-{
-	config->width = config->height = config->depth = config->refresh = 0;
-	if (strcmp(data, OSDOPTVAL_AUTO) == 0)
-	{
-		if (strcmp(defdata, OSDOPTVAL_AUTO) == 0)
-			return;
-		data = defdata;
-	}
-
-	if (sscanf(data, "%dx%dx%d", &config->width, &config->height, &config->depth) < 2 && report_error)
-		osd_printf_error("Illegal resolution value = %s\n", data);
-
-	const char * at_pos = strchr(data, '@');
-	if (at_pos)
-		if (sscanf(at_pos + 1, "%d", &config->refresh) < 1 && report_error)
-			osd_printf_error("Illegal refresh rate in resolution value = %s\n", data);
 }

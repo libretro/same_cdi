@@ -28,10 +28,6 @@
 #include "a26_cas.h"
 #endif
 
-#ifdef HAS_FORMATS_A5105_DSK
-#include "a5105_dsk.h"
-#endif
-
 #ifdef HAS_FORMATS_ABC800_DSK
 #include "abc800_dsk.h"
 #endif
@@ -124,18 +120,6 @@
 #include "bw2_dsk.h"
 #endif
 
-#ifdef HAS_FORMATS_C3040_DSK
-#include "c3040_dsk.h"
-#endif
-
-#ifdef HAS_FORMATS_C4040_DSK
-#include "c4040_dsk.h"
-#endif
-
-#ifdef HAS_FORMATS_C8280_DSK
-#include "c8280_dsk.h"
-#endif
-
 #ifdef HAS_FORMATS_CAMPLYNX_CAS
 #include "camplynx_cas.h"
 #endif
@@ -146,10 +130,6 @@
 
 #ifdef HAS_FORMATS_CBM_CRT
 #include "cbm_crt.h"
-#endif
-
-#ifdef HAS_FORMATS_CBM_TAP
-#include "cbm_tap.h"
 #endif
 
 #ifdef HAS_FORMATS_CCVF_DSK
@@ -176,40 +156,8 @@
 #include "concept_dsk.h"
 #endif
 
-#ifdef HAS_FORMATS_COUPEDSK
-#include "coupedsk.h"
-#endif
-
-#ifdef HAS_FORMATS_CPIS_DSK
-#include "cpis_dsk.h"
-#endif
-
 #ifdef HAS_FORMATS_CSW_CAS
 #include "csw_cas.h"
-#endif
-
-#ifdef HAS_FORMATS_D64_DSK
-#include "d64_dsk.h"
-#endif
-
-#ifdef HAS_FORMATS_D71_DSK
-#include "d71_dsk.h"
-#endif
-
-#ifdef HAS_FORMATS_D80_DSK
-#include "d80_dsk.h"
-#endif
-
-#ifdef HAS_FORMATS_D81_DSK
-#include "d81_dsk.h"
-#endif
-
-#ifdef HAS_FORMATS_D82_DSK
-#include "d82_dsk.h"
-#endif
-
-#ifdef HAS_FORMATS_DCP_DSK
-#include "dcp_dsk.h"
 #endif
 
 #ifdef HAS_FORMATS_DIM_DSK
@@ -264,10 +212,6 @@
 #include "fdd_dsk.h"
 #endif
 
-#ifdef HAS_FORMATS_FL1_DSK
-#include "fl1_dsk.h"
-#endif
-
 #ifdef HAS_FORMATS_FLEX_DSK
 #include "flex_dsk.h"
 #endif
@@ -280,20 +224,8 @@
 #include "fm7_cas.h"
 #endif
 
-#ifdef HAS_FORMATS_FMSX_CAS
-#include "fmsx_cas.h"
-#endif
-
-#ifdef HAS_FORMATS_FMTOWNS_DSK
-#include "fmtowns_dsk.h"
-#endif
-
 #ifdef HAS_FORMATS_FSD_DSK
 #include "fsd_dsk.h"
-#endif
-
-#ifdef HAS_FORMATS_G64_DSK
-#include "g64_dsk.h"
 #endif
 
 #ifdef HAS_FORMATS_GTP_CAS
@@ -380,10 +312,6 @@
 #include "lviv_lvt.h"
 #endif
 
-#ifdef HAS_FORMATS_M20_DSK
-#include "m20_dsk.h"
-#endif
-
 #ifdef HAS_FORMATS_M5_DSK
 #include "m5_dsk.h"
 #endif
@@ -406,10 +334,6 @@
 
 #ifdef HAS_FORMATS_MS0515_DSK
 #include "ms0515_dsk.h"
-#endif
-
-#ifdef HAS_FORMATS_MSX_DSK
-#include "msx_dsk.h"
 #endif
 
 #ifdef HAS_FORMATS_MTX_DSK
@@ -438,10 +362,6 @@
 
 #ifdef HAS_FORMATS_NFD_DSK
 #include "nfd_dsk.h"
-#endif
-
-#ifdef HAS_FORMATS_OPD_DSK
-#include "opd_dsk.h"
 #endif
 
 #ifdef HAS_FORMATS_ORAO_CAS
@@ -476,14 +396,6 @@
 #include "pasti_dsk.h"
 #endif
 
-#ifdef HAS_FORMATS_PC98FDI_DSK
-#include "pc98fdi_dsk.h"
-#endif
-
-#ifdef HAS_FORMATS_PC98_DSK
-#include "pc98_dsk.h"
-#endif
-
 #ifdef HAS_FORMATS_IPF_DSK
 #include "ipf_dsk.h"
 #endif
@@ -504,20 +416,12 @@
 #include "poly_dsk.h"
 #endif
 
-#ifdef HAS_FORMATS_PPG_DSK
-#include "ppg_dsk.h"
-#endif
-
 #ifdef HAS_FORMATS_PRIMOPTP
 #include "primoptp.h"
 #endif
 
 #ifdef HAS_FORMATS_PYLDIN_DSK
 #include "pyldin_dsk.h"
-#endif
-
-#ifdef HAS_FORMATS_QL_DSK
-#include "ql_dsk.h"
 #endif
 
 #ifdef HAS_FORMATS_RC759_DSK
@@ -532,10 +436,6 @@
 #include "rx50_dsk.h"
 #endif
 
-#ifdef HAS_FORMATS_SC3000_BIT
-#include "sc3000_bit.h"
-#endif
-
 #ifdef HAS_FORMATS_SDD_DSK
 #include "sdd_dsk.h"
 #endif
@@ -548,24 +448,12 @@
 #include "smx_dsk.h"
 #endif
 
-#ifdef HAS_FORMATS_SOL_CAS
-#include "sol_cas.h"
-#endif
-
-#ifdef HAS_FORMATS_SORC_CAS
-#include "sorc_cas.h"
-#endif
-
 #ifdef HAS_FORMATS_SORC_DSK
 #include "sorc_dsk.h"
 #endif
 
 #ifdef HAS_FORMATS_SORD_CAS
 #include "sord_cas.h"
-#endif
-
-#ifdef HAS_FORMATS_SPC1000_CAS
-#include "spc1000_cas.h"
 #endif
 
 #ifdef HAS_FORMATS_ST_DSK
@@ -578,10 +466,6 @@
 
 #ifdef HAS_FORMATS_SVI_DSK
 #include "svi_dsk.h"
-#endif
-
-#ifdef HAS_FORMATS_SWD_DSK
-#include "swd_dsk.h"
 #endif
 
 #ifdef HAS_FORMATS_TANDY2K_DSK
@@ -604,10 +488,6 @@
 #include "tiki100_dsk.h"
 #endif
 
-#ifdef HAS_FORMATS_TRD_DSK
-#include "trd_dsk.h"
-#endif
-
 #ifdef HAS_FORMATS_TRS80_DSK
 #include "trs80_dsk.h"
 #endif
@@ -622,10 +502,6 @@
 
 #ifdef HAS_FORMATS_TVC_DSK
 #include "tvc_dsk.h"
-#endif
-
-#ifdef HAS_FORMATS_TZX_CAS
-#include "tzx_cas.h"
 #endif
 
 #ifdef HAS_FORMATS_UEF_CAS
@@ -656,16 +532,8 @@
 #include "vt_dsk.h"
 #endif
 
-#ifdef HAS_FORMATS_FS_VTECH
-#include "fs_vtech.h"
-#endif
-
 #ifdef HAS_FORMATS_WD177X_DSK
 #include "wd177x_dsk.h"
-#endif
-
-#ifdef HAS_FORMATS_X07_CAS
-#include "x07_cas.h"
 #endif
 
 #ifdef HAS_FORMATS_X1_TAP
@@ -674,10 +542,6 @@
 
 #ifdef HAS_FORMATS_XDF_DSK
 #include "xdf_dsk.h"
-#endif
-
-#ifdef HAS_FORMATS_ZX81_P
-#include "zx81_p.h"
 #endif
 
 #ifdef HAS_FORMATS_FS_PRODOS
@@ -750,11 +614,6 @@ void mame_formats_full_list(mame_formats_enumerator &en)
 #endif
 #ifdef HAS_FORMATS_2D_DSK
 	en.add(FLOPPY_2D_FORMAT); // 2d_dsk.h
-#endif
-
-	en.category("Robotron");
-#ifdef HAS_FORMATS_A5105_DSK
-	en.add(FLOPPY_A5105_FORMAT); // a5105_dsk.h
 #endif
 
 	en.category("Luxor ABC");
@@ -850,38 +709,6 @@ void mame_formats_full_list(mame_formats_enumerator &en)
 	en.add(FLOPPY_BW2_FORMAT); // bw2_dsk.h
 #endif
 
-	en.category("Commodore");
-#ifdef HAS_FORMATS_CBM_TAP
-	en.add(cbm_cassette_formats); // cbm_tap.h
-#endif
-#ifdef HAS_FORMATS_C3040_DSK
-	en.add(FLOPPY_C3040_FORMAT); // c3040_dsk.h
-#endif
-#ifdef HAS_FORMATS_C4040_DSK
-	en.add(FLOPPY_C4040_FORMAT); // c4040_dsk.h
-#endif
-#ifdef HAS_FORMATS_C8280_DSK
-	en.add(FLOPPY_C8280_FORMAT); // c8280_dsk.h
-#endif
-#ifdef HAS_FORMATS_D64_DSK
-	en.add(FLOPPY_D64_FORMAT); // d64_dsk.h
-#endif
-#ifdef HAS_FORMATS_D71_DSK
-	en.add(FLOPPY_D71_FORMAT); // d71_dsk.h
-#endif
-#ifdef HAS_FORMATS_D80_DSK
-	en.add(FLOPPY_D80_FORMAT); // d80_dsk.h
-#endif
-#ifdef HAS_FORMATS_D81_DSK
-	en.add(FLOPPY_D81_FORMAT); // d81_dsk.h
-#endif
-#ifdef HAS_FORMATS_D82_DSK
-	en.add(FLOPPY_D82_FORMAT); // d82_dsk.h
-#endif
-#ifdef HAS_FORMATS_G64_DSK
-	en.add(FLOPPY_G64_FORMAT); // g64_dsk.h
-#endif
-
 	en.category("Camputers");
 #ifdef HAS_FORMATS_CAMPLYNX_CAS
 	en.add(lynx48k_cassette_formats); // camplynx_cas.h
@@ -914,39 +741,6 @@ void mame_formats_full_list(mame_formats_enumerator &en)
 	en.add(FLOPPY_CONCEPT_525DSDD_FORMAT); // concept_dsk.h
 #endif
 
-	en.category("Compis");
-#ifdef HAS_FORMATS_CPIS_DSK
-	en.add(FLOPPY_CPIS_FORMAT); // cpis_dsk.h
-#endif
-
-	en.category("PC98");
-#ifdef HAS_FORMATS_DCP_DSK
-	en.add(FLOPPY_DCP_FORMAT); // dcp_dsk.h
-#endif
-#ifdef HAS_FORMATS_DIP_DSK
-	en.add(FLOPPY_DIP_FORMAT); // dip_dsk.h
-#endif
-#ifdef HAS_FORMATS_FDD_DSK
-	en.add(FLOPPY_FDD_FORMAT); // fdd_dsk.h
-#endif
-#ifdef HAS_FORMATS_NFD_DSK
-	en.add(FLOPPY_NFD_FORMAT); // nfd_dsk.h
-#endif
-#ifdef HAS_FORMATS_PC98_DSK
-	en.add(FLOPPY_PC98_FORMAT); // pc98_dsk.h
-#endif
-#ifdef HAS_FORMATS_PC98FDI_DSK
-	en.add(FLOPPY_PC98FDI_FORMAT); // pc98fdi_dsk.h
-#endif
-
-	en.category("X68k");
-#ifdef HAS_FORMATS_DIM_DSK
-	en.add(FLOPPY_DIM_FORMAT); // dim_dsk.h
-#endif
-#ifdef HAS_FORMATS_XDF_DSK
-	en.add(FLOPPY_XDF_FORMAT); // xdf_dsk.h
-#endif
-
 	en.category("NCR Decision Mate V");
 #ifdef HAS_FORMATS_DMV_DSK
 	en.add(FLOPPY_DMV_FORMAT); // dmv_dsk.h
@@ -975,46 +769,9 @@ void mame_formats_full_list(mame_formats_enumerator &en)
 	en.add(FLOPPY_EXCALI64_FORMAT); // excali64_dsk.h
 #endif
 
-	en.category("Sinclair");
-#ifdef HAS_FORMATS_ZX81_P
-	en.add(zx81_p_format); // zx81_p.h
-	en.add(zx81_cassette_formats); // zx81_p.h
-	en.add(zx80_o_format); // zx81_p.h
-#endif
-#ifdef HAS_FORMATS_TZX_CAS
-	en.add(tzx_cassette_formats); // tzx_cas.h
-	en.add(cdt_cassette_formats); // tzx_cas.h
-#endif
-#ifdef HAS_FORMATS_FL1_DSK
-	en.add(FLOPPY_FL1_FORMAT); // fl1_dsk.h
-#endif
-#ifdef HAS_FORMATS_TRD_DSK
-	en.add(FLOPPY_TRD_FORMAT); // trd_dsk.h
-#endif
-#ifdef HAS_FORMATS_COUPEDSK
-	en.add(FLOPPY_MGT_FORMAT); // coupedsk.h
-#endif
-#ifdef HAS_FORMATS_OPD_DSK
-	en.add(FLOPPY_OPD_FORMAT); // opd_dsk.h
-#endif
-#ifdef HAS_FORMATS_SWD_DSK
-	en.add(FLOPPY_SWD_FORMAT); // swd_dsk.h
-#endif
-#ifdef HAS_FORMATS_SDD_DSK
-	en.add(FLOPPY_SDD_FORMAT); // sdd_dsk.h
-#endif
-#ifdef HAS_FORMATS_QL_DSK
-	en.add(FLOPPY_QL_FORMAT); // ql_dsk.h
-#endif
-
 	en.category("Flex");
 #ifdef HAS_FORMATS_FLEX_DSK
 	en.add(FLOPPY_FLEX_FORMAT); // flex_dsk.h
-#endif
-
-	en.category("FM Towns");
-#ifdef HAS_FORMATS_FMTOWNS_DSK
-	en.add(FLOPPY_FMTOWNS_FORMAT); // fmtowns_dsk.h
 #endif
 
 	en.category("JPM");
@@ -1083,11 +840,6 @@ void mame_formats_full_list(mame_formats_enumerator &en)
 	en.add(FLOPPY_KC85_FORMAT); // kc85_dsk.h
 #endif
 
-	en.category("Olivetti");
-#ifdef HAS_FORMATS_M20_DSK
-	en.add(FLOPPY_M20_FORMAT); // m20_dsk.h
-#endif
-
 	en.category("Sord M5");
 #ifdef HAS_FORMATS_SORD_CAS
 	en.add(sordm5_cassette_formats); // sord_cas.h
@@ -1110,14 +862,6 @@ void mame_formats_full_list(mame_formats_enumerator &en)
 	en.category("Elektronika");
 #ifdef HAS_FORMATS_MS0515_DSK
 	en.add(FLOPPY_MS0515_FORMAT); // ms0515_dsk.h
-#endif
-
-	en.category("MSX");
-#ifdef HAS_FORMATS_FMSX_CAS
-	en.add(fmsx_cassette_formats); // fmsx_cas.h
-#endif
-#ifdef HAS_FORMATS_MSX_DSK
-	en.add(FLOPPY_MSX_FORMAT); // msx_dsk.h
 #endif
 
 	en.category("MTX");
@@ -1167,11 +911,6 @@ void mame_formats_full_list(mame_formats_enumerator &en)
 	en.category("Poly");
 #ifdef HAS_FORMATS_POLY_DSK
 	en.add(FLOPPY_POLY_CPM_FORMAT); // poly_dsk.h
-#endif
-
-	en.category("Eltek Eurocom");
-#ifdef HAS_FORMATS_PPG_DSK
-	en.add(FLOPPY_PPG_FORMAT); // ppg_dsk.h
 #endif
 
 	en.category("Pyldin");
@@ -1359,43 +1098,5 @@ void mame_formats_full_list(mame_formats_enumerator &en)
 	en.add(rkm_cassette_formats); // rk_cas.h
 	en.add(rkp_cassette_formats); // rk_cas.h
 	en.add(gam_cassette_formats); // rk_cas.h
-#endif
-
-	en.category("SG 1000");
-#ifdef HAS_FORMATS_SC3000_BIT
-	en.add(sc3000_cassette_formats); // sc3000_bit.h
-#endif
-
-	en.category("Sol 20");
-#ifdef HAS_FORMATS_SOL_CAS
-	en.add(sol20_cassette_formats); // sol_cas.h
-#endif
-
-	en.category("Exidy");
-#ifdef HAS_FORMATS_SORC_CAS
-	en.add(sorcerer_cassette_formats); // sorc_cas.h
-#endif
-
-	en.category("Samsung");
-#ifdef HAS_FORMATS_SPC1000_CAS
-	en.add(spc1000_cassette_formats); // spc1000_cas.h
-#endif
-
-	en.category("Video Technology");
-#ifdef HAS_FORMATS_VT_CAS
-	en.add(vtech1_cassette_formats); // vt_cas.h
-	en.add(vtech2_cassette_formats); // vt_cas.h
-#endif
-#ifdef HAS_FORMATS_VT_DSJ
-	en.add(FLOPPY_VTECH_BIN_FORMAT); // vt_dsk.h
-	en.add(FLOPPY_VTECH_DSK_FORMAT); // vt_dsk.h
-#endif
-#ifdef HAS_FORMATS_FS_VTECH
-	en.add(FS_VTECH); // fs_vtech.h
-#endif
-
-	en.category("Canon");
-#ifdef HAS_FORMATS_X07_CAS
-	en.add(x07_cassette_formats); // x07_cas.h
 #endif
 }
