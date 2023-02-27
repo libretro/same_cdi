@@ -44,11 +44,6 @@ elseif _OPTIONS["targetos"]=="macosx" then
 end
 
 if BASE_TARGETOS=="unix" then
-
-			_OPTIONS["USE_QTDEBUG"] = "0"
-
-
-
 		if _OPTIONS["targetos"]~="haiku" and _OPTIONS["targetos"]~="android" then
 			links {
 				"m",

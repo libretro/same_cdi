@@ -129,12 +129,6 @@ function osdmodulesbuild()
 	defines {
 			"NO_USE_PORTAUDIO",
 		}
-
-	defines {
-			"USE_QTDEBUG=0",
-		}
-
-
 end
 
 
@@ -231,20 +225,6 @@ newoption {
 }
 
 newoption {
-	trigger = "USE_QTDEBUG",
-	description = "Use QT debugger",
-	allowed = {
-		{ "0",  "Don't use Qt debugger"  },
-		{ "1",  "Use Qt debugger" },
-	},
-}
-
-newoption {
-	trigger = "QT_HOME",
-	description = "QT lib location",
-}
-
-newoption {
 	trigger = "LIBRETRO_IOS",
 	description = "Specify iOS target when building using libretro"
 }
@@ -253,12 +233,3 @@ newoption {
 	trigger = "LIBRETRO_TVOS",
 	description = "Specify tvOS target when building using libretro"
 }
-
-
-if not _OPTIONS["USE_QTDEBUG"] then
-	if _OPTIONS["targetos"]=="windows" or _OPTIONS["targetos"]=="macosx" or _OPTIONS["targetos"]=="solaris" or _OPTIONS["targetos"]=="haiku" or _OPTIONS["targetos"] == "asmjs" then
-		_OPTIONS["USE_QTDEBUG"] = "0"
-	else
-		_OPTIONS["USE_QTDEBUG"] = "1"
-	end
-end

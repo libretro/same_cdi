@@ -79,32 +79,11 @@ function osdmodulesbuild()
 		MAME_DIR .. "src/osd/modules/netdev/none.cpp",
 		MAME_DIR .. "src/osd/modules/midi/portmidi.cpp",
 		MAME_DIR .. "src/osd/modules/midi/none.cpp",
-		MAME_DIR .. "src/osd/modules/sound/js_sound.cpp",
-		MAME_DIR .. "src/osd/modules/sound/direct_sound.cpp",
-		MAME_DIR .. "src/osd/modules/sound/pa_sound.cpp",
-		MAME_DIR .. "src/osd/modules/sound/pulse_sound.cpp",
-		MAME_DIR .. "src/osd/modules/sound/coreaudio_sound.cpp",
-		MAME_DIR .. "src/osd/modules/sound/sdl_sound.cpp",
-		MAME_DIR .. "src/osd/modules/sound/xaudio2_sound.cpp",
 		MAME_DIR .. "src/osd/modules/sound/none.cpp",
 		MAME_DIR .. "src/osd/modules/input/input_module.h",
 		MAME_DIR .. "src/osd/modules/input/input_common.cpp",
 		MAME_DIR .. "src/osd/modules/input/input_common.h",
-		MAME_DIR .. "src/osd/modules/input/input_dinput.cpp",
-		MAME_DIR .. "src/osd/modules/input/input_dinput.h",
 		MAME_DIR .. "src/osd/modules/input/input_none.cpp",
-		MAME_DIR .. "src/osd/modules/input/input_rawinput.cpp",
-		MAME_DIR .. "src/osd/modules/input/input_win32.cpp",
-		MAME_DIR .. "src/osd/modules/input/input_sdl.cpp",
-		MAME_DIR .. "src/osd/modules/input/input_sdlcommon.cpp",
-		MAME_DIR .. "src/osd/modules/input/input_sdlcommon.h",
-		MAME_DIR .. "src/osd/modules/input/input_x11.cpp",
-		MAME_DIR .. "src/osd/modules/input/input_windows.cpp",
-		MAME_DIR .. "src/osd/modules/input/input_windows.h",
-		MAME_DIR .. "src/osd/modules/input/input_xinput.cpp",
-		MAME_DIR .. "src/osd/modules/input/input_xinput.h",
-		MAME_DIR .. "src/osd/modules/input/input_winhybrid.cpp",
-		MAME_DIR .. "src/osd/modules/input/input_mac.cpp",
 		MAME_DIR .. "src/osd/modules/output/output_module.h",
 		MAME_DIR .. "src/osd/modules/output/none.cpp",
 		MAME_DIR .. "src/osd/modules/output/console.cpp",
@@ -113,10 +92,6 @@ function osdmodulesbuild()
 		MAME_DIR .. "src/osd/modules/output/win32_output.h",
 		MAME_DIR .. "src/osd/modules/monitor/monitor_common.h",
 		MAME_DIR .. "src/osd/modules/monitor/monitor_common.cpp",
-		MAME_DIR .. "src/osd/modules/monitor/monitor_win32.cpp",
-		MAME_DIR .. "src/osd/modules/monitor/monitor_dxgi.cpp",
-		MAME_DIR .. "src/osd/modules/monitor/monitor_sdl.cpp",
-		MAME_DIR .. "src/osd/modules/monitor/monitor_mac.cpp",
 	}
 	includedirs {
 		ext_includedir("asio"),
@@ -290,139 +265,6 @@ function osdmodulesbuild()
 			ext_includedir("portmidi"),
 		}
 	end
-
-	if _OPTIONS["USE_QTDEBUG"]=="1" then
-		defines {
-			"USE_QTDEBUG=1",
-		}
-	else
-		defines {
-			"USE_QTDEBUG=0",
-		}
-	end
-
-end
-
-
-function qtdebuggerbuild()
-
-	removeflags {
-		"SingleOutputDir",
-	}
-	local version = str_to_version(_OPTIONS["gcc_version"])
-	if _OPTIONS["gcc"]~=nil and (string.find(_OPTIONS["gcc"], "clang") or string.find(_OPTIONS["gcc"], "asmjs")) then
-		configuration { "gmake or ninja" }
-			if (version >= 30600) then
-				buildoptions {
-					"-Wno-inconsistent-missing-override",
-				}
-			end
-		configuration { }
-	end
-
-	files {
-		MAME_DIR .. "src/osd/modules/debugger/debugqt.cpp",
-	}
-
-	if _OPTIONS["USE_QTDEBUG"]=="1" then
-		files {
-			MAME_DIR .. "src/osd/modules/debugger/qt/debuggerview.cpp",
-			MAME_DIR .. "src/osd/modules/debugger/qt/debuggerview.h",
-			MAME_DIR .. "src/osd/modules/debugger/qt/windowqt.cpp",
-			MAME_DIR .. "src/osd/modules/debugger/qt/windowqt.h",
-			MAME_DIR .. "src/osd/modules/debugger/qt/logwindow.cpp",
-			MAME_DIR .. "src/osd/modules/debugger/qt/logwindow.h",
-			MAME_DIR .. "src/osd/modules/debugger/qt/dasmwindow.cpp",
-			MAME_DIR .. "src/osd/modules/debugger/qt/dasmwindow.h",
-			MAME_DIR .. "src/osd/modules/debugger/qt/mainwindow.cpp",
-			MAME_DIR .. "src/osd/modules/debugger/qt/mainwindow.h",
-			MAME_DIR .. "src/osd/modules/debugger/qt/memorywindow.cpp",
-			MAME_DIR .. "src/osd/modules/debugger/qt/memorywindow.h",
-			MAME_DIR .. "src/osd/modules/debugger/qt/breakpointswindow.cpp",
-			MAME_DIR .. "src/osd/modules/debugger/qt/breakpointswindow.h",
-			MAME_DIR .. "src/osd/modules/debugger/qt/deviceswindow.cpp",
-			MAME_DIR .. "src/osd/modules/debugger/qt/deviceinformationwindow.cpp",
-			MAME_DIR .. "src/osd/modules/debugger/qt/deviceinformationwindow.h",
-			MAME_DIR .. "src/osd/modules/debugger/qt/deviceswindow.h",
-			GEN_DIR .. "osd/modules/debugger/qt/debuggerview.moc.cpp",
-			GEN_DIR .. "osd/modules/debugger/qt/windowqt.moc.cpp",
-			GEN_DIR .. "osd/modules/debugger/qt/logwindow.moc.cpp",
-			GEN_DIR .. "osd/modules/debugger/qt/dasmwindow.moc.cpp",
-			GEN_DIR .. "osd/modules/debugger/qt/mainwindow.moc.cpp",
-			GEN_DIR .. "osd/modules/debugger/qt/memorywindow.moc.cpp",
-			GEN_DIR .. "osd/modules/debugger/qt/breakpointswindow.moc.cpp",
-			GEN_DIR .. "osd/modules/debugger/qt/deviceswindow.moc.cpp",
-			GEN_DIR .. "osd/modules/debugger/qt/deviceinformationwindow.moc.cpp",
-		}
-		defines {
-			"USE_QTDEBUG=1",
-		}
-
-		local MOC = ""
-		if (os.is("windows")) then
-			MOC = "moc"
-		else
-			if _OPTIONS["QT_HOME"]~=nil then
-				QMAKETST = backtick(_OPTIONS["QT_HOME"] .. "/bin/qmake --version 2>/dev/null")
-				if (QMAKETST=='') then
-					print("Qt's Meta Object Compiler (moc) wasn't found!")
-					os.exit(1)
-				end
-				MOC = _OPTIONS["QT_HOME"] .. "/bin/moc"
-			else
-				MOCTST = backtick("which moc-qt5 2>/dev/null")
-				if (MOCTST=='') then
-					MOCTST = backtick("which moc 2>/dev/null")
-				end
-				if (MOCTST=='') then
-					print("Qt's Meta Object Compiler (moc) wasn't found!")
-					os.exit(1)
-				end
-				MOC = MOCTST
-			end
-		end
-
-
-		custombuildtask {
-			{ MAME_DIR .. "src/osd/modules/debugger/qt/debuggerview.h",             GEN_DIR .. "osd/modules/debugger/qt/debuggerview.moc.cpp", { },         { MOC .. "$(MOCINCPATH) -b emu.h $(<) -o $(@)" }},
-			{ MAME_DIR .. "src/osd/modules/debugger/qt/windowqt.h",                 GEN_DIR .. "osd/modules/debugger/qt/windowqt.moc.cpp", { },                 { MOC .. "$(MOCINCPATH) -b emu.h $(<) -o $(@)" }},
-			{ MAME_DIR .. "src/osd/modules/debugger/qt/logwindow.h",                GEN_DIR .. "osd/modules/debugger/qt/logwindow.moc.cpp", { },                { MOC .. "$(MOCINCPATH) -b emu.h $(<) -o $(@)" }},
-			{ MAME_DIR .. "src/osd/modules/debugger/qt/dasmwindow.h",               GEN_DIR .. "osd/modules/debugger/qt/dasmwindow.moc.cpp", { },           { MOC .. "$(MOCINCPATH) -b emu.h $(<) -o $(@)" }},
-			{ MAME_DIR .. "src/osd/modules/debugger/qt/mainwindow.h",               GEN_DIR .. "osd/modules/debugger/qt/mainwindow.moc.cpp", { },           { MOC .. "$(MOCINCPATH) -b emu.h $(<) -o $(@)" }},
-			{ MAME_DIR .. "src/osd/modules/debugger/qt/memorywindow.h",             GEN_DIR .. "osd/modules/debugger/qt/memorywindow.moc.cpp", { },             { MOC .. "$(MOCINCPATH) -b emu.h $(<) -o $(@)" }},
-			{ MAME_DIR .. "src/osd/modules/debugger/qt/breakpointswindow.h",        GEN_DIR .. "osd/modules/debugger/qt/breakpointswindow.moc.cpp", { },        { MOC .. "$(MOCINCPATH) -b emu.h $(<) -o $(@)" }},
-			{ MAME_DIR .. "src/osd/modules/debugger/qt/deviceswindow.h",            GEN_DIR .. "osd/modules/debugger/qt/deviceswindow.moc.cpp", { },            { MOC .. "$(MOCINCPATH) -b emu.h $(<) -o $(@)" }},
-			{ MAME_DIR .. "src/osd/modules/debugger/qt/deviceinformationwindow.h",  GEN_DIR .. "osd/modules/debugger/qt/deviceinformationwindow.moc.cpp", { },{ MOC .. "$(MOCINCPATH) -b emu.h $(<) -o $(@)" }},
-
-		}
-
-		if _OPTIONS["targetos"]=="windows" then
-			configuration { "mingw*" }
-				buildoptions {
-					"-I$(shell qmake -query QT_INSTALL_HEADERS)",
-				}
-			configuration { }
-		elseif _OPTIONS["targetos"]=="macosx" then
-			buildoptions {
-				"-F" .. backtick("qmake -query QT_INSTALL_LIBS"),
-			}
-		else
-			if _OPTIONS["QT_HOME"]~=nil then
-				buildoptions {
-					"-I" .. backtick(_OPTIONS["QT_HOME"] .. "/bin/qmake -query QT_INSTALL_HEADERS"),
-				}
-			else
-				buildoptions {
-					backtick(pkgconfigcmd() .. " --cflags Qt5Widgets"),
-				}
-			end
-		end
-	else
-		defines {
-			"USE_QTDEBUG=0",
-		}
-	end
-
 end
 
 
@@ -455,43 +297,6 @@ function osdmodulestargetconf()
 			links {
 				"CoreMIDI.framework",
 			}
-		end
-	end
-
-	if _OPTIONS["USE_QTDEBUG"]=="1" then
-		if _OPTIONS["targetos"]=="windows" then
-			linkoptions {
-				"-L$(shell qmake -query QT_INSTALL_LIBS)",
-			}
-			links {
-				"Qt5Core.dll",
-				"Qt5Gui.dll",
-				"Qt5Widgets.dll",
-			}
-		elseif _OPTIONS["targetos"]=="macosx" then
-			linkoptions {
-				"-F" .. backtick("qmake -query QT_INSTALL_LIBS"),
-			}
-			links {
-				"Qt5Core.framework",
-				"Qt5Gui.framework",
-				"Qt5Widgets.framework",
-			}
-		else
-			if _OPTIONS["QT_HOME"]~=nil then
-				linkoptions {
-					"-L" .. backtick(_OPTIONS["QT_HOME"] .. "/bin/qmake -query QT_INSTALL_LIBS"),
-				}
-				links {
-					"Qt5Core",
-					"Qt5Gui",
-					"Qt5Widgets",
-				}
-			else
-				local str = backtick(pkgconfigcmd() .. " --libs Qt5Widgets")
-				addlibfromstring(str)
-				addoptionsfromstring(str)
-			end
 		end
 	end
 
@@ -620,21 +425,6 @@ newoption {
 	},
 }
 
-newoption {
-	trigger = "USE_QTDEBUG",
-	description = "Use QT debugger",
-	allowed = {
-		{ "0",  "Don't use Qt debugger" },
-		{ "1",  "Use Qt debugger" },
-	},
-}
-
-newoption {
-	trigger = "QT_HOME",
-	description = "QT lib location",
-}
-
-
 if not _OPTIONS["USE_TAPTUN"] then
 	if _OPTIONS["targetos"]=="linux" or _OPTIONS["targetos"]=="windows" then
 		_OPTIONS["USE_TAPTUN"] = "1"
@@ -648,13 +438,5 @@ if not _OPTIONS["USE_PCAP"] then
 		_OPTIONS["USE_PCAP"] = "1"
 	else
 		_OPTIONS["USE_PCAP"] = "0"
-	end
-end
-
-if not _OPTIONS["USE_QTDEBUG"] then
-	if _OPTIONS["targetos"]=="windows" or _OPTIONS["targetos"]=="macosx" or _OPTIONS["targetos"]=="solaris" or _OPTIONS["targetos"]=="haiku" or _OPTIONS["targetos"]=="asmjs" then
-		_OPTIONS["USE_QTDEBUG"] = "0"
-	else
-		_OPTIONS["USE_QTDEBUG"] = "1"
 	end
 end

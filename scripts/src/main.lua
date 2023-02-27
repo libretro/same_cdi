@@ -248,14 +248,6 @@ end
 	links {
 		"osd_" .. _OPTIONS["osd"],
 	}
--- RETRO HACK no qt
-if _OPTIONS["osd"]=="retro" then
-
-else
-	links {
-		"qtdbg_" .. _OPTIONS["osd"],
-	}
-end
 -- RETRO HACK END
 if (STANDALONE~=true) then
 	links {

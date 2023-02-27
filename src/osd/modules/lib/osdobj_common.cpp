@@ -247,20 +247,7 @@ void osd_common_t::register_options()
 	REGISTER_MODULE(m_mod_man, MONITOR_RETRO);
 #endif
 
-#ifndef __LIBRETRO__
-#ifdef SDLMAME_MACOSX
-	REGISTER_MODULE(m_mod_man, DEBUG_OSX);
-#endif
-#ifndef OSD_MINI
-	REGISTER_MODULE(m_mod_man, DEBUG_WINDOWS);
-	REGISTER_MODULE(m_mod_man, DEBUG_QT);
-	REGISTER_MODULE(m_mod_man, DEBUG_IMGUI);
-	REGISTER_MODULE(m_mod_man, DEBUG_GDBSTUB);
 	REGISTER_MODULE(m_mod_man, DEBUG_NONE);
-#endif
-#else
-	REGISTER_MODULE(m_mod_man, DEBUG_NONE);
-#endif
 
 #ifndef __LIBRETRO__
 	REGISTER_MODULE(m_mod_man, NETDEV_TAPTUN);
