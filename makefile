@@ -27,7 +27,6 @@
 # MODERN_WIN_API = 0
 # USE_SDL = 1
 # SDL_INI_PATH = .;$HOME/.mame/;ini;
-# SDL2_MULTIAPI = 1
 # NO_USE_MIDI = 1
 # USE_TAPTUN = 1
 # USE_PCAP = 1
@@ -62,7 +61,6 @@
 # USE_SYSTEM_LIB_LUA = 1
 # USE_SYSTEM_LIB_SQLITE3 = 1
 # USE_SYSTEM_LIB_PORTMIDI = 1
-# USE_BUNDLED_LIB_SDL2 = 1
 # USE_SYSTEM_LIB_UTF8PROC = 1
 # USE_SYSTEM_LIB_GLM = 1
 # USE_SYSTEM_LIB_RAPIDJSON = 1
@@ -534,14 +532,6 @@ ifdef USE_SYSTEM_LIB_PUGIXML
 PARAMS += --with-system-pugixml='$(USE_SYSTEM_LIB_PUGIXML)'
 endif
 
-# reverse logic for this one
-
-ifdef USE_BUNDLED_LIB_SDL2
-ifneq '$(USE_BUNDLED_LIB_SDL2)' '0'
-PARAMS += --with-bundled-sdl2
-endif
-endif
-
 #-------------------------------------------------
 # distribution may change things
 #-------------------------------------------------
@@ -753,26 +743,6 @@ endif
 
 ifdef MESA_INSTALL_ROOT
 PARAMS += --MESA_INSTALL_ROOT='$(MESA_INSTALL_ROOT)'
-endif
-
-ifdef SDL_LIBVER
-PARAMS += --SDL_LIBVER='$(SDL_LIBVER)'
-endif
-
-ifdef SDL2_MULTIAPI
-PARAMS += --SDL2_MULTIAPI='$(SDL2_MULTIAPI)'
-endif
-
-ifdef SDL_INSTALL_ROOT
-PARAMS += --SDL_INSTALL_ROOT='$(SDL_INSTALL_ROOT)'
-endif
-
-ifdef SDL_FRAMEWORK_PATH
-PARAMS += --SDL_FRAMEWORK_PATH='$(SDL_FRAMEWORK_PATH)'
-endif
-
-ifdef USE_LIBSDL
-PARAMS += --USE_LIBSDL='$(USE_LIBSDL)'
 endif
 
 ifdef LDOPTS
@@ -1490,7 +1460,6 @@ genieclean:
 
 clean: genieclean
 	@echo Cleaning...
-	-$(SILENT)rm -f language/*/*.mo
 	-$(SILENT)rm -rf $(BUILDDIR)
 
 GEN_FOLDERS := $(GENDIR)/$(TARGET)/layout/ $(GENDIR)/$(TARGET)/$(SUBTARGET_FULL)/ $(GENDIR)/mame/drivers/ $(GENDIR)/mame/machine/
@@ -1515,13 +1484,7 @@ generate: \
 		genie \
 		$(GEN_FOLDERS) \
 		$(GENDIR)/version.cpp \
-		$(patsubst %.po,%.mo,$(call rwildcard, language/, *.po)) \
-		$(patsubst $(SRC)/%.lay,$(GENDIR)/%.lh,$(LAYOUTS)) \
-		$(GENDIR)/includes/SDL2
-
-$(GENDIR)/includes/SDL2:
-	-$(call MKDIR,$@)
-	-$(call COPY,3rdparty/SDL2/include,$(GENDIR)/includes/SDL2)
+		$(patsubst $(SRC)/%.lay,$(GENDIR)/%.lh,$(LAYOUTS))
 
 ifneq ($(NEW_GIT_VERSION),$(OLD_GIT_VERSION))
 stale:
