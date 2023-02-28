@@ -144,11 +144,6 @@ if #disasm_files > 0 then
 		"dasm",
 	}
 end
-if (MACHINES["NETLIST"]~=null) then
-	links {
-		"netlist",
-	}
-end
 	links {
 		"utils",
 		ext_lib("expat"),

@@ -2788,13 +2788,6 @@ bool mac_floppy_device::writing_disabled() const
 
 bool mac_floppy_device::wpt_r()
 {
-	static const char *const regnames[16] = {
-		"Dir", "Step", "Motor", "Eject",
-		"RdData0", "Superdrive", "DoubleSide", "NoDrive",
-		"NoDiskInPl", "NoWrProtect", "NotTrack0", "NoTachPulse",
-		"RdData1", "MFMModeOn", "NoReady", "HD"
-	};
-
 	// actual_ss may have changed after the phases were set
 	m_reg = (m_reg & 7) | (actual_ss ? 8 : 0);
 
@@ -2860,15 +2853,7 @@ bool mac_floppy_device::wpt_r()
 
 void mac_floppy_device::seek_phase_w(int phases)
 {
-	static const char *const regnames[16] = {
-		"DirNext", "StepOn", "MotorOn", "EjectOff",
-		"DirPrev", "StepOff", "MotorOff", "EjectOn",
-		"-", "MFMModeOn", "-", "-",
-		"DskchgClear", "GCRModeOn", "-", "-"
-	};
-
 	bool prev_strb = m_strb;
-
 	m_reg = (phases & 7) | (actual_ss ? 8 : 0);
 	m_strb = (phases >> 3) & 1;
 

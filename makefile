@@ -823,10 +823,8 @@ SCRIPTS = scripts/genie.lua \
 	scripts/src/osd/modules.lua \
 	$(wildcard scripts/src/osd/$(OSD)*.lua) \
 	scripts/src/sound.lua \
-	scripts/src/tools.lua \
 	scripts/src/video.lua \
 	scripts/src/bus.lua \
-	scripts/src/netlist.lua \
 	scripts/src/formats.lua \
 	scripts/toolchain.lua \
 	scripts/src/osd/modules.lua \

@@ -15,7 +15,6 @@ premake.check_paths = true
 premake.make.override = { "TARGET" }
 
 MAME_DIR = (path.getabsolute("..") .. "/")
---MAME_DIR = string.gsub(MAME_DIR, "(%s)", "\\%1")
 local MAME_BUILD_DIR = (MAME_DIR .. _OPTIONS["build-dir"] .. "/")
 local naclToolchain = ""
 
@@ -98,10 +97,6 @@ function addprojectflags()
 end
 
 function opt_tool(hash, entry)
-   if _OPTIONS["with-tools"] then
-	  hash[entry] = true
-	  return true
-   end
    return hash[entry]
 end
 
@@ -111,16 +106,6 @@ MACHINES  = {}
 VIDEOS = {}
 BUSES  = {}
 FORMATS  = {}
-
-newoption {
-	trigger = "with-tools",
-	description = "Enable building tools.",
-}
-
-newoption {
-	trigger = "with-tests",
-	description = "Enable building tests.",
-}
 
 newoption {
 	trigger = "osd",
@@ -529,15 +514,6 @@ if string.sub(_ACTION,1,4) == "vs20" and _OPTIONS["osd"]=="sdl" then
 		_OPTIONS["with-bundled-sdl2"] = "1"
 	end
 end
--- Build SDL2 for Android
-if _OPTIONS["osd"] == "retro" then
--- RETRO HACK no sdl for libretro android
-else
-if _OPTIONS["targetos"] == "android" then
-	_OPTIONS["with-bundled-sdl2"] = "1"
-end
-end
--- RETRO HACK END no sdl for libretro android
 configuration {}
 
 if _OPTIONS["osd"] == "uwp" then
@@ -582,7 +558,6 @@ configuration { "gmake or ninja" }
 dofile ("toolchain.lua")
 
 -- RETRO HACK
-if _OPTIONS["osd"]=="retro" then
 	if string.sub(_ACTION,1,4) ~= "vs20" then
 		buildoptions {
 			"-fPIC"
@@ -600,7 +575,6 @@ if _OPTIONS["osd"]=="retro" then
 			"TARGET_OS_IPHONE"
 		}
 	end
-end
 -- RETRO HACK
 
 if _OPTIONS["targetos"]=="windows" then
@@ -1454,9 +1428,6 @@ if (not os.isfile(path.join("src", "osd",  _OPTIONS["osd"] .. ".lua"))) then
 end
 dofile(path.join("src", "osd", _OPTIONS["osd"] .. ".lua"))
 dofile(path.join("src", "lib.lua"))
-if opt_tool(MACHINES, "NETLIST") then
-   dofile(path.join("src", "netlist.lua"))
-end
 --if (STANDALONE~=true) then
 dofile(path.join("src", "formats.lua"))
 formatsProject(_OPTIONS["target"],_OPTIONS["subtarget"])
@@ -1499,16 +1470,6 @@ else
 end
 mainProject(_OPTIONS["target"],_OPTIONS["subtarget"])
 strip()
-
-if _OPTIONS["with-tools"] then
-	group "tools"
-	dofile(path.join("src", "tools.lua"))
-end
-
-if _OPTIONS["with-tests"] then
-	group "tests"
-	dofile(path.join("src", "tests.lua"))
-end
 
 function generate_has_header(hashname, hash)
    fname = GEN_DIR .. "has_" .. hashname:lower() .. ".h"
