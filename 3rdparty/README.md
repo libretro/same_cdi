@@ -6,12 +6,6 @@ asmjit - [zlib license](http://opensource.org/licenses/Zlib)
 
 benchmark - [Apache License, Version 2.0](http://opensource.org/licenses/Apache-2.0) (used only for testing, not part of distribution)
 
-bgfx - [The BSD 2-Clause License](http://opensource.org/licenses/BSD-2-Clause)
-
-bimg - [The BSD 2-Clause License](http://opensource.org/licenses/BSD-2-Clause)
-
-bx - [The BSD 2-Clause License](http://opensource.org/licenses/BSD-2-Clause)
-
 catch - [Boost Software License](http://www.boost.org/LICENSE_1_0.txt)
 
 compat - Wine headers missing in MinGW [The GNU Lesser General Public License, version 2.1 (LGPL-2.1)](http://opensource.org/licenses/LGPL-2.1)
@@ -23,8 +17,6 @@ dxsdk - [DirectX SDK EULA](https://github.com/mamedev/mame/blob/master/3rdparty/
 expat - [The MIT License (MIT)](http://opensource.org/licenses/MIT)
 
 genie - [The BSD 3-Clause License](http://opensource.org/licenses/BSD-3-Clause)
-
-glm - [The MIT License (MIT)](http://opensource.org/licenses/MIT)
 
 libflac - [The BSD 3-Clause License](http://opensource.org/licenses/BSD-3-Clause) (codecs), [The GNU General Public License, version 2](https://opensource.org/licenses/GPL-2.0)
 
@@ -53,8 +45,6 @@ portmidi - [The MIT License (MIT)](http://opensource.org/licenses/MIT)
 pugixml - [The MIT License (MIT)](http://opensource.org/licenses/MIT)
 
 rapidjson - [The MIT License (MIT)](http://opensource.org/licenses/MIT), [The BSD 3-Clause License](http://opensource.org/licenses/BSD-3-Clause) (msinttypes), JSON license (JSON_checker)
-
-sdl2 - [zlib license](http://opensource.org/licenses/Zlib)
 
 softfloat - ["Softfloat 2b" U.C. Berkeley modified license](https://github.com/mamedev/mame/blob/master/3rdparty/softfloat/README.txt) MIT compatible
 

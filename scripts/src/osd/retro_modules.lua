@@ -121,9 +121,6 @@ function osdmodulestargetconf()
 
 	if _OPTIONS["targetos"]=="windows" then
 		links {
-			"gdi32",
-			"dsound",
-			"dxguid",
 			"oleaut32",
 		}
 	elseif _OPTIONS["targetos"]=="macosx" then

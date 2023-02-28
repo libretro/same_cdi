@@ -143,9 +143,6 @@ function osdmodulestargetconf()
 
 	if _OPTIONS["targetos"]=="windows" then
 		links {
-			"gdi32",
-			"dsound",
-			"dxguid",
 			"oleaut32",
 			"winmm",
 		}
