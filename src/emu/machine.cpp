@@ -248,8 +248,6 @@ int running_machine::run(bool quiet)
 	// use try/catch for deep error recovery
 	try
 	{
-		m_manager.http()->clear();
-
 		// move to the init phase
 		m_current_phase = machine_phase::INIT;
 
@@ -308,8 +306,6 @@ int running_machine::run(bool quiet)
 		if (m_saveload_schedule != saveload_schedule::NONE)
 			handle_saveload();
 
-		export_http_api();
-
 #if defined(__EMSCRIPTEN__)
 		// break out to our async javascript loop and halt
 		emscripten_set_running_machine(this);
@@ -334,8 +330,6 @@ int running_machine::run(bool quiet)
 			if (m_saveload_schedule != saveload_schedule::NONE)
 				handle_saveload();
 		}
-		m_manager.http()->clear();
-
 		// and out via the exit phase
 		m_current_phase = machine_phase::EXIT;
 
@@ -1186,34 +1180,6 @@ running_machine::notifier_callback_item::notifier_callback_item(machine_notify_d
 running_machine::logerror_callback_item::logerror_callback_item(logerror_callback func)
 	: m_func(std::move(func))
 {
-}
-
-void running_machine::export_http_api()
-{
-	if (m_manager.http()->is_active()) {
-		m_manager.http()->add_http_handler("/api/machine", [this](http_manager::http_request_ptr request, http_manager::http_response_ptr response)
-		{
-			rapidjson::StringBuffer s;
-			rapidjson::Writer<rapidjson::StringBuffer> writer(s);
-			writer.StartObject();
-			writer.Key("name");
-			writer.String(m_basename.c_str());
-
-			writer.Key("devices");
-			writer.StartArray();
-
-			device_enumerator iter(this->root_device());
-			for (device_t &device : iter)
-				writer.String(device.tag());
-
-			writer.EndArray();
-			writer.EndObject();
-
-			response->set_status(200);
-			response->set_content_type("application/json");
-			response->set_body(s.GetString());
-		});
-	}
 }
 
 //**************************************************************************
