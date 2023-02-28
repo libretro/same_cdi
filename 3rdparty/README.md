@@ -58,6 +58,4 @@ tap-windows6.h - Dual-licensed [The GNU General Public License, version 2](https
 
 utf8proc - [The MIT License (MIT)](http://opensource.org/licenses/MIT)
 
-wdlfft - [zlib license](http://opensource.org/licenses/Zlib)
-
 zlib - [zlib license](http://opensource.org/licenses/Zlib)

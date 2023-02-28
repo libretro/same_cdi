@@ -154,7 +154,6 @@ end
 		ext_lib("expat"),
 		"softfloat",
 		"softfloat3",
-		"wdlfft",
 		ext_lib("jpeg"),
 		"7z",
 	}

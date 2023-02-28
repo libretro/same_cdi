@@ -1140,28 +1140,6 @@ links {
 }
 end
 
-
---------------------------------------------------
--- wdlfft library objects (from Cockos WDL)
---------------------------------------------------
-
-project "wdlfft"
-	uuid "74ca017e-fa0d-48b8-81d6-8081a37be14c"
-	kind "StaticLib"
-
-	configuration { "gmake or ninja" }
-		buildoptions_c {
-			"-Wno-strict-prototypes",
-		}
-
-	configuration { }
-
-	files {
-		MAME_DIR .. "3rdparty/wdlfft/fft.c",
-		MAME_DIR .. "3rdparty/wdlfft/fft.h"
-	}
-
-
 --------------------------------------------------
 -- asmjit library
 --------------------------------------------------
