@@ -113,10 +113,6 @@ function osdmodulesbuild()
 	defines {
 			"NO_USE_MIDI",
 		}
-
-	defines {
-			"NO_USE_PORTAUDIO",
-		}
 end
 
 
@@ -134,14 +130,12 @@ function osdmodulestargetconf()
 		if _OPTIONS["LIBRETRO_IOS"]=="1" or _OPTIONS["LIBRETRO_TVOS"]=="1" then
 			links {
 				"AudioToolbox.framework",
-				"CoreAudio.framework",
 				"CoreServices.framework",
 			}
 		else
 			links {
 				"AudioUnit.framework",
 				"AudioToolbox.framework",
-				"CoreAudio.framework",
 				"CoreServices.framework",
 			}
 		end
@@ -171,15 +165,6 @@ if not _OPTIONS["NO_USE_MIDI"] then
 		_OPTIONS["NO_USE_MIDI"] = "0"
 	end
 end
-
-newoption {
-	trigger = "NO_USE_PORTAUDIO",
-	description = "Disable PortAudio interface",
-	allowed = {
-		{ "0",  "Enable PortAudio"  },
-		{ "1",  "Disable PortAudio" },
-	},
-}
 
 newoption {
 	trigger = "MODERN_WIN_API",

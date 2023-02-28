@@ -13,7 +13,6 @@ local extlibs = {
 	flac       = { "FLAC",      "3rdparty/libflac/include" },
 	sqlite3    = { "sqlite3",   "3rdparty/sqlite3" },
 	portmidi   = { "portmidi",  "3rdparty/portmidi/pm_common" },
-	portaudio  = { "portaudio", "3rdparty/portaudio/include" },
 	lua        = { "lua",       "3rdparty/lua/src" },
 	utf8proc   = { "utf8proc",  "3rdparty/utf8proc" },
 	glm        = { "glm",       "3rdparty/glm" },
@@ -55,11 +54,6 @@ newoption {
 newoption {
 	trigger = 'with-system-portmidi',
 	description = 'Use system PortMidi library',
-}
-
-newoption {
-	trigger = 'with-system-portaudio',
-	description = 'Use system PortAudio library',
 }
 
 newoption {

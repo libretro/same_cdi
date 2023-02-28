@@ -734,9 +734,6 @@
 				_p(2,'<OutputFile>$(OutDir)%s</OutputFile>',cfg.buildtarget.name)
 				additional_options(2,cfg)
 				link_target_machine(2,cfg)
-				if _ACTION:sub(3) == "llvm" and prj.name == "portaudio" then -- MSVC-LLVM needs special help
-					_p(2,'<AdditionalDependencies>ksuser.lib;%%(AdditionalDependencies)</AdditionalDependencies>')
-				end
 			_p(1,'</Lib>')
 		end
 	end

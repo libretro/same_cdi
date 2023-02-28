@@ -748,8 +748,6 @@ if _OPTIONS["targetos"] == "macosx" then
 		links {
 			"AudioUnit.framework",
 			"AudioToolbox.framework",
-			"CoreAudio.framework",
-			"CoreAudioKit.framework",
 			"CoreServices.framework",
 		}
 

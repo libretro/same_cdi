@@ -101,28 +101,6 @@ const options_entry osd_options::s_option_entries[] =
 	{ OSDOPTION_SOUND,                        OSDOPTVAL_AUTO,   OPTION_STRING,    "sound output method: " },
 	{ OSDOPTION_AUDIO_LATENCY "(0-5)",        "2",              OPTION_INTEGER,   "set audio latency (increase to reduce glitches, decrease for responsiveness)" },
 
-#ifndef NO_USE_PORTAUDIO
-	{ nullptr,                                nullptr,          OPTION_HEADER,    "PORTAUDIO OPTIONS" },
-	{ OSDOPTION_PA_API,                       OSDOPTVAL_NONE,   OPTION_STRING,    "PortAudio API" },
-	{ OSDOPTION_PA_DEVICE,                    OSDOPTVAL_NONE,   OPTION_STRING,    "PortAudio device" },
-	{ OSDOPTION_PA_LATENCY "(0-0.25)",        "0",              OPTION_FLOAT,     "suggested latency in seconds, 0 for default" },
-#endif
-
-#ifdef SDLMAME_MACOSX
-	{ nullptr,                                nullptr,          OPTION_HEADER,    "CoreAudio-SPECIFIC OPTIONS" },
-	{ OSDOPTION_AUDIO_OUTPUT,                 OSDOPTVAL_AUTO,   OPTION_STRING,    "audio output device" },
-	{ OSDOPTION_AUDIO_EFFECT "0",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 0" },
-	{ OSDOPTION_AUDIO_EFFECT "1",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 1" },
-	{ OSDOPTION_AUDIO_EFFECT "2",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 2" },
-	{ OSDOPTION_AUDIO_EFFECT "3",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 3" },
-	{ OSDOPTION_AUDIO_EFFECT "4",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 4" },
-	{ OSDOPTION_AUDIO_EFFECT "5",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 5" },
-	{ OSDOPTION_AUDIO_EFFECT "6",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 6" },
-	{ OSDOPTION_AUDIO_EFFECT "7",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 7" },
-	{ OSDOPTION_AUDIO_EFFECT "8",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 8" },
-	{ OSDOPTION_AUDIO_EFFECT "9",             OSDOPTVAL_NONE,   OPTION_STRING,    "AudioUnit effect 9" },
-#endif
-
 		// End of list
 	{ nullptr }
 };

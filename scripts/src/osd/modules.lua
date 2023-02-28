@@ -95,7 +95,6 @@ function osdmodulesbuild()
 		includedirs {
 			MAME_DIR .. "3rdparty/winpcap/Include",
 			MAME_DIR .. "3rdparty/compat/mingw",
-			MAME_DIR .. "3rdparty/portaudio/include",
 		}
 
 		includedirs {
@@ -115,16 +114,6 @@ function osdmodulesbuild()
 	includedirs {
 		ext_includedir("rapidjson")
 	}
-
-	if _OPTIONS["NO_USE_PORTAUDIO"]=="1" then
-		defines {
-			"NO_USE_PORTAUDIO",
-		}
-	else
-		includedirs {
-			ext_includedir("portaudio"),
-		}
-	end
 
 	if _OPTIONS["NO_USE_MIDI"]=="1" then
 		defines {
@@ -164,7 +153,6 @@ function osdmodulestargetconf()
 		links {
 			"AudioUnit.framework",
 			"AudioToolbox.framework",
-			"CoreAudio.framework",
 			"CoreServices.framework",
 		}
 	end
@@ -203,23 +191,6 @@ if not _OPTIONS["NO_USE_MIDI"] then
 		_OPTIONS["NO_USE_MIDI"] = "1"
 	else
 		_OPTIONS["NO_USE_MIDI"] = "0"
-	end
-end
-
-newoption {
-	trigger = "NO_USE_PORTAUDIO",
-	description = "Disable PortAudio interface",
-	allowed = {
-		{ "0",  "Enable PortAudio"  },
-		{ "1",  "Disable PortAudio" },
-	},
-}
-
-if not _OPTIONS["NO_USE_PORTAUDIO"] then
-	if _OPTIONS["targetos"]=="windows" or _OPTIONS["targetos"]=="linux" or _OPTIONS["targetos"]=="macosx" then
-		_OPTIONS["NO_USE_PORTAUDIO"] = "0"
-	else
-		_OPTIONS["NO_USE_PORTAUDIO"] = "1"
 	end
 end
 

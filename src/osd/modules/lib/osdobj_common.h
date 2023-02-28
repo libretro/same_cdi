@@ -134,28 +134,9 @@ public:
 	bool filter() const { return bool_value(OSDOPTION_FILTER); }
 	int prescale() const { return int_value(OSDOPTION_PRESCALE); }
 
-	// OpenGL specific options
-	bool gl_force_pow2_texture() const { return bool_value(OSDOPTION_GL_FORCEPOW2TEXTURE); }
-	bool gl_no_texture_rect() const { return bool_value(OSDOPTION_GL_NOTEXTURERECT); }
-	bool gl_vbo() const { return bool_value(OSDOPTION_GL_VBO); }
-	bool gl_pbo() const { return bool_value(OSDOPTION_GL_PBO); }
-	bool gl_glsl() const { return bool_value(OSDOPTION_GL_GLSL); }
-	int glsl_filter() const { return int_value(OSDOPTION_GLSL_FILTER); }
-	const char *shader_mame(int index) const { return value(string_format("%s%d", OSDOPTION_SHADER_MAME, index)); }
-	const char *shader_screen(int index) const { return value(string_format("%s%d", OSDOPTION_SHADER_SCREEN, index)); }
-
 	// sound options
 	const char *sound() const { return value(OSDOPTION_SOUND); }
 	int audio_latency() const { return int_value(OSDOPTION_AUDIO_LATENCY); }
-
-	// CoreAudio specific options
-	const char *audio_output() const { return value(OSDOPTION_AUDIO_OUTPUT); }
-	const char *audio_effect(int index) const { return value(string_format("%s%d", OSDOPTION_AUDIO_EFFECT, index)); }
-
-	// PortAudio options
-	const char *pa_api() const { return value(OSDOPTION_PA_API); }
-	const char *pa_device() const { return value(OSDOPTION_PA_DEVICE); }
-	const float pa_latency() const { return float_value(OSDOPTION_PA_LATENCY); }
 
 	static const options_entry s_option_entries[];
 };
