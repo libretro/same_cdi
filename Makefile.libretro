@@ -157,6 +157,14 @@ endif
 
 ifeq ($(platform),osx)
   PLATFLAGS += DONT_USE_NETWORK=1
+  LIBRETRO_OS = osx
+   ifeq ($(CROSS_COMPILE),1)
+      TARGET_RULE   = -target $(LIBRETRO_APPLE_PLATFORM) -isysroot $(LIBRETRO_APPLE_ISYSROOT)
+      CFLAGS   += $(TARGET_RULE)
+      CPPFLAGS += $(TARGET_RULE)
+      CXXFLAGS += $(TARGET_RULE)
+      LDFLAGS  += $(TARGET_RULE)
+   endif
 endif
 
 ifeq ($(platform),ios-arm64)
@@ -176,8 +184,8 @@ ifeq ($(platform),tvos-arm64)
 	ARCH = arm64
 	LIBRETRO_OS = ios-arm64
 	IOSSDK := $(shell xcodebuild -version -sdk appletvos Path)
-	CC = cc -arch arm64 -isysroot $(IOSSDK)
-	CXX = c++ -arch arm64 -isysroot $(IOSSDK)
+	CC = cc -arch arm64 -isysroot $(IOSSDK) -mappletvos-version-min=11.0
+	CXX = c++ -arch arm64 -isysroot $(IOSSDK) -mappletvos-version-min=11.0
 	PLATFLAGS += OVERRIDE_CC="$(CC)" OVERRIDE_CXX="$(CXX)"
 endif
 
@@ -230,6 +238,8 @@ build:
 
 	@echo "Renaming compiled target"
 	@mv $(SUBTARGET)_libretro.dylib $(SAME_SYSTEM)_libretro.dylib 2> /dev/null || true
+	@mv $(SUBTARGET)_libretro_ios.dylib $(SAME_SYSTEM)_libretro_ios.dylib 2> /dev/null || true
+	@mv $(SUBTARGET)_libretro_tvos.dylib $(SAME_SYSTEM)_libretro_tvos.dylib 2> /dev/null || true
 	@mv $(SUBTARGET)_libretro.dll $(SAME_SYSTEM)_libretro.dll 2> /dev/null || true
 	@mv $(SUBTARGET)_libretro.so $(SAME_SYSTEM)_libretro.so 2> /dev/null || true
 	@mv $(SUBTARGET)_libretro_android.so $(SAME_SYSTEM)_libretro_android.so 2> /dev/null || true

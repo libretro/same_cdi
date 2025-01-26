@@ -29,10 +29,22 @@ include:
   - project: 'libretro-infrastructure/ci-templates'
     file: '/osx-x64.yml'
     
+  # MacOS arm 64-bit
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/osx-arm64.yml'
+
   ################################## CELLULAR ################################
   # Android
   - project: 'libretro-infrastructure/ci-templates'
     file: '/android-make.yml'
+
+  # iOS
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/ios-arm64.yml'
+
+  # tvOS
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/tvos-arm64.yml'
 
 # Stages for building
 stages:
@@ -100,6 +112,17 @@ libretro-build-osx-x64:
     <<: *global_cache
     key: "$CI_COMMIT_REF_SLUG-osx-x64"
     
+# MacOS arm 64-bit
+libretro-build-osx-arm64:
+  extends:
+    - .libretro-osx-arm64-make-default
+    - .core-defs
+  variables:
+    MACOSX_DEPLOYMENT_TARGET: "10.14"
+  cache:
+    <<: *global_cache
+    key: "$CI_COMMIT_REF_SLUG-osx-arm64"
+
 ################################### CELLULAR #################################
 # Android ARMv7a
 android-armeabi-v7a:
@@ -127,3 +150,22 @@ android-x86_64:
   cache:
     <<: *global_cache
     key: "$CI_COMMIT_REF_SLUG-android-x86_64"
+
+# iOS
+libretro-build-ios-arm64:
+  extends:
+    - .libretro-ios-arm64-make-default
+    - .core-defs
+  cache:
+    <<: *global_cache
+    key: "$CI_COMMIT_REF_SLUG-osx-arm64"
+
+# tvOS
+libretro-build-tvos-arm64:
+  extends:
+    - .libretro-tvos-arm64-make-default
+    - .core-defs
+  cache:
+    <<: *global_cache
+    key: "$CI_COMMIT_REF_SLUG-osx-arm64"
+
