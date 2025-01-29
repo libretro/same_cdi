@@ -158,7 +158,7 @@ libretro-build-ios-arm64:
     - .core-defs
   cache:
     <<: *global_cache
-    key: "$CI_COMMIT_REF_SLUG-osx-arm64"
+    key: "$CI_COMMIT_REF_SLUG-ios-arm64"
 
 # tvOS
 libretro-build-tvos-arm64:
@@ -167,5 +167,5 @@ libretro-build-tvos-arm64:
     - .core-defs
   cache:
     <<: *global_cache
-    key: "$CI_COMMIT_REF_SLUG-osx-arm64"
+    key: "$CI_COMMIT_REF_SLUG-tvos-arm64"
 
