@@ -599,6 +599,7 @@ void retro_init (void)
    const char *system_dir = NULL;
    const char *content_dir = NULL;
    const char *save_dir = NULL;
+   retro_pause = 0;
 
 //FIXME: re-add way to handle 16/32 bit
 #ifdef M16B
@@ -659,11 +660,13 @@ void retro_init (void)
 extern void retro_finish();
 extern void retro_main_loop();
 int RLOOP=1;
+static int mfirst=1;
 
 void retro_deinit(void)
 {
    printf("RETRO DEINIT\n");
    if(retro_load_ok)retro_finish();
+   mfirst=1;
 }
 
 void retro_reset (void)
@@ -681,7 +684,6 @@ void retro_run (void)
       update_runtime_variables();
    }
 
-   static int mfirst=1;
    if(mfirst==1)
    {
       mfirst++;

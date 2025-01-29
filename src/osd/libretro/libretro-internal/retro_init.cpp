@@ -315,13 +315,6 @@ void Extract_AllPath(char *srcpath)
 
 static void Add_Option(const char* option)
 {
-   static int first = 0;
-
-   if (first == 0)
-   {
-      PARAMCOUNT=0;
-      first++;
-   }
    log_cb(RETRO_LOG_DEBUG, "SAME_CDI OPTION = %s\n",option);
    sprintf(XARGV[PARAMCOUNT++], "%s", option);
 }
@@ -330,6 +323,7 @@ static void Set_Default_Option(void)
 {
    /* some hardcoded default options. */
 
+   PARAMCOUNT=0;
    // Add_Option(forcedSystem);
 
    if(throttle_enable)
