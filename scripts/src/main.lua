@@ -237,7 +237,7 @@ if (STANDALONE==true) then
 end
 
 if (STANDALONE~=true) then
-	if _OPTIONS["targetos"]=="macosx" and (not override_resources) then
+	if _OPTIONS["targetos"]=="macosx" and (not override_resources) and not (_OPTIONS["LIBRETRO_IOS"]=="1" or _OPTIONS["LIBRETRO_TVOS"]=="1") then
 		linkoptions {
 			"-sectcreate __TEXT __info_plist " .. _MAKE.esc(GEN_DIR) .. "resource/" .. _subtarget .. "-Info.plist"
 		}
