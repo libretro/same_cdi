@@ -24,7 +24,11 @@ else
 	project (_subtarget)
 end
 	uuid (os.uuid(_target .."_" .. _subtarget))
-	kind "ConsoleApp"
+	if _OPTIONS["targetos"]=="libnx" then
+		kind "StaticLib"
+	else
+		kind "ConsoleApp"
+	end
 
 	configuration { "android*" }
 	linkoptions {
@@ -65,7 +69,9 @@ end
 		targetextension ".bc"
 	-- BEGIN libretro overrides to MAME's GENie build
 	configuration { "libretro*" }
-		kind "SharedLib"	
+		if _OPTIONS["targetos"]~="libnx" then
+			kind "SharedLib"
+		end
 		targetsuffix "_libretro"
 		if _OPTIONS["targetos"]=="android" then
 			targetsuffix "_libretro_android"

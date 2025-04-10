@@ -55,9 +55,10 @@ if BASE_TARGETOS=="unix" then
 					"nsl",
 				}
 			else
-				links {
-					"util",
-				}
+				-- What are you needed for? nobody knows...
+				-- links {
+				-- 	"util",
+				-- }
 			end
 		end
 	

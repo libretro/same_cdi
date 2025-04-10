@@ -114,9 +114,11 @@
 //#define snprintf _snprintf
 #endif
 #else
+#ifndef __DEVKITPRO__
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <poll.h>
+#endif
 #define USE_TERMIOS
 #define HAVE_UNISTD_H
 #endif
@@ -248,7 +250,9 @@ static int checkForColor(const char *buf, int *colors, int *size)
 
 #if defined(USE_TERMIOS)
 static void linenoiseAtExit(void);
+#ifndef __DEVKITPRO__
 static struct termios orig_termios; /* in order to restore at exit */
+#endif
 static int rawmode = 0; /* for atexit() function to check if restore is needed*/
 static int atexit_registered = 0; /* register atexit just 1 time */
 
@@ -269,6 +273,7 @@ static int isUnsupportedTerm(void) {
 }
 
 static int enableRawMode(struct current *current) {
+#ifndef __DEVKITPRO__
     struct termios raw;
 
     current->fd = STDIN_FILENO;
@@ -280,12 +285,14 @@ fatal:
         errno = ENOTTY;
         return -1;
     }
+#endif
 
     if (!atexit_registered) {
         atexit(linenoiseAtExit);
         atexit_registered = 1;
     }
 
+#ifndef __DEVKITPRO__
     raw = orig_termios;  /* modify the original mode */
     /* input modes: no break, no CR to NL, no parity check, no strip char,
      * no start/stop output control. */
@@ -306,20 +313,25 @@ fatal:
         goto fatal;
     }
     rawmode = 1;
+#endif
     return 0;
 }
 
 static void disableRawMode(struct current *current) {
+#ifndef __DEVKITPRO__
     /* Don't even check the return value as it's too late. */
     if (rawmode && tcsetattr(current->fd,TCSADRAIN,&orig_termios) != -1)
         rawmode = 0;
+#endif
 }
 
 /* At exit we'll try to fix the terminal to the initial conditions. */
 static void linenoiseAtExit(void) {
+#ifndef __DEVKITPRO__
     if (rawmode) {
         tcsetattr(STDIN_FILENO, TCSADRAIN, &orig_termios);
     }
+#endif
     linenoiseHistoryFree();
 }
 
@@ -388,8 +400,9 @@ static void setCursorPos(struct current *current, int x)
  */
 static int fd_read_char(int fd, int timeout)
 {
-    struct pollfd p;
     unsigned char c;
+#ifndef __DEVKITPRO__
+    struct pollfd p;
 
     p.fd = fd;
     p.events = POLLIN;
@@ -398,6 +411,7 @@ static int fd_read_char(int fd, int timeout)
         /* timeout */
         return -1;
     }
+#endif
     if (read(fd, &c, 1) != 1) {
         return -1;
     }
@@ -410,8 +424,9 @@ static int fd_read_char(int fd, int timeout)
  */
 static int fd_read(struct current *current)
 {
-    struct pollfd p;
     int ret;
+#ifndef __DEVKITPRO__
+    struct pollfd p;
     p.fd = current->fd;
     p.events = POLLIN;
     while(1) {
@@ -427,6 +442,7 @@ static int fd_read(struct current *current)
         else
             break;
     }
+#endif
 #ifdef USE_UTF8
     char buf[4];
     int n;
@@ -499,12 +515,14 @@ static int queryCursor(int fd, int* cols)
  */
 static int getWindowSize(struct current *current)
 {
+#ifndef __DEVKITPRO__
     struct winsize ws;
 
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_col != 0) {
         current->cols = ws.ws_col;
         return 0;
     }
+#endif
 
     /* Failed to query the window size. Perhaps we are on a serial terminal.
      * Try to query the width by sending the cursor as far to the right

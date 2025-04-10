@@ -151,8 +151,13 @@ ifeq ($(platform),android-x86_64)
 	PTR64 :=
 endif
 
-ifeq ($(platform),linux32)
+ifeq ($(platform),libnx)
 	PTR64 := 0
+	PLATFLAGS += TARGETOS="libnx" PLATFORM="arm64" FORCE_DRC_C_BACKEND="1"
+	LIBRETRO_CPU :=
+	ARCH :=
+	LIBRETRO_OS :=
+	PTR64 :=
 endif
 
 ifeq ($(platform),osx)
@@ -243,6 +248,7 @@ build:
 	@mv $(SUBTARGET)_libretro.dll $(SAME_SYSTEM)_libretro.dll 2> /dev/null || true
 	@mv $(SUBTARGET)_libretro.so $(SAME_SYSTEM)_libretro.so 2> /dev/null || true
 	@mv $(SUBTARGET)_libretro_android.so $(SAME_SYSTEM)_libretro_android.so 2> /dev/null || true
+	@mv $(SUBTARGET)_libretro.a $(SAME_SYSTEM)_libretro.a 2> /dev/null || true
 	@echo "Done!"
 
 vs2015:

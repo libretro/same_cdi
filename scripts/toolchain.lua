@@ -33,6 +33,7 @@ newoption {
 		{ "osx",           "OSX (GCC compiler)"     },
 		{ "osx-clang",     "OSX (Clang compiler)"   },
 		{ "solaris",       "Solaris"                },
+		{ "libnx",         "libnx"                  },
 	},
 }
 
@@ -207,6 +208,13 @@ function toolchain(_buildDir, _subDir)
 			premake.gcc.cxx = toolchainPrefix .. "clang++"
 			premake.gcc.ar  = toolchainPrefix .. "ar"
 			location (_buildDir .. "projects/" .. _subDir .. "/".. _ACTION .. "-osx-clang")
+		end
+
+		if "libnx" == _OPTIONS["gcc"] then
+			premake.gcc.cc  = "aarch64-none-elf-gcc"
+			premake.gcc.cxx = "aarch64-none-elf-g++"
+			premake.gcc.ar  = "aarch64-none-elf-ar"
+			location (_buildDir .. "projects/" .. _subDir .. "/".. _ACTION .. "-libnx-arm64")
 		end
 	elseif _ACTION == "vs2019" then
 
@@ -686,6 +694,38 @@ function toolchain(_buildDir, _subDir)
 	configuration { "rpi" }
 		targetdir (_buildDir .. "rpi" .. "/bin")
 		objdir (_buildDir .. "rpi" .. "/obj")
+
+	configuration { "libnx" }
+		systemincludedirs {
+			"/opt/devkitpro/libnx/include",
+			"/opt/devkitpro/portlibs/switch/include",
+		}
+		defines {
+			"LLONG_MAX=0x7fffffffffffffffLL",
+			"LLONG_MIN=-0x8000000000000000LL",
+			"ULLONG_MAX=0xffffffffffffffffLL",
+		}
+		libdirs {
+			"/opt/devkitpro/libnx/lib",
+			"/opt/devkitpro/portlibs/switch/lib",
+		}
+		links {
+			"nx",
+		}
+		buildoptions {
+			"-g -ffunction-sections",
+			"-march=armv8-a -mtune=cortex-a57 -mtp=soft",
+		}
+		buildoptions_cpp {
+			-- Added by libretro-super, but we seem to need these
+			-- "-fno-rtti -fno-exceptions",
+		}
+		linkoptions {
+			"-specs=/opt/devkitpro/libnx/switch.specs",
+			"-march=armv8-a -mtune=cortex-a57 -mtp=soft",
+			"-ftls-model=local-exec",
+		}
+
 -- BEGIN libretro overrides to MAME's GENie build
 
 	configuration { "libretro*" }

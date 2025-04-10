@@ -1209,6 +1209,7 @@ static int db_create_collation(lua_State *L) {
     return 0;
 }
 
+#ifndef __DEVKITPRO__
 /* Thanks to Wolfgang Oertl...
 */
 static int db_load_extension(lua_State *L) {
@@ -1236,6 +1237,7 @@ static int db_load_extension(lua_State *L) {
     sqlite3_free(errmsg);
     return 2;
 }
+#endif
 
 /*
 ** trace callback:
@@ -2192,7 +2194,9 @@ static const luaL_Reg dblib[] = {
     {"create_function",     db_create_function      },
     {"create_aggregate",    db_create_aggregate     },
     {"create_collation",    db_create_collation     },
+#ifndef __DEVKITPRO__
     {"load_extension",      db_load_extension       },
+#endif
 
     {"trace",               db_trace                },
     {"progress_handler",    db_progress_handler     },

@@ -8,8 +8,10 @@
 #include <windows.h>
 #include <memoryapi.h>
 #else
+#ifndef __DEVKITPRO__
 #include <dlfcn.h>
 #include <sys/mman.h>
+#endif
 #include <sys/time.h>
 #include <unistd.h>
 #endif
@@ -29,6 +31,7 @@ const char *osd_getenv(const char *name)
     return getenv(name);
 }
 
+#ifndef __DEVKITPRO__
 //============================================================
 //  osd_setenv
 //============================================================
@@ -57,6 +60,7 @@ int osd_setenv(const char *name, const char *value, int overwrite)
    return setenv(name, value, overwrite);
 #endif
 }
+#endif
 
 //============================================================
 //  osd_process_kill
@@ -64,7 +68,9 @@ int osd_setenv(const char *name, const char *value, int overwrite)
 
 void osd_process_kill(void)
 {
-#ifndef _WIN32
+#if defined(__DEVKITPRO__)
+		abort();
+#elif !defined(_WIN32)
     kill(getpid(), SIGKILL);
 #else
     TerminateProcess(GetCurrentProcess(), -1);
@@ -72,6 +78,7 @@ void osd_process_kill(void)
 }
 
 
+#ifndef __DEVKITPRO__
 //============================================================
 //  osd_alloc_executable
 //
@@ -102,6 +109,7 @@ void osd_free_executable(void *ptr, size_t size)
 	munmap(ptr, size);
 #endif
 }
+#endif
 
 //============================================================
 //  osd_break_into_debugger
@@ -209,7 +217,7 @@ private:
 	std::vector<std::string> m_libraries;
 	HMODULE                  m_module = nullptr;
 };
-#else
+#elif !defined(__DEVKITPRO__)
 class dynamic_module_posix_impl : public dynamic_module
 {
 public:
@@ -277,6 +285,7 @@ bool invalidate_instruction_cache(void const *start, std::size_t size)
 #endif
 }
 
+#ifndef __DEVKITPRO__
 void *virtual_memory_allocation::do_alloc(std::initializer_list<std::size_t> blocks, unsigned intent, std::size_t &size, std::size_t &page_size)
 {
 #if defined(_WIN32)
@@ -349,7 +358,9 @@ bool virtual_memory_allocation::do_set_access(void *start, std::size_t size, uns
 	return mprotect(reinterpret_cast<char *>(start), size, prot) == 0;
 #endif
 }
+#endif
 
+#ifndef __DEVKITPRO__
 dynamic_module::ptr dynamic_module::open(std::vector<std::string> &&names)
 {
 #if defined(_WIN32)
@@ -358,5 +369,6 @@ dynamic_module::ptr dynamic_module::open(std::vector<std::string> &&names)
 	return std::make_unique<dynamic_module_posix_impl>(std::move(names));
 #endif
 }
+#endif
 
 } // namespace osd
