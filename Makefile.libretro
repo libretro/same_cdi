@@ -151,8 +151,11 @@ ifeq ($(platform),android-x86_64)
 	PTR64 :=
 endif
 
-ifeq ($(platform),libnx)
+ifeq ($(platform),linux32)
 	PTR64 := 0
+endif
+
+ifeq ($(platform),libnx)
 	PLATFLAGS += TARGETOS="libnx" PLATFORM="arm64" FORCE_DRC_C_BACKEND="1"
 	LIBRETRO_CPU :=
 	ARCH :=

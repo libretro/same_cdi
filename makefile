@@ -1437,7 +1437,7 @@ openbsd_x86: generate $(PROJECTDIR)/$(MAKETYPE)-openbsd/Makefile
 	$(SILENT) $(MAKE) -C $(PROJECTDIR)/$(MAKETYPE)-openbsd config=$(CONFIG)32
 
 #-------------------------------------------------
-# gmake-linux
+# libnx
 #-------------------------------------------------
 
 $(PROJECTDIR)/$(MAKETYPE)-libnx/Makefile: makefile $(SCRIPTS) $(GENIE)
