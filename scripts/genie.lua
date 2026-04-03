@@ -126,6 +126,7 @@ newoption {
 		{ "windows",       "Windows"                },
 		{ "haiku",         "Haiku"                  },
 		{ "solaris",       "Solaris SunOS"          },
+		{ "libnx",         "libnx"                  },
 	},
 }
 

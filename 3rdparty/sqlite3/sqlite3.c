@@ -926,7 +926,9 @@ SQLITE_PRIVATE const char **sqlite3CompileOptions(int *pnOpt){
 #else
 /* This is not VxWorks. */
 #define OS_VXWORKS 0
+#ifndef __DEVKITPRO__
 #define HAVE_FCHOWN 1
+#endif
 #define HAVE_READLINK 1
 #define HAVE_LSTAT 1
 #endif /* defined(_WRS_KERNEL) */
@@ -33440,7 +33442,9 @@ SQLITE_PRIVATE const char *sqlite3OpcodeName(int i){
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
 #include <sys/ioctl.h>
+#endif
 #include <unistd.h>
 /* #include <time.h> */
 #include <sys/time.h>

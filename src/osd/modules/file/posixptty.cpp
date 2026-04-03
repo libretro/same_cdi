@@ -109,7 +109,7 @@ bool posix_check_ptty_path(std::string const &path) noexcept
 
 std::error_condition posix_open_ptty(std::uint32_t openflags, osd_file::ptr &file, std::uint64_t &filesize, std::string &name) noexcept
 {
-#if defined(__ANDROID__)
+#if defined(__ANDROID__) || defined(__DEVKITPRO__)
 	return std::errc::not_supported; // TODO: revisit this error code
 #else // defined(__ANDROID__)
 	// TODO: handling of the slave path is insecure - should use ptsname_r/ttyname_r in a loop

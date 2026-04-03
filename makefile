@@ -1437,6 +1437,18 @@ openbsd_x86: generate $(PROJECTDIR)/$(MAKETYPE)-openbsd/Makefile
 	$(SILENT) $(MAKE) -C $(PROJECTDIR)/$(MAKETYPE)-openbsd config=$(CONFIG)32
 
 #-------------------------------------------------
+# libnx
+#-------------------------------------------------
+
+$(PROJECTDIR)/$(MAKETYPE)-libnx/Makefile: makefile $(SCRIPTS) $(GENIE)
+	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --gcc=libnx --gcc_version=$(GCC_VERSION) $(MAKETYPE)
+
+.PHONY: libnx-arm64
+libnx: generate $(PROJECTDIR)/$(MAKETYPE)-libnx/Makefile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/$(MAKETYPE)-libnx-arm64 config=$(CONFIG) precompile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/$(MAKETYPE)-libnx-arm64 config=$(CONFIG)
+
+#-------------------------------------------------
 # Clean/bootstrap
 #-------------------------------------------------
 

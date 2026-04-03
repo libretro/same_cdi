@@ -857,7 +857,7 @@ end
 			"LUA_COMPAT_5_1",
 			"LUA_COMPAT_5_2",
 		}
-	if not (_OPTIONS["targetos"]=="windows") and not (_OPTIONS["targetos"]=="asmjs") then
+	if not (_OPTIONS["targetos"]=="windows") and not (_OPTIONS["targetos"]=="asmjs") and not (_OPTIONS["targetos"]=="libnx") then
 		defines {
 			"LUA_USE_POSIX",
 		}
@@ -981,6 +981,10 @@ if _OPTIONS["vs"]=="clangcl" then
 end
 
 	configuration { }
+	defines {
+		"SQLITE_OMIT_WAL",
+		"SQLITE_OMIT_LOAD_EXTENSION",
+	}
 
 	files {
 		MAME_DIR .. "3rdparty/sqlite3/sqlite3.c",

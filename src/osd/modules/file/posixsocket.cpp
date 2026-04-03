@@ -24,7 +24,9 @@
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#ifndef __DEVKITPRO__
 #include <sys/un.h>
+#endif
 #include <unistd.h>
 
 
@@ -211,6 +213,9 @@ bool posix_check_domain_path(std::string const &path) noexcept
 
 std::error_condition posix_open_socket(std::string const &path, std::uint32_t openflags, osd_file::ptr &file, std::uint64_t &filesize) noexcept
 {
+	#if defined(__DEVKITPRO__)
+	return std::errc::not_supported;
+	#else
 	char hostname[256];
 	int port;
 	std::sscanf(&path[strlen(posixfile_socket_identifier)], "%255[^:]:%d", hostname, &port);
@@ -239,11 +244,15 @@ std::error_condition posix_open_socket(std::string const &path, std::uint32_t op
 	}
 
 	return create_socket(sai, sock, openflags, file, filesize);
+	#endif
 }
 
 
 std::error_condition posix_open_domain(std::string const &path, std::uint32_t openflags, osd_file::ptr &file, std::uint64_t &filesize) noexcept
 {
+	#if defined(__DEVKITPRO__)
+	return std::errc::not_supported;
+	#else
 	struct sockaddr_un sau;
 	memset(&sau, 0, sizeof(sau));
 	sau.sun_family = AF_UNIX;
@@ -261,4 +270,5 @@ std::error_condition posix_open_domain(std::string const &path, std::uint32_t op
 	}
 
 	return create_socket(sau, sock, openflags, file, filesize);
+	#endif
 }
