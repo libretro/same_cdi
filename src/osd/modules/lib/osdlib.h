@@ -17,6 +17,7 @@
 #define __OSDLIB__
 
 #include <initializer_list>
+#include <cstdint>
 #include <string>
 #include <type_traits>
 #include <vector>
