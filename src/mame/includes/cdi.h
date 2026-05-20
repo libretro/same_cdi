@@ -7,6 +7,7 @@
 #include "machine/scc68070.h"
 #include "machine/cdislavehle.h"
 #include "machine/cdicdic.h"
+#include "machine/cdidvc.h"
 #include "sound/dmadac.h"
 #include "video/mcd212.h"
 #include "cpu/mcs51/mcs51.h"
@@ -28,8 +29,12 @@ public:
 		, m_servo(*this, "servo")
 		, m_slave(*this, "slave")
 		, m_cdic(*this, "cdic")
+		, m_dvc(*this, "dvc")
 		, m_mcd212(*this, "mcd212")
 		, m_dmadac(*this, "dac%u", 1U)
+		, m_cdic_intreq(false)
+		, m_dvc_intreq(false)
+		, m_in4_owner(IN4_IDLE)
 	{ }
 
 	void cdimono1_base(machine_config &config);
@@ -38,6 +43,7 @@ public:
 	void cdi910(machine_config &config);
 
 protected:
+	virtual void machine_start() override;
 	virtual void machine_reset() override;
 
 	void cdimono1_mem(address_map &map);
@@ -65,20 +71,34 @@ private:
 
 	uint16_t main_rom_r(offs_t offset);
 
-	uint16_t dvc_r(offs_t offset, uint16_t mem_mask = ~0);
-	void dvc_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
-
 	uint16_t bus_error_r(offs_t offset);
 	void bus_error_w(offs_t offset, uint16_t data);
+
+	DECLARE_WRITE_LINE_MEMBER(cdic_intreq_w);
+	DECLARE_WRITE_LINE_MEMBER(dvc_intreq_w);
+	uint8_t intack4_r();
+	void update_in4_state();
 
 	required_shared_ptr_array<uint16_t, 2> m_plane_ram;
 	optional_device<cdislave_hle_device> m_slave_hle;
 	optional_device<m68hc05c8_device> m_servo;
 	optional_device<m68hc05c8_device> m_slave;
 	optional_device<cdicdic_device> m_cdic;
+	optional_device<cdidvc_device> m_dvc;
 	required_device<mcd212_device> m_mcd212;
 
 	required_device_array<dmadac_sound_device, 2> m_dmadac;
+
+	enum : uint8_t
+	{
+		IN4_IDLE,
+		IN4_CDIC,
+		IN4_DVC
+	};
+
+	bool m_cdic_intreq;
+	bool m_dvc_intreq;
+	uint8_t m_in4_owner;
 };
 
 class quizard_state : public cdi_state

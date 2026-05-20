@@ -1608,6 +1608,8 @@ files {
 	MAME_DIR .. "src/mame/includes/cdi.h",
 	MAME_DIR .. "src/mame/machine/cdicdic.cpp",
 	MAME_DIR .. "src/mame/machine/cdicdic.h",
+	MAME_DIR .. "src/mame/machine/cdidvc.cpp",
+	MAME_DIR .. "src/mame/machine/cdidvc.h",
 	MAME_DIR .. "src/mame/machine/cdislavehle.cpp",
 	MAME_DIR .. "src/mame/machine/cdislavehle.h",
 	MAME_DIR .. "src/mame/video/mcd212.cpp",

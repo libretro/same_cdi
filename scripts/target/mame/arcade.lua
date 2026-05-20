@@ -4834,6 +4834,8 @@ files {
 	MAME_DIR .. "src/mame/machine/cdislavehle.h",
 	MAME_DIR .. "src/mame/machine/cdicdic.cpp",
 	MAME_DIR .. "src/mame/machine/cdicdic.h",
+	MAME_DIR .. "src/mame/machine/cdidvc.cpp",
+	MAME_DIR .. "src/mame/machine/cdidvc.h",
 	MAME_DIR .. "src/mame/drivers/chameleonrx1.cpp",
 	MAME_DIR .. "src/mame/drivers/chance32.cpp",
 	MAME_DIR .. "src/mame/drivers/changyu.cpp",
