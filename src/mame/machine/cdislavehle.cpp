@@ -248,13 +248,6 @@ void cdislave_hle_device::slave_w(offs_t offset, uint16_t data)
 				{
 					switch (m_in_buf[0])
 					{
-						case 0xc0: case 0xc1: case 0xc2: case 0xc3: case 0xc4: case 0xc5: case 0xc6: case 0xc7:
-						case 0xc8: case 0xc9: case 0xca: case 0xcb: case 0xcc: case 0xcd: case 0xce: case 0xcf:
-							m_atten_w(((uint32_t)m_in_buf[1] << 24) | ((uint32_t)m_in_buf[2] << 16) | ((uint32_t)m_in_buf[3] << 8) | (uint32_t)m_in_buf[4]);
-							memset(m_in_buf, 0, 17);
-							m_in_index = 0;
-							m_in_count = 0;
-							break;
 						case 0xf0: // Set Front Panel LCD
 							memset(m_in_buf + 1, 0, 16);
 							m_in_count = 17;
@@ -290,10 +283,6 @@ void cdislave_hle_device::slave_w(offs_t offset, uint16_t data)
 						m_in_count = 0;
 						break;
 					}
-					case 0xc0: case 0xc1: case 0xc2: case 0xc3: case 0xc4: case 0xc5: case 0xc6: case 0xc7:
-					case 0xc8: case 0xc9: case 0xca: case 0xcb: case 0xcc: case 0xcd: case 0xce: case 0xcf:
-						m_in_count = 5;
-						break;
 					case 0xf0: // Set Front Panel LCD
 						m_in_count = 17;
 						break;
@@ -392,7 +381,6 @@ void cdislave_hle_device::slave_w(offs_t offset, uint16_t data)
 cdislave_hle_device::cdislave_hle_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 	: device_t(mconfig, CDI_SLAVE_HLE, tag, owner, clock)
 	, m_int_callback(*this)
-	, m_atten_w(*this)
 	, m_dmadac(*this, ":dac%u", 1U)
 	, m_mousex(*this, "MOUSEX")
 	, m_mousey(*this, "MOUSEY")
@@ -409,7 +397,6 @@ cdislave_hle_device::cdislave_hle_device(const machine_config &mconfig, const ch
 void cdislave_hle_device::device_resolve_objects()
 {
 	m_int_callback.resolve_safe();
-	m_atten_w.resolve_safe();
 }
 
 //-------------------------------------------------
