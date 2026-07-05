@@ -31,6 +31,7 @@ TODO:
 #include "sound/cdda.h"
 #include "sound/dmadac.h"
 #include "cdrom.h"
+#include <stdint.h>
 
 //**************************************************************************
 //  TYPE DEFINITIONS
@@ -203,6 +204,7 @@ private:
 	void play_audio_sector(const uint8_t coding, const uint8_t *data);
 	void play_cdda_sector(const uint8_t *data);
 	void process_audio_map();
+
 
 	void descramble_sector(uint8_t *buffer);
 	bool is_valid_sector(const uint8_t *buffer);

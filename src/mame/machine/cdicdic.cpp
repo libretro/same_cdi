@@ -517,48 +517,33 @@ void cdicdic_device::play_raw_group(const uint8_t *data)
 
 void cdicdic_device::play_xa_group(const uint8_t coding, const uint8_t *data, const uint16_t idx)
 {
-	static const uint16_t s_4bit_header_offsets[8] = { 0, 1, 2, 3, 8, 9, 10, 11 };
-	static const uint16_t s_8bit_header_offsets[4] = { 0, 1, 2, 3 };
+	static const uint16_t s_4bit_header_offsets[8] = { 4, 5, 6, 7, 12, 13, 14, 15 };
+	static const uint16_t s_8bit_header_offsets[4] = { 4, 5, 6, 7 };
 	static const uint16_t s_4bit_data_offsets[8] = { 16, 16, 17, 17, 18, 18, 19, 19 };
 	static const uint16_t s_8bit_data_offsets[4] = { 16, 17, 18, 19 };
 
 	const uint8_t num_samples = coding & CODING_8BPS ? 4 : 8;
 
+	for (uint8_t i = 0; i < num_samples; i++)
+	{
 	switch (coding & (CODING_BPS_MASK | CODING_CHAN_MASK))
 	{
 		case CODING_4BPS | CODING_MONO:
-			for (uint8_t i = 0; i < 8; i++)
-			{
-				decode_4bit_xa_unit(0, data[s_4bit_header_offsets[i]], data + s_4bit_data_offsets[i], (i & 1) ? 4 : 0, samples);
-				m_dmadac[0]->transfer(0, 1, 1, 28, samples);
-				m_dmadac[1]->transfer(0, 1, 1, 28, samples);
-			}
-			return;
+			decode_4bit_xa_unit(0, data[s_4bit_header_offsets[i]], data + s_4bit_data_offsets[i], (i & 1) ? 4 : 0, &m_samples[0][idx + i * 28]);
+			break;
 
 		case CODING_4BPS | CODING_STEREO:
-			for (uint8_t i = 0; i < 8; i++)
-			{
-				decode_4bit_xa_unit(i & 1, data[s_4bit_header_offsets[i]], data + s_4bit_data_offsets[i], (i & 1) ? 4 : 0, samples);
-				m_dmadac[i & 1]->transfer(0, 1, 1, 28, samples);
-			}
-			return;
+			decode_4bit_xa_unit(i & 1, data[s_4bit_header_offsets[i]], data + s_4bit_data_offsets[i], (i & 1) ? 4 : 0, &m_samples[i & 1][idx + (i >> 1) * 28]);
+			break;
 
 		case CODING_8BPS | CODING_MONO:
-			for (uint8_t i = 0; i < 4; i++)
-			{
-				decode_8bit_xa_unit(0, data[s_8bit_header_offsets[i]], data + s_8bit_data_offsets[i], samples);
-				m_dmadac[0]->transfer(0, 1, 1, 28, samples);
-				m_dmadac[1]->transfer(0, 1, 1, 28, samples);
-			}
-			return;
+			decode_8bit_xa_unit(0, data[s_8bit_header_offsets[i]], data + s_8bit_data_offsets[i], &m_samples[0][idx + i * 28]);
+			break;
 
 		case CODING_8BPS | CODING_STEREO:
-			for (uint8_t i = 0; i < 4; i++)
-			{
-				decode_8bit_xa_unit(i & 1, data[s_8bit_header_offsets[i]], data + s_8bit_data_offsets[i], samples);
-				m_dmadac[i & 1]->transfer(0, 1, 1, 28, samples);
-			}
-			return;
+			decode_8bit_xa_unit(i & 1, data[s_8bit_header_offsets[i]], data + s_8bit_data_offsets[i], &m_samples[i & 1][idx + (i >> 1) * 28]);
+			break;
+		}
 	}
 }
 
