@@ -1250,7 +1250,7 @@ void cdicdic_device::regs_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 				m_audio_format_sectors = 0;
 				m_audio_sector_counter = 1;
 				m_decoding_audio_map = true;
-				std::fill_n(&m_xa_last[0], 4, 0);
+				std::fill_n(m_xa_last, 4, 0);
 			}
 			break;
 
