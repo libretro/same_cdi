@@ -21,7 +21,6 @@ TODO:
 #pragma once
 
 #include "sound/dmadac.h"
-#include <stdint.h>
 
 //**************************************************************************
 //  TYPE DEFINITIONS
@@ -36,7 +35,6 @@ public:
 	cdislave_hle_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
 	auto int_callback() { return m_int_callback.bind(); }
-	auto atten_callback() { return m_atten_w.bind(); }
 
 	// external callbacks
 	DECLARE_INPUT_CHANGED_MEMBER( mouse_update );
@@ -63,7 +61,6 @@ private:
 	devcb_write_line m_int_callback;
 
 	required_device_array<dmadac_sound_device, 2> m_dmadac;
-	devcb_write32 m_atten_w;
 
 	required_ioport m_mousex;
 	required_ioport m_mousey;

@@ -31,7 +31,6 @@ TODO:
 #include "sound/cdda.h"
 #include "sound/dmadac.h"
 #include "cdrom.h"
-#include <stdint.h>
 
 //**************************************************************************
 //  TYPE DEFINITIONS
@@ -60,7 +59,6 @@ public:
 	void ram_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 
 	uint8_t intack_r();
-	void atten_w(uint32_t state);
 
 protected:
 	// device-level overrides
@@ -191,8 +189,6 @@ private:
 	bool m_decoding_audio_map;
 	uint16_t m_decode_addr;
 
-	// Audio Attenuation (L->L, L->R, R->R, R->L)
-	uint8_t m_atten[4];
 	int16_t m_xa_last[4];
 	std::unique_ptr<uint8_t[]> m_ram;
 	std::unique_ptr<int16_t[]> m_samples[2];
@@ -200,11 +196,10 @@ private:
 	void decode_8bit_xa_unit(int channel, uint8_t param, const uint8_t *data, int16_t *out_buffer);
 	void decode_4bit_xa_unit(int channel, uint8_t param, const uint8_t *data, uint8_t shift, int16_t *out_buffer);
 	void play_raw_group(const uint8_t *data);
-	void play_xa_group(const uint8_t coding, const uint8_t *data, const uint16_t idx);
+	void play_xa_group(const uint8_t coding, const uint8_t *data);
 	void play_audio_sector(const uint8_t coding, const uint8_t *data);
 	void play_cdda_sector(const uint8_t *data);
 	void process_audio_map();
-
 
 	void descramble_sector(uint8_t *buffer);
 	bool is_valid_sector(const uint8_t *buffer);
