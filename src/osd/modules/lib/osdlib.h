@@ -21,6 +21,7 @@
 #include <type_traits>
 #include <vector>
 #include <memory>
+#include <cstdint>
 
 /*-----------------------------------------------------------------------------
     osd_process_kill: kill the current process
