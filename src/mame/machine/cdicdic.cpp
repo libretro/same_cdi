@@ -1281,7 +1281,7 @@ void cdicdic_device::init_disc_read(uint8_t disc_mode)
 	m_disc_command = m_command;
 	m_disc_mode = disc_mode;
 	m_curr_lba = lba_from_time();
-	m_disc_spinup_counter = 1;
+	m_disc_spinup_counter = 6;
 }
 
 void cdicdic_device::cancel_disc_read()
