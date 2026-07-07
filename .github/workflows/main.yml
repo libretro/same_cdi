@@ -1,0 +1,47 @@
+name: Build SAME_CDi iOS dylib
+
+on:
+ workflow_dispatch:
+
+jobs:
+  build:
+   runs-on: macos-latest
+
+   steps:
+     - name: Checkout Code
+       uses: actions/checkout@v4
+
+     - name: Set up Xcode
+       run: |
+          sudo xcode-select -s /Applications/Xcode.app
+          xcodebuild -version
+
+     - name: Install Dependencies
+       run: |
+          brew install coreutils
+          # MAME requires Python for build scripts (GENie)
+          echo "PYTHON_EXECUTABLE=python3" >> $GITHUB_ENV 
+
+     - name: Compile SAME_CDi Libretro Core (iOS arm64)
+       run: |
+          # Get iOS SDK path dynamically
+          IOS_SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
+          
+          # Run the Libretro Makefile with explicit iOS overrides
+          # Using SUBTARGET=arcade keeps compilation faster and prevents GitHub runner timeouts
+          make -f Makefile.libretro -j$(sysctl -n hw.ncpu) \
+            platform=ios-arm64 \
+            IOS_SDK_PATH="$IOS_SDK_PATH"
+
+     - name: Locate and Rename Artifact
+       run: |
+          mkdir -p output/
+          # Libretro cores traditionally output as mame_libretro_ios.dylib or similar
+          find . -name "*.dylib" -exec cp {} output/ \;
+          ls -la output/
+            
+     - name: Upload Built Binaries
+       uses: actions/upload-artifact@v4
+       with:
+        name: samecdi-libretro-ios
+        path: output/
