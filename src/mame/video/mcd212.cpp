@@ -1222,9 +1222,9 @@ void mcd212_device::device_start()
 
 	save_item(NAME(m_interlace_field));
 
-	m_dca_timer = timer_alloc(FUNC(mcd212_device::dca_tick), this);
+	m_dca_timer = machine().scheduler().timer_alloc(timer_expired_delegate(FUNC(mcd212_device::dca_tick), this));
 	m_dca_timer->adjust(attotime::never);
 
-	m_ica_timer = timer_alloc(FUNC(mcd212_device::ica_tick), this);
+	m_ica_timer = machine().scheduler().timer_alloc(timer_expired_delegate(FUNC(mcd212_device::ica_tick), this));
 	m_ica_timer->adjust(attotime::never);
 }
