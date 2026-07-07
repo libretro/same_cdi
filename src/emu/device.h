@@ -705,7 +705,7 @@ public:
 	u64 attotime_to_clocks(const attotime &duration) const noexcept;
 
 	// timer interfaces
-	emu_timer *timer_alloc(device_timer_id id = 0, void *ptr = nullptr);
+	template <typename... T> emu_timer *timer_alloc(T &&... args);
 	void timer_set(const attotime &duration, device_timer_id id = 0, int param = 0, void *ptr = nullptr);
 	void synchronize(device_timer_id id = 0, int param = 0, void *ptr = nullptr) { timer_set(attotime::zero, id, param, ptr); }
 	void timer_expired(emu_timer &timer, device_timer_id id, int param, void *ptr) { device_timer(timer, id, param, ptr); }
