@@ -171,6 +171,7 @@ uint16_t cdi_state::main_rom_r(offs_t offset)
 	return m_main_rom[offset];
 }
 
+
 /**********************
 *  BERR Handling      *
 **********************/
@@ -308,9 +309,6 @@ void cdi_state::cdimono1_base(machine_config &config)
 
 	CDI_SLAVE_HLE(config, m_slave_hle, 0);
 	m_slave_hle->int_callback().set(m_maincpu, FUNC(scc68070_device::in2_w));
-
-	CDROM(config, "cdrom").set_interface("cdi_cdrom");
-	SOFTWARE_LIST(config, "cd_list").set_original("cdi").set_filter("!DVC");
 
 	/* sound hardware */
 	SPEAKER(config, "lspeaker").front_left();
@@ -482,6 +480,7 @@ ROM_START( cdi490a )
 	ROM_LOAD( "impega.rom", 0x0000, 0x40000, CRC(84d6f6aa) SHA1(02526482a0851ea2a7b582d8afaa8ef14a8bd914) )
 	ROM_LOAD( "vmpega.rom", 0x0000, 0x40000, CRC(db264e8b) SHA1(be407fbc102f1731a0862554855e963e5a47c17b) )
 ROM_END
+
 
 /*************************
 *      Game driver(s)    *
