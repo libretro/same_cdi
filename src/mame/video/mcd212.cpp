@@ -42,174 +42,72 @@ TODO:
 // device type definition
 DEFINE_DEVICE_TYPE(MCD212, mcd212_device, "mcd212", "MCD212 VDSC")
 
-inline ATTR_FORCE_INLINE uint8_t mcd212_device::get_weight_factor(const uint32_t region_idx)
+inline ATTR_FORCE_INLINE uint8_t mcd212_device::get_weight_factor(const uint32_t matte_idx)
 {
-	return (uint8_t)((m_region_control[region_idx] & RC_WF) >> RC_WF_SHIFT);
+	return (uint8_t)((m_matte_control[matte_idx] & MC_WF) >> MC_WF_SHIFT);
 }
 
-inline ATTR_FORCE_INLINE uint8_t mcd212_device::get_region_op(const uint32_t region_idx)
+inline ATTR_FORCE_INLINE uint8_t mcd212_device::get_matte_op(const uint32_t matte_idx)
 {
-	return (m_region_control[region_idx] & RC_OP) >> RC_OP_SHIFT;
+	return (m_matte_control[matte_idx] & MC_OP) >> MC_OP_SHIFT;
 }
 
-void mcd212_device::update_region_arrays()
+void mcd212_device::update_matte_arrays()
 {
 	bool latched_rf[2] { false, false };
 	uint8_t latched_wfa = m_weight_factor[0][0];
 	uint8_t latched_wfb = m_weight_factor[1][0];
 	const int width = get_screen_width();
 
-	if (BIT(m_image_coding_method, ICM_NR_BIT))
-	{
-		if (get_region_op(0) == 0 && get_region_op(4) == 0)
-		{
-			std::fill_n(m_weight_factor[0], std::size(m_weight_factor[0]), latched_wfa);
-			std::fill_n(m_weight_factor[1], std::size(m_weight_factor[1]), latched_wfb);
-			std::fill_n(m_region_flag[0], std::size(m_region_flag[0]), false);
-			std::fill_n(m_region_flag[1], std::size(m_region_flag[1]), false);
-			return;
-		}
+	const int width = get_screen_width();
+	const int num_mattes = BIT(m_image_coding_method, ICM_NM_BIT) ? 2 : 1;
 
-		for (int x = 0; x < width; x++)
-		{
-			for (int flag = 0; flag < 2; flag++)
-			{
-				for (int region = 0; region < 4; region++)
-				{
-					const int region_idx = (flag << 2) + region;
-					const uint32_t region_ctrl = m_region_control[region_idx];
-					const uint32_t region_op = get_region_op(region_idx);
-					if (region_op == 0)
-					{
-						break;
-					}
-					if (x == (region_ctrl & RC_X))
-					{
-						switch (region_op)
-						{
-							case 0: // End of region control for line
-								break;
-							case 1:
-							case 2:
-							case 3: // Not used
-								break;
-							case 4: // Change weight of plane A
-								latched_wfa = get_weight_factor(region_idx);
-								break;
-							case 5: // Not used
-								break;
-							case 6: // Change weight of plane B
-								latched_wfb = get_weight_factor(region_idx);
-								break;
-							case 7: // Not used
-								break;
-							case 8: // Reset region flag
-								latched_rf[flag] = false;
-								break;
-							case 9: // Set region flag
-								latched_rf[flag] = true;
-								break;
-							case 10:    // Not used
-							case 11:    // Not used
-								break;
-							case 12: // Reset region flag and change weight of plane A
-								latched_wfa = get_weight_factor(region_idx);
-								latched_rf[flag] = false;
-								break;
-							case 13: // Set region flag and change weight of plane A
-								latched_wfa = get_weight_factor(region_idx);
-								latched_rf[flag] = true;
-								break;
-							case 14: // Reset region flag and change weight of plane B
-								latched_wfb = get_weight_factor(region_idx);
-								latched_rf[flag] = false;
-								break;
-							case 15: // Set region flag and change weight of plane B
-								latched_wfb = get_weight_factor(region_idx);
-								latched_rf[flag] = true;
-								break;
-						}
-					}
-				}
-			}
-			m_weight_factor[0][x] = latched_wfa;
-			m_weight_factor[1][x] = latched_wfb;
-			m_region_flag[0][x] = latched_rf[0];
-			m_region_flag[1][x] = latched_rf[1];
-		}
-	}
-	else
+	bool latched_mf[2]{ false, false };
+	uint8_t latched_wf[2] = { m_weight_factor[0][0], m_weight_factor[1][0] };
+	int matte_idx[2] = { 0, 4 };
+
+	for (int x = 0; x < width; x++)
 	{
-		int region_idx = 0;
-		for (int x = 0; x < width; x++)
+		for (int matte = 0; matte < num_mattes; matte++)
 		{
-			if (region_idx < 8)
+			const int max_matte_id = ((num_mattes == 2) ? 4 : 8) + (matte ? 4 : 0);
+			if (matte_idx[matte] >= max_matte_id)
 			{
-				const int flag = BIT(m_region_control[region_idx], RC_RF_BIT);
-				const uint32_t region_ctrl = m_region_control[region_idx];
-				const uint32_t region_op = get_region_op(region_idx);
-				if (region_op == 0)
-				{
-					std::fill_n(m_weight_factor[0] + x, std::size(m_weight_factor[0]) - x, latched_wfa);
-					std::fill_n(m_weight_factor[1] + x, std::size(m_weight_factor[1]) - x, latched_wfb);
-					std::fill_n(m_region_flag[0] + x, std::size(m_region_flag[0]) - x, latched_rf[0]);
-					std::fill_n(m_region_flag[1] + x, std::size(m_region_flag[1]) - x, latched_rf[1]);
-					return;
-				}
-				if (x == (region_ctrl & RC_X))
-				{
-					switch (region_op)
-					{
-						case 0: // End of region control for line
-							break;
-						case 1:
-						case 2:
-						case 3: // Not used
-							break;
-						case 4: // Change weight of plane A
-							latched_wfa = get_weight_factor(region_idx);
-							break;
-						case 5: // Not used
-							break;
-						case 6: // Change weight of plane B
-							latched_wfb = get_weight_factor(region_idx);
-							break;
-						case 7: // Not used
-							break;
-						case 8: // Reset region flag
-							latched_rf[flag] = false;
-							break;
-						case 9: // Set region flag
-							latched_rf[flag] = true;
-							break;
-						case 10:    // Not used
-						case 11:    // Not used
-							break;
-						case 12: // Reset region flag and change weight of plane A
-							latched_wfa = get_weight_factor(region_idx);
-							latched_rf[flag] = false;
-							break;
-						case 13: // Set region flag and change weight of plane A
-							latched_wfa = get_weight_factor(region_idx);
-							latched_rf[flag] = true;
-							break;
-						case 14: // Reset region flag and change weight of plane B
-							latched_wfb = get_weight_factor(region_idx);
-							latched_rf[flag] = false;
-							break;
-						case 15: // Set region flag and change weight of plane B
-							latched_wfb = get_weight_factor(region_idx);
-							latched_rf[flag] = true;
-							break;
-					}
-					region_idx++;
-				}
+				continue;
 			}
-			m_weight_factor[0][x] = latched_wfa;
-			m_weight_factor[1][x] = latched_wfb;
-			m_region_flag[0][x] = latched_rf[0];
-			m_region_flag[1][x] = latched_rf[1];
+			const uint32_t matte_ctrl = m_matte_control[matte_idx[matte]];
+
+			if (x == (matte_ctrl & MC_X))
+			{
+				const uint32_t matte_op = get_matte_op(matte_idx[matte]);
+				const int flag = (num_mattes == 2) ? matte : BIT(m_matte_control[matte_idx[matte]], MC_MF_BIT);
+				// See 5.10.2 Matte Commands. Changing the MF-bit inside a line is undefined. Greenbook says don't do it.
+				// Console validation shows the 220 reads and uses this value anyway.
+				switch (matte_op)
+				{
+				case 0: // Disregard all commands in higher registers. See 5.10.2
+					matte_idx[matte] = 8;
+					break;
+				case 1: case 2: case 3: case 5: case 7: case 10: case 11: // Not used
+					break;
+				case 4: case 6: // Change weight of plane (A or B)
+					latched_wf[BIT(matte_op, 1)] = get_weight_factor(matte_idx[matte]);
+					break;
+				case 8: case 9: // (Reset or Set) matte flag
+					latched_mf[flag] = BIT(matte_op, 0);
+					break;
+				case 12: case 13: case 14: case 15: // Change weight of plane (A or B) and (Reset or Set) matte flag
+					latched_wf[BIT(matte_op, 1)] = get_weight_factor(matte_idx[matte]);
+					latched_mf[flag] = BIT(matte_op, 0);
+					break;
+				}
+				matte_idx[matte]++;
+			}
 		}
+		m_weight_factor[0][x] = latched_wf[0];
+		m_weight_factor[1][x] = latched_wf[1];
+		m_matte_flag[0][x] = latched_mf[0];
+		m_matte_flag[1][x] = latched_mf[1];
 	}
 }
 
@@ -582,16 +480,6 @@ template <int Channel>
 inline ATTR_FORCE_INLINE uint8_t mcd212_device::get_mosaic_factor()
 {
 	return 1 << (((m_ddr[Channel] & DDR_MT) >> DDR_MT_SHIFT) + 1);
-}
-
-template <int Channel>
-int mcd212_device::get_plane_width()
-{
-	const int width = get_screen_width();
-	const uint8_t icm = get_icm<Channel>();
-	if (icm == ICM_CLUT4)
-		return width;
-	return width >> 1;
 }
 
 template <int Channel>
@@ -1310,13 +1198,13 @@ void mcd212_device::device_reset()
 	m_cursor_position = 0;
 	m_cursor_control = 0;
 	std::fill_n(m_cursor_pattern, std::size(m_cursor_pattern), 0);
-	std::fill_n(m_region_control, 8, 0);
+	std::fill_n(m_matte_control, 8, 0);
 	m_backdrop_color = 0;
 	std::fill_n(m_mosaic_hold, 2, 0);
 	std::fill_n(m_weight_factor[0], std::size(m_weight_factor[0]), 0);
 	std::fill_n(m_weight_factor[1], std::size(m_weight_factor[1]), 0);
-	std::fill_n(m_region_flag[0], std::size(m_region_flag[0]), false);
-	std::fill_n(m_region_flag[1], std::size(m_region_flag[1]), false);
+	std::fill_n(m_matte_flag[0], std::size(m_matte_flag[0]), false);
+	std::fill_n(m_matte_flag[1], std::size(m_matte_flag[1]), false);
 
 	m_ica_height = 32;
 	m_total_height = 312;
@@ -1341,17 +1229,6 @@ mcd212_device::mcd212_device(const machine_config &mconfig, const char *tag, dev
 }
 
 //-------------------------------------------------
-//  device_resolve_objects - resolve objects that
-//  may be needed for other devices to set
-//  initial conditions at start time
-//-------------------------------------------------
-
-void mcd212_device::device_resolve_objects()
-{
-	m_int_callback.resolve_safe();
-}
-
-//-------------------------------------------------
 //  device_start - device-specific startup
 //-------------------------------------------------
 
@@ -1365,12 +1242,12 @@ void mcd212_device::device_start()
 		m_delta_uv_lut[d] = s_dyuv_deltas[d >> 4];
 	}
 
-	for (uint16_t w = 0; w < 3 * 0xff; w++)
+	for (int16_t sw = 0; sw < 0x100; sw++)
 	{
-		const uint8_t limit = (w < 0xff + 16) ?  0 : w <= 16 + 2 * 0xff ? w - 0x10f : 0xff;
-		m_dyuv_limit_r_lut[w] = limit << 16;
-		m_dyuv_limit_g_lut[w] = limit << 8;
-		m_dyuv_limit_b_lut[w] = limit;
+		m_dyuv_u_to_b[sw] = (444 * (sw - 128)) / 256;
+		m_dyuv_u_to_g[sw] = - (86 * (sw - 128)) / 256;
+		m_dyuv_v_to_g[sw] = - (179 * (sw - 128)) / 256;
+		m_dyuv_v_to_r[sw] = (351 * (sw - 128)) / 256;
 	}
 
 	for (int16_t sw = 0; sw < 0x100; sw++)
@@ -1381,8 +1258,8 @@ void mcd212_device::device_start()
 		m_dyuv_v_to_r[sw] = (351 * (sw - 128)) / 256;
 	}
 
-	save_item(NAME(m_region_flag[0]));
-	save_item(NAME(m_region_flag[1]));
+	save_item(NAME(m_matte_flag[0]));
+	save_item(NAME(m_matte_flag[1]));
 	save_item(NAME(m_ica_height));
 	save_item(NAME(m_total_height));
 	save_item(NAME(m_csrr));
@@ -1403,7 +1280,7 @@ void mcd212_device::device_start()
 	save_item(NAME(m_cursor_position));
 	save_item(NAME(m_cursor_control));
 	save_item(NAME(m_cursor_pattern));
-	save_item(NAME(m_region_control));
+	save_item(NAME(m_matte_control));
 	save_item(NAME(m_backdrop_color));
 	save_item(NAME(m_mosaic_hold));
 	save_item(NAME(m_weight_factor[0]));
