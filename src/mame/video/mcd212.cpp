@@ -54,10 +54,6 @@ inline ATTR_FORCE_INLINE uint8_t mcd212_device::get_matte_op(const uint32_t matt
 
 void mcd212_device::update_matte_arrays()
 {
-	bool latched_rf[2] { false, false };
-	uint8_t latched_wfa = m_weight_factor[0][0];
-	uint8_t latched_wfb = m_weight_factor[1][0];
-	const int width = get_screen_width();
 
 	const int width = get_screen_width();
 	const int num_mattes = BIT(m_image_coding_method, ICM_NM_BIT) ? 2 : 1;
@@ -212,8 +208,8 @@ void mcd212_device::set_register(uint8_t reg, uint32_t value)
 		case 0xd5:
 		case 0xd6:
 		case 0xd7:
-			m_region_control[reg & 7] = value;
-			update_region_arrays();
+			m_matte_control[reg & 7] = value;
+			update_matte_arrays();
 			break;
 		case 0xd8: // Backdrop Color
 			if (Channel == 0)
@@ -237,14 +233,14 @@ void mcd212_device::set_register(uint8_t reg, uint32_t value)
 			if (Channel == 0)
 			{
 				m_weight_factor[0][0] = (uint8_t)value;
-				update_region_arrays();
+				update_matte_arrays();
 			}
 			break;
 		case 0xdc: // Weight Factor B
 			if (Channel == 1)
 			{
 				m_weight_factor[1][0] = (uint8_t)value;
-				update_region_arrays();
+				update_matte_arrays();
 			}
 			break;
 	}
