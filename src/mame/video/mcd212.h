@@ -21,8 +21,8 @@ TODO:
 
 *******************************************************************************/
 
-#ifndef MAME_PHILIPS_MCD212_H
-#define MAME_PHILIPS_MCD212_H
+#ifndef MAME_VIDEO_MCD212_H
+#define MAME_VIDEO_MCD212_H
 
 #pragma once
 
