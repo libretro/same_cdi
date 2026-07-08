@@ -482,22 +482,18 @@ template <int Path>
 void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 {
 	const uint8_t *data = reinterpret_cast<uint8_t *>(Path ? m_planeb.target() : m_planea.target());
+	const uint8_t *data2 = reinterpret_cast<uint8_t*>(!Path ? m_planeb.target() : m_planea.target());
 	const uint8_t icm = get_icm<Path>();
-	const uint8_t transp_ctrl = get_transparency_control<Path>();
-	const int width = get_screen_width<Path>();
+	const uint8_t tp_ctrl = get_transparency_control<Path>();
+	const int width = get_screen_width();
 
 	uint32_t vsr = get_vsr<Path>();
+	uint32_t vsr2 = get_vsr<!Path>();
 
-	if (transp_ctrl == TCR_COND_1)
+	if (tp_ctrl == TCR_ALWAYS || !icm || !vsr)
 	{
-		std::fill_n(pixels, get_screen_width(), 0x00101010);
-		std::fill_n(transparent, get_screen_width(), true);
-		return;
-	}
-
-	if (!icm || !vsr)
-	{
-		std::fill_n(pixels, get_screen_width(), 0x00101010);
+		std::fill_n(pixels, get_screen_width(), s_4bpp_color[0]);
+		std::fill_n(transparent, get_screen_width(), (tp_ctrl == TCR_ALWAYS));
 		return;
 	}
 
@@ -524,207 +520,92 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 	const bool is_dyuv_rgb = (icm == ICM_DYUV) || ((icm == ICM_RGB555) && (Path == 1)); // DYUV and RGB do not have access to color key.
 	const bool use_color_key = !is_dyuv_rgb && ((tp_ctrl_type == TCR_KEY) || (tp_ctrl_type == TCR_MF0_KEY1) || (tp_ctrl_type == TCR_MF1_KEY1));
 
-	bool done = false;
-	int x = 0;
+	LOGMASKED(LOG_VSR, "Scanline %d: VSR Path %d, ICM (%02x), VSR (%08x)\n", screen().vpos(), Path, icm, vsr);
 
-	while (!done)
+	for (uint32_t x = 0; x < width; )
 	{
-		uint8_t byte = data[(vsr & 0x0007ffff) ^ 1];
-		vsr++;
-		switch (m_ddr[Path] & DDR_FT)
+		const uint8_t byte = data[(vsr++ & 0x0007ffff) ^ 1];
+		uint32_t color0 = 0;
+		uint32_t color1 = 0;
+		bool rgb_tp_bit = false;
+		if (icm == ICM_DYUV)
 		{
-			case DDR_FT_BMP:
-			case DDR_FT_BMP2:
-			case DDR_FT_MOSAIC:
-				if (icm == ICM_DYUV)
-				{
-					use_color_key = false;
+			const uint8_t byte1 = data[(vsr++ & 0x0007ffff) ^ 1];
+			const uint8_t y2 = y + m_delta_y_lut[byte];
+			y = y2 + m_delta_y_lut[byte1];
+			u += m_delta_uv_lut[byte];
+			v += m_delta_uv_lut[byte1];
 
-					uint8_t y = start_y;
-					uint8_t u = start_u;
-					uint8_t v = start_v;
-					for (; x < width; x++)
-					{
-						const uint8_t byte1 = data[(vsr++ & 0x0007ffff) ^ 1];
-						const uint8_t u1 = u + m_delta_uv_lut[byte];
-						const uint8_t y0 = y + m_delta_y_lut[byte];
+			const uint32_t *limit_rgb = m_dyuv_limit_lut + y2 + 0x100;
+			const uint32_t *limit_rgb2 = m_dyuv_limit_lut + y + 0x100;
 
-						const uint8_t v1 = v + m_delta_uv_lut[byte1];
-						const uint8_t y1 = y0 + m_delta_y_lut[byte1];
+			color0 = (limit_rgb[m_dyuv_v_to_r[v]] << 16) | (limit_rgb[m_dyuv_u_to_g[u] + m_dyuv_v_to_g[v]] << 8) | limit_rgb[m_dyuv_u_to_b[u]];
 
-						const uint8_t u0 = (u + u1) >> 1;
-						const uint8_t v0 = (v + v1) >> 1;
+			const uint8_t byte2 = data[(vsr & 0x0007ffff) ^ 1]; // Peek ahead, for calculating the half-step.
+			const uint8_t byte3 = data[((vsr + 1) & 0x0007ffff) ^ 1];
+			const uint8_t u8 = u + m_delta_uv_lut[byte2];
+			const uint8_t v8 = v + m_delta_uv_lut[byte3];
+			const uint8_t u6 = (u >> 1) + (u8 >> 1) + (u & u8 & 1);
+			const uint8_t v6 = (v >> 1) + (v8 >> 1) + (v & v8 & 1);
 
-						uint32_t *limit_r = m_dyuv_limit_r_lut + y0 + 0xff;
-						uint32_t *limit_g = m_dyuv_limit_g_lut + y0 + 0xff;
-						uint32_t *limit_b = m_dyuv_limit_b_lut + y0 + 0xff;
+			color1 = (limit_rgb2[m_dyuv_v_to_r[v6]] << 16) | (limit_rgb2[m_dyuv_u_to_g[u6] + m_dyuv_v_to_g[v6]] << 8) | limit_rgb2[m_dyuv_u_to_b[u6]];
 
-						uint32_t entry = limit_r[m_dyuv_v_to_r[v0]] | limit_g[m_dyuv_u_to_g[u0] + m_dyuv_v_to_g[v0]] | limit_b[m_dyuv_u_to_b[u0]];
-						pixels[x] = entry;
-						transparent[x] = (transp_always || (use_matte_flag && matte_flags[x << 1])) != invert_transp_condition;
+			// TODO: Does not support QHY
+			pixels[x] = color0;
+			pixels[x + 1] = color0;
+			pixels[x + 2] = color1;
+			pixels[x + 3] = color1;
+			transparent[x    ] = tp_always || (use_matte_flag && (matte_flags[x    ] == tp_check_parity));
+			transparent[x + 1] = tp_always || (use_matte_flag && (matte_flags[x + 1] == tp_check_parity));
+			transparent[x + 2] = tp_always || (use_matte_flag && (matte_flags[x + 2] == tp_check_parity));
+			transparent[x + 3] = tp_always || (use_matte_flag && (matte_flags[x + 3] == tp_check_parity));
+			x += 4;
+		}
+		else
+		{
+			bool clut_select = BIT(m_image_coding_method, ICM_CS_BIT);
+			if (icm == ICM_RGB555 && Path == 1)
+			{
+				const uint8_t byte1 = data2[(vsr2++ & 0x0007ffff) ^ 1];
+				const uint8_t blue = (byte & 0b11111) << 3;
+				const uint8_t green = ((byte & 0b11100000) >> 2) + ((byte1 & 0b11) << 6);
+				const uint8_t red = (byte1 & 0b01111100) << 1;
+				rgb_tp_bit = (use_rgb_tp_bit && (BIT(byte1,7) == tp_check_parity));
+				color1 = color0 = (uint32_t(red) << 16) | (uint32_t(green) << 8) | blue;
+			}
+			else if (icm == ICM_CLUT4)
+			{
+				const uint8_t mask = (decodingMode == DDR_FT_RLE) ? 0x7 : 0xf;
+				color0 = m_clut[BYTE_TO_CLUT<Path>(icm, mask & (byte >> 4), clut_select)];
+				color1 = m_clut[BYTE_TO_CLUT<Path>(icm, mask & byte, clut_select)];
+			}
+			else
+			{
+				color1 = color0 = m_clut[BYTE_TO_CLUT<Path>(icm, byte, clut_select)];
+			}
 
-						if (mosaic_enable)
-						{
-							for (int mosaic_index = 1; mosaic_index < mosaic_factor && (x + mosaic_index) < width; mosaic_index++)
-							{
-								pixels[x + mosaic_index] = pixels[x];
-								transparent[x + mosaic_index] = transparent[x << 1];
-							}
-							x += mosaic_factor;
-						}
-						else
-						{
-							x++;
-						}
+			int length_m = mosaic_enable ? (mosaic_factor * 2) : 2;
+			if (decodingMode == DDR_FT_RLE)
+			{
+				const uint16_t length = (byte & 0x80) ? data[((vsr++) & 0x0007ffff) ^ 1] : 1;
+				length_m = length ? (length * 2) : width;
+			}
 
-						limit_r = m_dyuv_limit_r_lut + y1 + 0xff;
-						limit_g = m_dyuv_limit_g_lut + y1 + 0xff;
-						limit_b = m_dyuv_limit_b_lut + y1 + 0xff;
-
-						entry = limit_r[m_dyuv_v_to_r[v1]] | limit_g[m_dyuv_u_to_g[u1] + m_dyuv_v_to_g[v1]] | limit_b[m_dyuv_u_to_b[u1]];
-						pixels[x] = entry;
-						transparent[x] = (transp_always || (use_matte_flag && matte_flags[x << 1])) != invert_transp_condition;
-
-						if (mosaic_enable)
-						{
-							for (int mosaic_index = 1; mosaic_index < mosaic_factor && (x + mosaic_index) < width; mosaic_index++)
-							{
-								pixels[x + mosaic_index] = pixels[x];
-								transparent[x + mosaic_index] = transparent[x];
-							}
-							x += mosaic_factor - 1;
-						}
-
-						byte = data[(vsr++ & 0x0007ffff) ^ 1];
-
-						y = y1;
-						u = u1;
-						v = v1;
-					}
-					set_vsr<Path>(vsr - 1);
-				}
-				else if (icm == ICM_CLUT8 || icm == ICM_CLUT7 || icm == ICM_CLUT77)
-				{
-					for (; x < width; x++)
-					{
-						uint32_t entry = m_clut[BYTE_TO_CLUT<Path>(icm, byte)];
-						pixels[x] = entry;
-						transparent[x] = (transp_always || (use_color_key && (entry == transparent_color)) || (use_matte_flag && matte_flags[x << 1])) != invert_transp_condition;
-						if (mosaic_enable)
-						{
-							for (int mosaic_index = 1; mosaic_index < mosaic_factor && (x + mosaic_index) < width; mosaic_index++)
-							{
-								pixels[x + mosaic_index] = pixels[x];
-								transparent[x + mosaic_index] = transparent[x];
-							}
-							x += mosaic_factor - 1;
-						}
-						byte = data[(vsr & 0x0007ffff) ^ 1];
-						vsr++;
-					}
-					set_vsr<Path>(vsr - 1);
-				}
-				else if (icm == ICM_CLUT4)
-				{
-					for (; x < width - 1; x += 2)
-					{
-						const uint32_t even_entry = m_clut[BYTE_TO_CLUT<Path>(icm, byte >> 4)];
-						const uint32_t odd_entry = m_clut[BYTE_TO_CLUT<Path>(icm, byte)];
-						const bool even_pre_transparent = transp_always || (use_color_key && (even_entry == transparent_color));
-						const bool odd_pre_transparent = transp_always || (use_color_key && (odd_entry == transparent_color));
-						if (mosaic_enable)
-						{
-							for (int mosaic_index = 0; mosaic_index < mosaic_factor && (x + mosaic_index) < (width - 1); mosaic_index += 2)
-							{
-								pixels[x + mosaic_index] = even_entry;
-								transparent[x + mosaic_index] = (even_pre_transparent || (use_matte_flag && matte_flags[x + mosaic_index])) != invert_transp_condition;
-								pixels[x + mosaic_index + 1] = odd_entry;
-								transparent[x + mosaic_index + 1] = (odd_pre_transparent || (use_matte_flag && matte_flags[x + mosaic_index + 1])) != invert_transp_condition;
-							}
-							x += mosaic_factor - 2;
-						}
-						else
-						{
-							pixels[x] = even_entry;
-							transparent[x] = (even_pre_transparent || (use_matte_flag && matte_flags[x])) != invert_transp_condition;
-
-							pixels[x + 1] = odd_entry;
-							transparent[x + 1] = (odd_pre_transparent || (use_matte_flag && matte_flags[x + 1])) != invert_transp_condition;
-						}
-						byte = data[(vsr & 0x0007ffff) ^ 1];
-						vsr++;
-					}
-					set_vsr<Path>(vsr - 1);
-				}
-				else
-				{
-					std::fill_n(pixels + x, width - x, 0x00101010);
-					std::fill_n(transparent + x, width - x, true);
-				}
-				done = true;
-				break;
-			case DDR_FT_RLE:
-				if (byte & 0x80)
-				{
-					// Run length
-					uint8_t length = data[((vsr++) & 0x0007ffff) ^ 1];
-					const uint32_t entry = m_clut[BYTE_TO_CLUT<Path>(icm, byte & 0x7f)];
-					const bool pre_transparent = (transp_always || (use_color_key && entry == transparent_color));
-					if (!length)
-					{
-						// Go to the end of the line
-						std::fill_n(pixels + x, width - x, entry);
-						for (int transp_index = x; transp_index < width; transp_index++)
-						{
-							transparent[transp_index] = (pre_transparent || (use_matte_flag && matte_flags[transp_index << 1])) != invert_transp_condition;
-						}
-						done = true;
-						set_vsr<Path>(vsr);
-					}
-					else
-					{
-						int end = std::min(width, x + length);
-						std::fill_n(pixels + x, end - x, entry);
-						for (int transp_index = x; transp_index < end; transp_index++)
-						{
-							transparent[transp_index] = (pre_transparent || (use_matte_flag && matte_flags[transp_index << 1])) != invert_transp_condition;
-						}
-						x = end;
-						if (x >= width)
-						{
-							done = true;
-							set_vsr<Path>(vsr);
-						}
-					}
-				}
-				else
-				{
-					// Single pixel
-					const uint32_t entry = m_clut[BYTE_TO_CLUT<Path>(icm, byte)];
-					const bool pre_transparent = (transp_always || (use_color_key && entry == transparent_color));
-
-					pixels[x] = entry;
-					transparent[x] = (pre_transparent || (use_matte_flag && matte_flags[x << 1])) != invert_transp_condition;
-					x++;
-
-					if (x >= width)
-					{
-						done = true;
-						set_vsr<Path>(vsr);
-					}
-				}
-				break;
+			const bool color_match0 = ((mask_bits & color0) == tp_color_match) == tp_check_parity;
+			const bool color_match1 = ((mask_bits & color1) == tp_color_match) == tp_check_parity;
+			const int end = std::min<int>(width, x + length_m);
+			for (int rl_index = x; rl_index < end; rl_index += 2)
+			{
+				pixels[rl_index    ] = color0;
+				pixels[rl_index + 1] = color1;
+				transparent[rl_index    ] = tp_always || rgb_tp_bit || (use_color_key && color_match0) || (use_matte_flag && (matte_flags[rl_index    ] == tp_check_parity));
+				transparent[rl_index + 1] = tp_always || rgb_tp_bit || (use_color_key && color_match1) || (use_matte_flag && (matte_flags[rl_index + 1] == tp_check_parity));
+			}
+			x = end;
 		}
 	}
-
-	if (icm != ICM_CLUT4)
-	{
-		for (int i = width - 1; i >= 0; i--)
-		{
-			pixels[i * 2] = pixels[i * 2 + 1] = pixels[i];
-			transparent[i * 2] = transparent[i * 2 + 1] = transparent[i];
-		}
-	}
+	set_vsr<Path>(vsr);
+	set_vsr<!Path>(vsr2);
 }
 
 const uint32_t mcd212_device::s_4bpp_color[16] =
