@@ -107,7 +107,7 @@ void mcd212_device::update_matte_arrays()
 	}
 }
 
-template <int Channel>
+template <int Path>
 void mcd212_device::set_register(uint8_t reg, uint32_t value)
 {
 	switch (reg)
@@ -121,86 +121,86 @@ void mcd212_device::set_register(uint8_t reg, uint32_t value)
 		case 0xb0: case 0xb1: case 0xb2: case 0xb3: case 0xb4: case 0xb5: case 0xb6: case 0xb7:
 		case 0xb8: case 0xb9: case 0xba: case 0xbb: case 0xbc: case 0xbd: case 0xbe: case 0xbf:
 			{
-				const uint8_t clut_index = m_clut_bank[Channel] * 0x40 + (reg - 0x80);
+				const uint8_t clut_index = m_clut_bank[Path] * 0x40 + (reg - 0x80);
 				m_clut[clut_index] = value & 0x00fcfcfc;
 			}
 			break;
 		case 0xc0: // Image Coding Method
-			if (Channel == 0)
+			if (Path == 0)
 			{
 				m_image_coding_method = value;
 			}
 			break;
 		case 0xc1: // Transparency Control
-			if (Channel == 0)
+			if (Path == 0)
 			{
 				m_transparency_control = value;
 			}
 			break;
 		case 0xc2: // Plane Order
-			if (Channel == 0)
+			if (Path == 0)
 			{
 				m_plane_order = value & 0x00000007;
 			}
 			break;
 		case 0xc3: // CLUT Bank Register
-			m_clut_bank[Channel] = Channel ? (2 | (value & 0x00000001)) : (value & 0x00000003);
+			m_clut_bank[Path] = Path ? (2 | (value & 0x00000001)) : (value & 0x00000003);
 			break;
 		case 0xc4: // Transparent Color A
-			if (Channel == 0)
+			if (Path == 0)
 			{
 				m_transparent_color[0] = value & 0x00fcfcfc;
 			}
 			break;
 		case 0xc6: // Transparent Color B
-			if (Channel == 1)
+			if (Path == 1)
 			{
 				m_transparent_color[1] = value & 0x00fcfcfc;
 			}
 			break;
 		case 0xc7: // Mask Color A
-			if (Channel == 0)
+			if (Path == 0)
 			{
 				m_mask_color[0] = value & 0x00fcfcfc;
 			}
 			break;
 		case 0xc9: // Mask Color B
-			if (Channel == 1)
+			if (Path == 1)
 			{
 				m_mask_color[1] = value & 0x00fcfcfc;
 			}
 			break;
 		case 0xca: // Delta YUV Absolute Start Value A
-			if (Channel == 0)
+			if (Path == 0)
 			{
 				m_dyuv_abs_start[0] = value;
 			}
 			break;
 		case 0xcb: // Delta YUV Absolute Start Value B
-			if (Channel == 1)
+			if (Path == 1)
 			{
 				m_dyuv_abs_start[1] = value;
 			}
 			break;
 		case 0xcd: // Cursor Position
-			if (Channel == 0)
+			if (Path == 0)
 			{
 				m_cursor_position = value;
 			}
 			break;
 		case 0xce: // Cursor Control
-			if (Channel == 0)
+			if (Path == 0)
 			{
 				m_cursor_control = value;
 			}
 			break;
 		case 0xcf: // Cursor Pattern
-			if (Channel == 0)
+			if (Path == 0)
 			{
 				m_cursor_pattern[(value >> 16) & 0x000f] = value & 0x0000ffff;
 			}
 			break;
-		case 0xd0: // Region Control 0-7
+		case 0xd0: // matte Control 0-7
 		case 0xd1:
 		case 0xd2:
 		case 0xd3:
@@ -212,32 +212,32 @@ void mcd212_device::set_register(uint8_t reg, uint32_t value)
 			update_matte_arrays();
 			break;
 		case 0xd8: // Backdrop Color
-			if (Channel == 0)
+			if (Path == 0)
 			{
 				m_backdrop_color = value;
 			}
 			break;
 		case 0xd9: // Mosaic Pixel Hold Factor A
-			if (Channel == 0)
+			if (Path == 0)
 			{
 				m_mosaic_hold[0] = value;
 			}
 			break;
 		case 0xda: // Mosaic Pixel Hold Factor B
-			if (Channel == 1)
+			if (Path == 1)
 			{
 				m_mosaic_hold[1] = value;
 			}
 			break;
 		case 0xdb: // Weight Factor A
-			if (Channel == 0)
+			if (Path == 0)
 			{
 				m_weight_factor[0][0] = (uint8_t)value;
 				update_matte_arrays();
 			}
 			break;
 		case 0xdc: // Weight Factor B
-			if (Channel == 1)
+			if (Path == 1)
 			{
 				m_weight_factor[1][0] = (uint8_t)value;
 				update_matte_arrays();
@@ -246,41 +246,41 @@ void mcd212_device::set_register(uint8_t reg, uint32_t value)
 	}
 }
 
-template <int Channel>
+template <int Path>
 inline ATTR_FORCE_INLINE uint32_t mcd212_device::get_vsr()
 {
-	return ((m_dcr[Channel] & 0x3f) << 16) | m_vsr[Channel];
+	return ((m_dcr[Path] & 0x3f) << 16) | m_vsr[Path];
 }
 
-template <int Channel>
+template <int Path>
 inline ATTR_FORCE_INLINE void mcd212_device::set_vsr(uint32_t value)
 {
-	m_vsr[Channel] = value & 0x0000ffff;
-	m_dcr[Channel] &= 0xffc0;
-	m_dcr[Channel] |= (value >> 16) & 0x003f;
+	m_vsr[Path] = value & 0x0000ffff;
+	m_dcr[Path] &= 0xffc0;
+	m_dcr[Path] |= (value >> 16) & 0x003f;
 }
 
-template <int Channel>
+template <int Path>
 inline ATTR_FORCE_INLINE void mcd212_device::set_dcp(uint32_t value)
 {
-	m_dcp[Channel] = value & 0x0000ffff;
-	m_ddr[Channel] &= 0xffc0;
-	m_ddr[Channel] |= (value >> 16) & 0x003f;
+	m_dcp[Path] = value & 0x0000ffff;
+	m_ddr[Path] &= 0xffc0;
+	m_ddr[Path] |= (value >> 16) & 0x003f;
 }
 
-template <int Channel>
+template <int Path>
 inline ATTR_FORCE_INLINE uint32_t mcd212_device::get_dcp()
 {
-	return ((m_ddr[Channel] & 0x3f) << 16) | m_dcp[Channel];
+	return ((m_ddr[Path] & 0x3f) << 16) | m_dcp[Path];
 }
 
-template <int Channel>
+template <int Path>
 inline ATTR_FORCE_INLINE void mcd212_device::set_display_parameters(uint8_t value)
 {
-	m_ddr[Channel] &= 0xf0ff;
-	m_ddr[Channel] |= (value & 0x0f) << 8;
-	m_dcr[Channel] &= 0xf7ff;
-	m_dcr[Channel] |= (value & 0x10) << 7;
+	m_ddr[Path] &= 0xf0ff;
+	m_ddr[Path] |= (value & 0x0f) << 8;
+	m_dcr[Path] &= 0xf7ff;
+	m_dcr[Path] |= (value & 0x10) << 7;
 }
 
 int mcd212_device::get_screen_width()
@@ -299,10 +299,10 @@ int mcd212_device::get_border_width()
 	return width;
 }
 
-template <int Channel>
+template <int Path>
 void mcd212_device::process_ica()
 {
-	uint16_t *ica = Channel ? m_planeb.target() : m_planea.target();
+	uint16_t *ica = Path ? m_planeb.target() : m_planea.target();
 	uint32_t addr = 0x200;
 	uint32_t cmd = 0;
 
@@ -321,11 +321,11 @@ void mcd212_device::process_ica()
 				break;
 			case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: // RELOAD DCP
 			case 0x28: case 0x29: case 0x2a: case 0x2b: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
-				set_dcp<Channel>(cmd & 0x003ffffc);
+				set_dcp<Path>(cmd & 0x003ffffc);
 				break;
 			case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: // RELOAD DCP and STOP
 			case 0x38: case 0x39: case 0x3a: case 0x3b: case 0x3c: case 0x3d: case 0x3e: case 0x3f:
-				set_dcp<Channel>(cmd & 0x003ffffc);
+				set_dcp<Path>(cmd & 0x003ffffc);
 				return;
 			case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: // RELOAD VSR (ICA)
 			case 0x48: case 0x49: case 0x4a: case 0x4b: case 0x4c: case 0x4d: case 0x4e: case 0x4f:
@@ -333,29 +333,29 @@ void mcd212_device::process_ica()
 				break;
 			case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57: // RELOAD VSR and STOP
 			case 0x58: case 0x59: case 0x5a: case 0x5b: case 0x5c: case 0x5d: case 0x5e: case 0x5f:
-				set_vsr<Channel>(cmd & 0x003fffff);
+				set_vsr<Path>(cmd & 0x003fffff);
 				return;
 			case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: // INTERRUPT
 			case 0x68: case 0x69: case 0x6a: case 0x6b: case 0x6c: case 0x6d: case 0x6e: case 0x6f:
-				m_csrr[1] |= 1 << (2 - Channel);
+				m_csrr[1] |= 1 << (2 - Path);
 				if (m_csrr[1] & (CSR2R_IT1 | CSR2R_IT2))
 					m_int_callback(ASSERT_LINE);
 				break;
 			case 0x78: case 0x79: case 0x7a: case 0x7b: case 0x7c: case 0x7d: case 0x7e: case 0x7f: // RELOAD DISPLAY PARAMETERS
-				set_display_parameters<Channel>(cmd & 0x1f);
+				set_display_parameters<Path>(cmd & 0x1f);
 				break;
 			default:
-				set_register<Channel>(cmd >> 24, cmd & 0x00ffffff);
+				set_register<Path>(cmd >> 24, cmd & 0x00ffffff);
 				break;
 		}
 	}
 }
 
-template <int Channel>
+template <int Path>
 void mcd212_device::process_dca()
 {
-	uint16_t *dca = Channel ? m_planeb.target() : m_planea.target();
-	uint32_t addr = (m_dca[Channel] & 0x0007ffff) / 2;
+	uint16_t *dca = Path ? m_planeb.target() : m_planea.target();
+	uint32_t addr = (m_dca[Path] & 0x0007ffff) / 2;
 	uint32_t cmd = 0;
 	uint32_t count = 0;
 	uint32_t max = 64;
@@ -380,29 +380,29 @@ void mcd212_device::process_dca()
 				break;
 			case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: // RELOAD DCP and STOP
 			case 0x38: case 0x39: case 0x3a: case 0x3b: case 0x3c: case 0x3d: case 0x3e: case 0x3f:
-				set_dcp<Channel>(cmd & 0x003ffffc);
-				m_dca[Channel] = cmd & 0x0007fffc;
+				set_dcp<Path>(cmd & 0x003ffffc);
+				m_dca[Path] = cmd & 0x0007fffc;
 				return;
 			case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: // RELOAD VSR
 			case 0x48: case 0x49: case 0x4a: case 0x4b: case 0x4c: case 0x4d: case 0x4e: case 0x4f:
-				set_vsr<Channel>(cmd & 0x003fffff);
+				set_vsr<Path>(cmd & 0x003fffff);
 				break;
 			case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57: // RELOAD VSR and STOP
 			case 0x58: case 0x59: case 0x5a: case 0x5b: case 0x5c: case 0x5d: case 0x5e: case 0x5f:
-				set_vsr<Channel>(cmd & 0x003fffff);
+				set_vsr<Path>(cmd & 0x003fffff);
 				processing = false;
 				break;
 			case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: // INTERRUPT
 			case 0x68: case 0x69: case 0x6a: case 0x6b: case 0x6c: case 0x6d: case 0x6e: case 0x6f:
-				m_csrr[1] |= 1 << (2 - Channel);
+				m_csrr[1] |= 1 << (2 - Path);
 				if (m_csrr[1] & (CSR2R_IT1 | CSR2R_IT2))
 					m_int_callback(ASSERT_LINE);
 				break;
 			case 0x78: case 0x79: case 0x7a: case 0x7b: case 0x7c: case 0x7d: case 0x7e: case 0x7f: // RELOAD DISPLAY PARAMETERS
-				set_display_parameters<Channel>(cmd & 0x1f);
+				set_display_parameters<Path>(cmd & 0x1f);
 				break;
 			default:
-				set_register<Channel>(cmd >> 24, cmd & 0x00ffffff);
+				set_register<Path>(cmd >> 24, cmd & 0x00ffffff);
 				break;
 		}
 	}
@@ -412,10 +412,10 @@ void mcd212_device::process_dca()
 		addr += (max - count) >> 1;
 	}
 
-	m_dca[Channel] = addr * 2;
+	m_dca[Path] = addr * 2;
 }
 
-template <int Channel>
+template <int Path>
 static inline uint8_t BYTE_TO_CLUT(int icm, uint8_t byte)
 {
 	switch (icm)
@@ -423,7 +423,7 @@ static inline uint8_t BYTE_TO_CLUT(int icm, uint8_t byte)
 		case 1:
 			return byte;
 		case 3:
-			if (Channel == 1)
+			if (Path == 1)
 			{
 				return 0x80 + (byte & 0x7f);
 			}
@@ -432,13 +432,13 @@ static inline uint8_t BYTE_TO_CLUT(int icm, uint8_t byte)
 				return byte & 0x7f;
 			}
 		case 4:
-			if (Channel == 0)
+			if (Path == 0)
 			{
 				return byte & 0x7f;
 			}
 			break;
 		case 11:
-			if (Channel == 1)
+			if (Path == 1)
 			{
 				return 0x80 + (byte & 0x0f);
 			}
@@ -452,41 +452,41 @@ static inline uint8_t BYTE_TO_CLUT(int icm, uint8_t byte)
 	return 0;
 }
 
-template <int Channel>
+template <int Path>
 inline ATTR_FORCE_INLINE uint8_t mcd212_device::get_transparency_control()
 {
-	return (m_transparency_control >> (Channel ? 8 : 0)) & 0x0f;
+	return (m_transparency_control >> (Path ? 8 : 0)) & 0x0f;
 }
 
-template <int Channel>
+template <int Path>
 inline ATTR_FORCE_INLINE uint8_t mcd212_device::get_icm()
 {
-	const uint32_t mask = Channel ? ICM_MODE2 : ICM_MODE1;
-	const uint32_t shift = Channel ? ICM_MODE2_SHIFT : ICM_MODE1_SHIFT;
+	const uint32_t mask = Path ? ICM_MODE2 : ICM_MODE1;
+	const uint32_t shift = Path ? ICM_MODE2_SHIFT : ICM_MODE1_SHIFT;
 	return (m_image_coding_method & mask) >> shift;
 }
 
-template <int Channel>
+template <int Path>
 inline ATTR_FORCE_INLINE bool mcd212_device::get_mosaic_enable()
 {
-	return (m_ddr[Channel] & DDR_FT) == DDR_FT_MOSAIC;
+	return (m_ddr[Path] & DDR_FT) == DDR_FT_MOSAIC;
 }
 
-template <int Channel>
+template <int Path>
 inline ATTR_FORCE_INLINE uint8_t mcd212_device::get_mosaic_factor()
 {
-	return 1 << (((m_ddr[Channel] & DDR_MT) >> DDR_MT_SHIFT) + 1);
+	return 1 << (((m_ddr[Path] & DDR_MT) >> DDR_MT_SHIFT) + 1);
 }
 
-template <int Channel>
+template <int Path>
 void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 {
-	const uint8_t *data = reinterpret_cast<uint8_t *>(Channel ? m_planeb.target() : m_planea.target());
-	const uint8_t icm = get_icm<Channel>();
-	const uint8_t transp_ctrl = get_transparency_control<Channel>();
-	const int width = get_plane_width<Channel>();
+	const uint8_t *data = reinterpret_cast<uint8_t *>(Path ? m_planeb.target() : m_planea.target());
+	const uint8_t icm = get_icm<Path>();
+	const uint8_t transp_ctrl = get_transparency_control<Path>();
+	const int width = get_screen_width<Path>();
 
-	uint32_t vsr = get_vsr<Channel>();
+	uint32_t vsr = get_vsr<Path>();
 
 	if (transp_ctrl == TCR_COND_1)
 	{
@@ -501,22 +501,28 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 		return;
 	}
 
-	const uint8_t mosaic_enable = get_mosaic_enable<Channel>();
-	const uint8_t mosaic_factor = get_mosaic_factor<Channel>();
+	const uint32_t decodingMode = m_ddr[Path] & DDR_FT;
 
-	const uint32_t dyuv_abs_start = m_dyuv_abs_start[Channel];
-	const uint8_t start_y = (dyuv_abs_start >> 16) & 0x000000ff;
-	const uint8_t start_u = (dyuv_abs_start >>  8) & 0x000000ff;
-	const uint8_t start_v = (dyuv_abs_start >>  0) & 0x000000ff;
+	const uint8_t mosaic_enable = get_mosaic_enable<Path>();
+	const uint8_t mosaic_factor = get_mosaic_factor<Path>();
 
-	const uint32_t transparent_color = m_transparent_color[Channel];
-	const uint8_t transp_ctrl_masked = transp_ctrl & 0x07;
-	const bool transp_always = (transp_ctrl_masked == TCR_COND_1);
-	const bool invert_transp_condition = BIT(transp_ctrl, 3);
-	const int region_flag_index = 1 - (transp_ctrl_masked & 1);
-	const bool *region_flags = m_region_flag[region_flag_index];
-	const bool use_region_flag = (transp_ctrl_masked >= TCR_COND_RF0_1 && transp_ctrl_masked <= TCR_COND_RF1KEY_1);
-	bool use_color_key = (transp_ctrl_masked == TCR_COND_KEY_1 || transp_ctrl_masked == TCR_COND_RF0KEY_1 || transp_ctrl_masked == TCR_COND_RF1KEY_1);
+	const uint32_t dyuv_abs_start = m_dyuv_abs_start[Path];
+	uint8_t y = (dyuv_abs_start >> 16) & 0x000000ff;
+	uint8_t u = (dyuv_abs_start >>  8) & 0x000000ff;
+	uint8_t v = (dyuv_abs_start >>  0) & 0x000000ff;
+
+	const uint32_t mask_bits = (~m_mask_color[Path]) & 0x00fcfcfc;
+	const uint32_t tp_color_match = m_transparent_color[Path] & mask_bits;
+	const uint8_t tp_ctrl_type = tp_ctrl & 0x07;
+
+	const bool use_rgb_tp_bit = (tp_ctrl_type == TCR_RGB);
+	const bool tp_check_parity = !BIT(tp_ctrl, 3);
+	const bool tp_always = ((tp_ctrl_type == TCR_ALWAYS) && tp_check_parity);
+	const int matte_flag_index = BIT(~tp_ctrl_type, 0);
+	const bool *const matte_flags = m_matte_flag[matte_flag_index];
+	const bool use_matte_flag = (tp_ctrl_type >= TCR_MF0 && tp_ctrl_type <= TCR_MF1_KEY1);
+	const bool is_dyuv_rgb = (icm == ICM_DYUV) || ((icm == ICM_RGB555) && (Path == 1)); // DYUV and RGB do not have access to color key.
+	const bool use_color_key = !is_dyuv_rgb && ((tp_ctrl_type == TCR_KEY) || (tp_ctrl_type == TCR_MF0_KEY1) || (tp_ctrl_type == TCR_MF1_KEY1));
 
 	bool done = false;
 	int x = 0;
@@ -525,7 +531,7 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 	{
 		uint8_t byte = data[(vsr & 0x0007ffff) ^ 1];
 		vsr++;
-		switch (m_ddr[Channel] & DDR_FT)
+		switch (m_ddr[Path] & DDR_FT)
 		{
 			case DDR_FT_BMP:
 			case DDR_FT_BMP2:
@@ -555,7 +561,7 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 
 						uint32_t entry = limit_r[m_dyuv_v_to_r[v0]] | limit_g[m_dyuv_u_to_g[u0] + m_dyuv_v_to_g[v0]] | limit_b[m_dyuv_u_to_b[u0]];
 						pixels[x] = entry;
-						transparent[x] = (transp_always || (use_region_flag && region_flags[x << 1])) != invert_transp_condition;
+						transparent[x] = (transp_always || (use_matte_flag && matte_flags[x << 1])) != invert_transp_condition;
 
 						if (mosaic_enable)
 						{
@@ -577,7 +583,7 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 
 						entry = limit_r[m_dyuv_v_to_r[v1]] | limit_g[m_dyuv_u_to_g[u1] + m_dyuv_v_to_g[v1]] | limit_b[m_dyuv_u_to_b[u1]];
 						pixels[x] = entry;
-						transparent[x] = (transp_always || (use_region_flag && region_flags[x << 1])) != invert_transp_condition;
+						transparent[x] = (transp_always || (use_matte_flag && matte_flags[x << 1])) != invert_transp_condition;
 
 						if (mosaic_enable)
 						{
@@ -595,15 +601,15 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 						u = u1;
 						v = v1;
 					}
-					set_vsr<Channel>(vsr - 1);
+					set_vsr<Path>(vsr - 1);
 				}
 				else if (icm == ICM_CLUT8 || icm == ICM_CLUT7 || icm == ICM_CLUT77)
 				{
 					for (; x < width; x++)
 					{
-						uint32_t entry = m_clut[BYTE_TO_CLUT<Channel>(icm, byte)];
+						uint32_t entry = m_clut[BYTE_TO_CLUT<Path>(icm, byte)];
 						pixels[x] = entry;
-						transparent[x] = (transp_always || (use_color_key && (entry == transparent_color)) || (use_region_flag && region_flags[x << 1])) != invert_transp_condition;
+						transparent[x] = (transp_always || (use_color_key && (entry == transparent_color)) || (use_matte_flag && matte_flags[x << 1])) != invert_transp_condition;
 						if (mosaic_enable)
 						{
 							for (int mosaic_index = 1; mosaic_index < mosaic_factor && (x + mosaic_index) < width; mosaic_index++)
@@ -616,14 +622,14 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 						byte = data[(vsr & 0x0007ffff) ^ 1];
 						vsr++;
 					}
-					set_vsr<Channel>(vsr - 1);
+					set_vsr<Path>(vsr - 1);
 				}
 				else if (icm == ICM_CLUT4)
 				{
 					for (; x < width - 1; x += 2)
 					{
-						const uint32_t even_entry = m_clut[BYTE_TO_CLUT<Channel>(icm, byte >> 4)];
-						const uint32_t odd_entry = m_clut[BYTE_TO_CLUT<Channel>(icm, byte)];
+						const uint32_t even_entry = m_clut[BYTE_TO_CLUT<Path>(icm, byte >> 4)];
+						const uint32_t odd_entry = m_clut[BYTE_TO_CLUT<Path>(icm, byte)];
 						const bool even_pre_transparent = transp_always || (use_color_key && (even_entry == transparent_color));
 						const bool odd_pre_transparent = transp_always || (use_color_key && (odd_entry == transparent_color));
 						if (mosaic_enable)
@@ -631,24 +637,24 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 							for (int mosaic_index = 0; mosaic_index < mosaic_factor && (x + mosaic_index) < (width - 1); mosaic_index += 2)
 							{
 								pixels[x + mosaic_index] = even_entry;
-								transparent[x + mosaic_index] = (even_pre_transparent || (use_region_flag && region_flags[x + mosaic_index])) != invert_transp_condition;
+								transparent[x + mosaic_index] = (even_pre_transparent || (use_matte_flag && matte_flags[x + mosaic_index])) != invert_transp_condition;
 								pixels[x + mosaic_index + 1] = odd_entry;
-								transparent[x + mosaic_index + 1] = (odd_pre_transparent || (use_region_flag && region_flags[x + mosaic_index + 1])) != invert_transp_condition;
+								transparent[x + mosaic_index + 1] = (odd_pre_transparent || (use_matte_flag && matte_flags[x + mosaic_index + 1])) != invert_transp_condition;
 							}
 							x += mosaic_factor - 2;
 						}
 						else
 						{
 							pixels[x] = even_entry;
-							transparent[x] = (even_pre_transparent || (use_region_flag && region_flags[x])) != invert_transp_condition;
+							transparent[x] = (even_pre_transparent || (use_matte_flag && matte_flags[x])) != invert_transp_condition;
 
 							pixels[x + 1] = odd_entry;
-							transparent[x + 1] = (odd_pre_transparent || (use_region_flag && region_flags[x + 1])) != invert_transp_condition;
+							transparent[x + 1] = (odd_pre_transparent || (use_matte_flag && matte_flags[x + 1])) != invert_transp_condition;
 						}
 						byte = data[(vsr & 0x0007ffff) ^ 1];
 						vsr++;
 					}
-					set_vsr<Channel>(vsr - 1);
+					set_vsr<Path>(vsr - 1);
 				}
 				else
 				{
@@ -662,7 +668,7 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 				{
 					// Run length
 					uint8_t length = data[((vsr++) & 0x0007ffff) ^ 1];
-					const uint32_t entry = m_clut[BYTE_TO_CLUT<Channel>(icm, byte & 0x7f)];
+					const uint32_t entry = m_clut[BYTE_TO_CLUT<Path>(icm, byte & 0x7f)];
 					const bool pre_transparent = (transp_always || (use_color_key && entry == transparent_color));
 					if (!length)
 					{
@@ -670,10 +676,10 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 						std::fill_n(pixels + x, width - x, entry);
 						for (int transp_index = x; transp_index < width; transp_index++)
 						{
-							transparent[transp_index] = (pre_transparent || (use_region_flag && region_flags[transp_index << 1])) != invert_transp_condition;
+							transparent[transp_index] = (pre_transparent || (use_matte_flag && matte_flags[transp_index << 1])) != invert_transp_condition;
 						}
 						done = true;
-						set_vsr<Channel>(vsr);
+						set_vsr<Path>(vsr);
 					}
 					else
 					{
@@ -681,30 +687,30 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 						std::fill_n(pixels + x, end - x, entry);
 						for (int transp_index = x; transp_index < end; transp_index++)
 						{
-							transparent[transp_index] = (pre_transparent || (use_region_flag && region_flags[transp_index << 1])) != invert_transp_condition;
+							transparent[transp_index] = (pre_transparent || (use_matte_flag && matte_flags[transp_index << 1])) != invert_transp_condition;
 						}
 						x = end;
 						if (x >= width)
 						{
 							done = true;
-							set_vsr<Channel>(vsr);
+							set_vsr<Path>(vsr);
 						}
 					}
 				}
 				else
 				{
 					// Single pixel
-					const uint32_t entry = m_clut[BYTE_TO_CLUT<Channel>(icm, byte)];
+					const uint32_t entry = m_clut[BYTE_TO_CLUT<Path>(icm, byte)];
 					const bool pre_transparent = (transp_always || (use_color_key && entry == transparent_color));
 
 					pixels[x] = entry;
-					transparent[x] = (pre_transparent || (use_region_flag && region_flags[x << 1])) != invert_transp_condition;
+					transparent[x] = (pre_transparent || (use_matte_flag && matte_flags[x << 1])) != invert_transp_condition;
 					x++;
 
 					if (x >= width)
 					{
 						done = true;
-						set_vsr<Channel>(vsr);
+						set_vsr<Path>(vsr);
 					}
 				}
 				break;
@@ -1052,7 +1058,7 @@ uint32_t mcd212_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 
 	int scanline = screen.vpos();
 
-	// Process VSR and mix if we're in the visible region
+	// Process VSR and mix if we're in the visible matte
 	if (scanline >= m_ica_height)
 	{
 		uint32_t *out = &bitmap.pix(scanline);
@@ -1129,7 +1135,7 @@ uint32_t mcd212_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 template int mcd212_device::ram_dtack_cycle_count<0>();
 template int mcd212_device::ram_dtack_cycle_count<1>();
 
-template <int Channel>
+template <int Path>
 int mcd212_device::ram_dtack_cycle_count()
 {
 	// Per MCD-212 documentation, it takes 4 CLKs (2 SCC68070 clocks) for a VRAM access during the System timing slot.
@@ -1138,8 +1144,8 @@ int mcd212_device::ram_dtack_cycle_count()
 	if (!BIT(m_dcr[0], DCR_DE_BIT))
 		return 2;
 
-	// No contending for Ch.1/Ch.2 timing slots if a relevant channel is disabled
-	if (!BIT(m_dcr[Channel], DCR_ICA_BIT))
+	// No contending for Ch.1/Ch.2 timing slots if a relevant Path is disabled
+	if (!BIT(m_dcr[Path], DCR_ICA_BIT))
 		return 2;
 
 	const int x = screen().hpos();
@@ -1155,7 +1161,7 @@ int mcd212_device::ram_dtack_cycle_count()
 		return 2;
 
 	// No contending for Ch.1/Ch.2 timing slots during the free-run area of DCA lines if DCA is disabled
-	if (!BIT(m_dcr[Channel], DCR_DCA_BIT) && x_outside_active_display)
+	if (!BIT(m_dcr[Path], DCR_DCA_BIT) && x_outside_active_display)
 		return 2;
 
 	// System access is restricted to the last 5 out of every 16 CLKs.
