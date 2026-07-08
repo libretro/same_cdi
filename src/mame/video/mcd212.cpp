@@ -416,38 +416,24 @@ void mcd212_device::process_dca()
 }
 
 template <int Path>
-static inline uint8_t BYTE_TO_CLUT(int icm, uint8_t byte)
+static inline uint8_t BYTE_TO_CLUT(int icm, uint8_t byte, bool clut_select)
 {
 	switch (icm)
 	{
-		case 1:
-			return byte;
-		case 3:
-			if (Path == 1)
-			{
-				return 0x80 + (byte & 0x7f);
-			}
-			else
-			{
-				return byte & 0x7f;
-			}
-		case 4:
-			if (Path == 0)
-			{
-				return byte & 0x7f;
-			}
-			break;
-		case 11:
-			if (Path == 1)
-			{
-				return 0x80 + (byte & 0x0f);
-			}
-			else
-			{
-				return byte & 0x0f;
-			}
-		default:
-			break;
+	case 1:
+		return byte;
+	case 3:
+		return (Path ? 0x80 : 0) | (byte & 0x7f);
+	case 4:
+		if (Path == 0)
+		{
+			return (clut_select ? 0x80 : 0) | (byte & 0x7f);
+		}
+		break;
+	case 11:
+		return (Path ? 0x80 : 0) | (byte & 0x0f);
+	default:
+		break;
 	}
 	return 0;
 }
