@@ -17,7 +17,7 @@ STATUS:
 
 TODO:
 
-- Unknown yet.
+- QHY DYUV Image Decoder
 
 *******************************************************************************/
 
@@ -54,7 +54,6 @@ inline ATTR_FORCE_INLINE uint8_t mcd212_device::get_matte_op(const uint32_t matt
 
 void mcd212_device::update_matte_arrays()
 {
-
 	const int width = get_screen_width();
 	const int num_mattes = BIT(m_image_coding_method, ICM_NM_BIT) ? 2 : 1;
 
@@ -122,81 +121,95 @@ void mcd212_device::set_register(uint8_t reg, uint32_t value)
 		case 0xb8: case 0xb9: case 0xba: case 0xbb: case 0xbc: case 0xbd: case 0xbe: case 0xbf:
 			{
 				const uint8_t clut_index = m_clut_bank[Path] * 0x40 + (reg - 0x80);
+				LOGMASKED(LOG_CLUT, "%s: Path %d: CLUT[%d] = %08x\n", machine().describe_context(), Path, clut_index, value);
 				m_clut[clut_index] = value & 0x00fcfcfc;
 			}
 			break;
 		case 0xc0: // Image Coding Method
 			if (Path == 0)
 			{
+				LOGMASKED(LOG_REGISTERS, "%s: Path 0: Image Coding Method = %08x\n", machine().describe_context(), value);
 				m_image_coding_method = value;
 			}
 			break;
 		case 0xc1: // Transparency Control
 			if (Path == 0)
 			{
+				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 0: Transparency Control = %08x\n", machine().describe_context(), screen().vpos(), value);
 				m_transparency_control = value;
 			}
 			break;
 		case 0xc2: // Plane Order
 			if (Path == 0)
 			{
+				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 0: Plane Order = %08x\n", machine().describe_context(), screen().vpos(), value & 7);
 				m_plane_order = value & 0x00000007;
 			}
 			break;
 		case 0xc3: // CLUT Bank Register
+			LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path %d: CLUT Bank Register = %08x\n", machine().describe_context(), screen().vpos(), Path, value & 3);
 			m_clut_bank[Path] = Path ? (2 | (value & 0x00000001)) : (value & 0x00000003);
 			break;
 		case 0xc4: // Transparent Color A
 			if (Path == 0)
 			{
+				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 0: Transparent Color A = %08x\n", machine().describe_context(), screen().vpos(), value);
 				m_transparent_color[0] = value & 0x00fcfcfc;
 			}
 			break;
 		case 0xc6: // Transparent Color B
 			if (Path == 1)
 			{
+				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 1: Transparent Color B = %08x\n", machine().describe_context(), screen().vpos(), value);
 				m_transparent_color[1] = value & 0x00fcfcfc;
 			}
 			break;
 		case 0xc7: // Mask Color A
 			if (Path == 0)
 			{
+				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 0: Mask Color A = %08x\n", machine().describe_context(), screen().vpos(), value);
 				m_mask_color[0] = value & 0x00fcfcfc;
 			}
 			break;
 		case 0xc9: // Mask Color B
 			if (Path == 1)
 			{
+				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 1: Mask Color B = %08x\n", machine().describe_context(), screen().vpos(), value);
 				m_mask_color[1] = value & 0x00fcfcfc;
 			}
 			break;
 		case 0xca: // Delta YUV Absolute Start Value A
 			if (Path == 0)
 			{
+				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 0: Delta YUV Absolute Start Value A = %08x\n", machine().describe_context(), screen().vpos(), value);
 				m_dyuv_abs_start[0] = value;
 			}
 			break;
 		case 0xcb: // Delta YUV Absolute Start Value B
 			if (Path == 1)
 			{
+				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 1: Delta YUV Absolute Start Value B = %08x\n", machine().describe_context(), screen().vpos(), value);
 				m_dyuv_abs_start[1] = value;
 			}
 			break;
 		case 0xcd: // Cursor Position
 			if (Path == 0)
 			{
+				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 0: Cursor Position = %08x\n", machine().describe_context(), screen().vpos(), value);
 				m_cursor_position = value;
 			}
 			break;
 		case 0xce: // Cursor Control
 			if (Path == 0)
 			{
+				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 0: Cursor Control = %08x\n", machine().describe_context(), screen().vpos(), value);
 				m_cursor_control = value;
 			}
 			break;
 		case 0xcf: // Cursor Pattern
 			if (Path == 0)
 			{
+				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 0: Cursor Pattern[%d] = %04x\n", machine().describe_context(), screen().vpos(), (value >> 16) & 0x000f, value & 0x0000ffff);
 				m_cursor_pattern[(value >> 16) & 0x000f] = value & 0x0000ffff;
 			}
 			break;
@@ -208,30 +221,35 @@ void mcd212_device::set_register(uint8_t reg, uint32_t value)
 		case 0xd5:
 		case 0xd6:
 		case 0xd7:
+			LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path %d: matte Control %d = %08x\n", machine().describe_context(), screen().vpos(), Path, reg & 7, value);
 			m_matte_control[reg & 7] = value;
 			update_matte_arrays();
 			break;
 		case 0xd8: // Backdrop Color
 			if (Path == 0)
 			{
+				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 0: Backdrop Color = %08x\n", machine().describe_context(), screen().vpos(), value);
 				m_backdrop_color = value;
 			}
 			break;
 		case 0xd9: // Mosaic Pixel Hold Factor A
 			if (Path == 0)
 			{
+				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 0: Mosaic Pixel Hold Factor A = %08x\n", machine().describe_context(), screen().vpos(), value);
 				m_mosaic_hold[0] = value;
 			}
 			break;
 		case 0xda: // Mosaic Pixel Hold Factor B
 			if (Path == 1)
 			{
+				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 1: Mosaic Pixel Hold Factor B = %08x\n", machine().describe_context(), screen().vpos(), value);
 				m_mosaic_hold[1] = value;
 			}
 			break;
 		case 0xdb: // Weight Factor A
 			if (Path == 0)
 			{
+				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 0: Weight Factor A = %08x\n", machine().describe_context(), screen().vpos(), value);
 				m_weight_factor[0][0] = (uint8_t)value;
 				update_matte_arrays();
 			}
@@ -239,6 +257,7 @@ void mcd212_device::set_register(uint8_t reg, uint32_t value)
 		case 0xdc: // Weight Factor B
 			if (Path == 1)
 			{
+				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 1: Weight Factor B = %08x\n", machine().describe_context(), screen().vpos(), value);
 				m_weight_factor[1][0] = (uint8_t)value;
 				update_matte_arrays();
 			}
@@ -299,6 +318,14 @@ int mcd212_device::get_border_width()
 	return width;
 }
 
+uint32_t mcd212_device::get_backdrop_plane()
+{
+	if (BIT(m_image_coding_method, ICM_EV_BIT))
+		return 0; // External Video Background. Default to Black since there is no DVC.
+	else
+		return s_4bpp_color[m_backdrop_color];
+}
+
 template <int Path>
 void mcd212_device::process_ica()
 {
@@ -315,36 +342,45 @@ void mcd212_device::process_ica()
 		{
 			case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07: // STOP
 			case 0x08: case 0x09: case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
+				LOGMASKED(LOG_ICA, "%08x: %08x: ICA %d: STOP\n", (addr - 2) * 2 + Path * 0x200000, cmd, Path);
 				return;
 			case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17: // NOP
 			case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e: case 0x1f:
+				LOGMASKED(LOG_ICA, "%08x: %08x: ICA %d: NOP\n", (addr - 2) * 2 + Path * 0x200000, cmd, Path);
 				break;
 			case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: // RELOAD DCP
 			case 0x28: case 0x29: case 0x2a: case 0x2b: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
+				LOGMASKED(LOG_ICA, "%08x: %08x: ICA %d: RELOAD DCP: %06x\n", (addr - 2) * 2 + Path * 0x200000, cmd, Path, cmd & 0x001fffff);
 				set_dcp<Path>(cmd & 0x003ffffc);
 				break;
 			case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: // RELOAD DCP and STOP
 			case 0x38: case 0x39: case 0x3a: case 0x3b: case 0x3c: case 0x3d: case 0x3e: case 0x3f:
+				LOGMASKED(LOG_ICA, "%08x: %08x: ICA %d: RELOAD DCP and STOP: %06x\n", (addr - 2) * 2 + Path * 0x200000, cmd, Path, cmd & 0x001fffff);
 				set_dcp<Path>(cmd & 0x003ffffc);
 				return;
 			case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: // RELOAD VSR (ICA)
 			case 0x48: case 0x49: case 0x4a: case 0x4b: case 0x4c: case 0x4d: case 0x4e: case 0x4f:
+				LOGMASKED(LOG_ICA, "%08x: %08x: ICA %d: RELOAD VSR: %06x\n", (addr - 2) * 2 + Path * 0x200000, cmd, Path, cmd & 0x001fffff);
 				addr = (cmd & 0x0007ffff) / 2;
 				break;
 			case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57: // RELOAD VSR and STOP
 			case 0x58: case 0x59: case 0x5a: case 0x5b: case 0x5c: case 0x5d: case 0x5e: case 0x5f:
+				LOGMASKED(LOG_ICA, "%08x: %08x: ICA %d: RELOAD VSR and STOP: VSR = %05x\n", (addr - 2) * 2 + Path * 0x200000, cmd, Path, cmd & 0x001fffff);
 				set_vsr<Path>(cmd & 0x003fffff);
 				return;
 			case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: // INTERRUPT
 			case 0x68: case 0x69: case 0x6a: case 0x6b: case 0x6c: case 0x6d: case 0x6e: case 0x6f:
+				LOGMASKED(LOG_ICA, "%08x: %08x: ICA %d: INTERRUPT\n", (addr - 2) * 2 + Path * 0x200000, cmd, Path);
 				m_csrr[1] |= 1 << (2 - Path);
 				if (m_csrr[1] & (CSR2R_IT1 | CSR2R_IT2))
 					m_int_callback(ASSERT_LINE);
 				break;
 			case 0x78: case 0x79: case 0x7a: case 0x7b: case 0x7c: case 0x7d: case 0x7e: case 0x7f: // RELOAD DISPLAY PARAMETERS
+				LOGMASKED(LOG_ICA, "%08x: %08x: ICA %d: RELOAD DISPLAY PARAMETERS\n", (addr - 2) * 2 + Path * 0x200000, cmd, Path);
 				set_display_parameters<Path>(cmd & 0x1f);
 				break;
 			default:
+				LOGMASKED(LOG_ICA, "%08x: %08x: ICA %d: SET REGISTER %02x = %06x\n", (addr - 2) * 2 + Path * 0x200000, cmd, Path, cmd >> 24, cmd & 0x00ffffff);
 				set_register<Path>(cmd >> 24, cmd & 0x00ffffff);
 				break;
 		}
@@ -362,6 +398,8 @@ void mcd212_device::process_dca()
 	bool addr_changed = false;
 	bool processing = true;
 
+	LOGMASKED(LOG_DCA, "Scanline %d: Processing DCA %d\n", screen().vpos(), Path);
+
 	while (processing && count < max)
 	{
 		cmd = dca[addr++] << 16;
@@ -371,34 +409,43 @@ void mcd212_device::process_dca()
 		{
 			case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07: // STOP
 			case 0x08: case 0x09: case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f:
+				LOGMASKED(LOG_DCA, "%08x: %08x: DCA %d: STOP\n", (addr - 2) * 2 + Path * 0x200000, cmd, Path);
 				processing = false;
 				break;
 			case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17: // NOP
 			case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e: case 0x1f:
+				LOGMASKED(LOG_DCA, "%08x: %08x: DCA %d: NOP\n", (addr - 2) * 2 + Path * 0x200000, cmd, Path);
+				break;
 			case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: // RELOAD DCP
 			case 0x28: case 0x29: case 0x2a: case 0x2b: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
+				LOGMASKED(LOG_DCA, "%08x: %08x: DCA %d: RELOAD DCP (NOP)\n", (addr - 2) * 2 + Path * 0x200000, cmd, Path);
 				break;
 			case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: // RELOAD DCP and STOP
 			case 0x38: case 0x39: case 0x3a: case 0x3b: case 0x3c: case 0x3d: case 0x3e: case 0x3f:
+				LOGMASKED(LOG_DCA, "%08x: %08x: DCA %d: RELOAD DCP and STOP\n", (addr - 2) * 2 + Path * 0x200000, cmd, Path);
 				set_dcp<Path>(cmd & 0x003ffffc);
 				m_dca[Path] = cmd & 0x0007fffc;
 				return;
 			case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: // RELOAD VSR
 			case 0x48: case 0x49: case 0x4a: case 0x4b: case 0x4c: case 0x4d: case 0x4e: case 0x4f:
+				LOGMASKED(LOG_DCA, "%08x: %08x: DCA %d: RELOAD VSR: %06x\n", (addr - 2) * 2 + Path * 0x200000, cmd, Path, cmd & 0x001fffff);
 				set_vsr<Path>(cmd & 0x003fffff);
 				break;
 			case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57: // RELOAD VSR and STOP
 			case 0x58: case 0x59: case 0x5a: case 0x5b: case 0x5c: case 0x5d: case 0x5e: case 0x5f:
+				LOGMASKED(LOG_DCA, "%08x: %08x: DCA %d: RELOAD VSR and STOP: %06x\n", (addr - 2) * 2 + Path * 0x200000, cmd, Path, cmd & 0x001fffff);
 				set_vsr<Path>(cmd & 0x003fffff);
 				processing = false;
 				break;
 			case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: // INTERRUPT
 			case 0x68: case 0x69: case 0x6a: case 0x6b: case 0x6c: case 0x6d: case 0x6e: case 0x6f:
+				LOGMASKED(LOG_DCA, "%08x: %08x: DCA %d: INTERRUPT\n", (addr - 2) * 2 + Path * 0x200000, cmd, Path);
 				m_csrr[1] |= 1 << (2 - Path);
 				if (m_csrr[1] & (CSR2R_IT1 | CSR2R_IT2))
 					m_int_callback(ASSERT_LINE);
 				break;
 			case 0x78: case 0x79: case 0x7a: case 0x7b: case 0x7c: case 0x7d: case 0x7e: case 0x7f: // RELOAD DISPLAY PARAMETERS
+				LOGMASKED(LOG_DCA, "%08x: %08x: DCA %d: RELOAD DISPLAY PARAMETERS\n", (addr - 2) * 2 + Path * 0x200000, cmd, Path);
 				set_display_parameters<Path>(cmd & 0x1f);
 				break;
 			default:
@@ -479,7 +526,7 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 	if (tp_ctrl == TCR_ALWAYS || !icm || !vsr)
 	{
 		std::fill_n(pixels, get_screen_width(), s_4bpp_color[0]);
-		std::fill_n(transparent, get_screen_width(), (tp_ctrl == TCR_ALWAYS));
+		std::fill_n(transparent, get_screen_width(), true);
 		return;
 	}
 
@@ -603,152 +650,110 @@ const uint32_t mcd212_device::s_4bpp_color[16] =
 template <bool MosaicA, bool MosaicB, bool OrderAB>
 void mcd212_device::mix_lines(uint32_t *plane_a, bool *transparent_a, uint32_t *plane_b, bool *transparent_b, uint32_t *out)
 {
-	const uint32_t backdrop = s_4bpp_color[m_backdrop_color];
-	const uint8_t mosaic_count_a = (m_mosaic_hold[0] & 0x0000ff) << 1;
-	const uint8_t mosaic_count_b = (m_mosaic_hold[1] & 0x0000ff) << 1;
+	const uint8_t icmA = get_icm<0>();
+	const uint8_t icmB = get_icm<1>();
+	uint16_t mosaic_count_a = (m_mosaic_hold[0] & 0x0000ff) << 1;
+	uint16_t mosaic_count_b = (m_mosaic_hold[1] & 0x0000ff) << 1;
 	const int width = get_screen_width();
 	const int border_width = get_border_width();
 
 	uint8_t *weight_a = &m_weight_factor[0][0];
 	uint8_t *weight_b = &m_weight_factor[1][0];
 
-	if (!(m_transparency_control & TCR_DISABLE_MX))
-	{
-		for (int x = 0; x < width; x++, weight_a++, transparent_a++, weight_b++, transparent_b++)
-		{
-			const uint8_t weight_a_cur = *weight_a;
-			const uint8_t weight_b_cur = *weight_b;
+	// Console Verified. CLUT4 pixels are drawn in pairs during VSR. So the mosaic here is halved.
+	if (icmA == ICM_CLUT4)
+		mosaic_count_a >>= 1;
+	if (icmB == ICM_CLUT4)
+		mosaic_count_b >>= 1;
 
-			const uint32_t plane_a_cur = plane_a[x];
-			const uint32_t plane_b_cur = plane_b[x];
-
-			const int32_t plane_a_r = (int32_t)(uint8_t)(plane_a_cur >> 16);
-			const int32_t plane_b_r = (int32_t)(uint8_t)(plane_b_cur >> 16);
-			const int32_t plane_a_g = (int32_t)(uint8_t)(plane_a_cur >> 8);
-			const int32_t plane_b_g = (int32_t)(uint8_t)(plane_b_cur >> 8);
-			const int32_t plane_a_b = (int32_t)(uint8_t)plane_a_cur;
-			const int32_t plane_b_b = (int32_t)(uint8_t)plane_b_cur;
-			const int32_t weighted_a_r = (plane_a_r > 16) ? (((plane_a_r - 16) * weight_a_cur) >> 6) : 0;
-			const int32_t weighted_a_g = (plane_a_g > 16) ? (((plane_a_g - 16) * weight_a_cur) >> 6) : 0;
-			const int32_t weighted_a_b = (plane_a_b > 16) ? (((plane_a_b - 16) * weight_a_cur) >> 6) : 0;
-			const int32_t weighted_b_r = ((plane_b_r > 16) ? (((plane_b_r - 16) * weight_b_cur) >> 6) : 0) + weighted_a_r;
-			const int32_t weighted_b_g = ((plane_b_g > 16) ? (((plane_b_g - 16) * weight_b_cur) >> 6) : 0) + weighted_a_g;
-			const int32_t weighted_b_b = ((plane_b_b > 16) ? (((plane_b_b - 16) * weight_b_cur) >> 6) : 0) + weighted_a_b;
-			const uint8_t out_r = (weighted_b_r > 255) ? 255 : (uint8_t)weighted_b_r;
-			const uint8_t out_g = (weighted_b_g > 255) ? 255 : (uint8_t)weighted_b_g;
-			const uint8_t out_b = (weighted_b_b > 255) ? 255 : (uint8_t)weighted_b_b;
-			*out++ = 0xff000000 | (out_r << 16) | (out_g << 8) | out_b;
-		}
-	}
-	else
+	for (int x = 0; x < width; x++)
 	{
-		for (int x = 0; x < width; x++, weight_a++, transparent_a++, weight_b++, transparent_b++)
+		if (transparent_a[x] && transparent_b[x])
 		{
-			if (OrderAB)
-			{
-				if (!(*transparent_a))
-				{
-					const uint32_t plane_a_cur = MosaicA ? plane_a[x - (x % mosaic_count_a)] : plane_a[x];
-					const uint8_t weight_a_cur = *weight_a;
-					const int32_t plane_a_r = (int32_t)(uint8_t)(plane_a_cur >> 16);
-					const int32_t plane_a_g = (int32_t)(uint8_t)(plane_a_cur >> 8);
-					const int32_t plane_a_b = (int32_t)(uint8_t)plane_a_cur;
-					const uint8_t weighted_a_r = std::clamp(((plane_a_r > 16) ? (((plane_a_r - 16) * weight_a_cur) >> 6) : 0) + 16, 0, 255);
-					const uint8_t weighted_a_g = std::clamp(((plane_a_g > 16) ? (((plane_a_g - 16) * weight_a_cur) >> 6) : 0) + 16, 0, 255);
-					const uint8_t weighted_a_b = std::clamp(((plane_a_b > 16) ? (((plane_a_b - 16) * weight_a_cur) >> 6) : 0) + 16, 0, 255);
-					*out++ = 0xff000000 | (weighted_a_r << 16) | (weighted_a_g << 8) | weighted_a_b;
-				}
-				else if (!(*transparent_b))
-				{
-					const uint32_t plane_b_cur = MosaicB ? plane_b[x - (x % mosaic_count_b)] : plane_b[x];
-					const uint8_t weight_b_cur = *weight_b;
-					const int32_t plane_b_r = (int32_t)(uint8_t)(plane_b_cur >> 16);
-					const int32_t plane_b_g = (int32_t)(uint8_t)(plane_b_cur >> 8);
-					const int32_t plane_b_b = (int32_t)(uint8_t)plane_b_cur;
-					const uint8_t weighted_b_r = std::clamp(((plane_b_r > 16) ? (((plane_b_r - 16) * weight_b_cur) >> 6) : 0) + 16, 0, 255);
-					const uint8_t weighted_b_g = std::clamp(((plane_b_g > 16) ? (((plane_b_g - 16) * weight_b_cur) >> 6) : 0) + 16, 0, 255);
-					const uint8_t weighted_b_b = std::clamp(((plane_b_b > 16) ? (((plane_b_b - 16) * weight_b_cur) >> 6) : 0) + 16, 0, 255);
-					*out++ = 0xff000000 | (weighted_b_r << 16) | (weighted_b_g << 8) | weighted_b_b;
-				}
-				else
-				{
-					*out++ = backdrop;
-				}
-			}
-			else
-			{
-				if (!(*transparent_b))
-				{
-					const uint32_t plane_b_cur = MosaicB ? plane_b[x - (x % mosaic_count_b)] : plane_b[x];
-					const uint8_t weight_b_cur = *weight_b;
-					const int32_t plane_b_r = (int32_t)(uint8_t)(plane_b_cur >> 16);
-					const int32_t plane_b_g = (int32_t)(uint8_t)(plane_b_cur >> 8);
-					const int32_t plane_b_b = (int32_t)(uint8_t)plane_b_cur;
-					const uint8_t weighted_b_r = std::clamp(((plane_b_r > 16) ? (((plane_b_r - 16) * weight_b_cur) >> 6) : 0) + 16, 0, 255);
-					const uint8_t weighted_b_g = std::clamp(((plane_b_g > 16) ? (((plane_b_g - 16) * weight_b_cur) >> 6) : 0) + 16, 0, 255);
-					const uint8_t weighted_b_b = std::clamp(((plane_b_b > 16) ? (((plane_b_b - 16) * weight_b_cur) >> 6) : 0) + 16, 0, 255);
-					*out++ = 0xff000000 | (weighted_b_r << 16) | (weighted_b_g << 8) | weighted_b_b;
-				}
-				else if (!(*transparent_a))
-				{
-					const uint32_t plane_a_cur = MosaicA ? plane_a[x - (x % mosaic_count_a)] : plane_a[x];
-					const uint8_t weight_a_cur = *weight_a;
-					const int32_t plane_a_r = (int32_t)(uint8_t)(plane_a_cur >> 16);
-					const int32_t plane_a_g = (int32_t)(uint8_t)(plane_a_cur >> 8);
-					const int32_t plane_a_b = (int32_t)(uint8_t)plane_a_cur;
-					const uint8_t weighted_a_r = std::clamp(((plane_a_r > 16) ? (((plane_a_r - 16) * weight_a_cur) >> 6) : 0) + 16, 0, 255);
-					const uint8_t weighted_a_g = std::clamp(((plane_a_g > 16) ? (((plane_a_g - 16) * weight_a_cur) >> 6) : 0) + 16, 0, 255);
-					const uint8_t weighted_a_b = std::clamp(((plane_a_b > 16) ? (((plane_a_b - 16) * weight_a_cur) >> 6) : 0) + 16, 0, 255);
-					*out++ = 0xff000000 | (weighted_a_r << 16) | (weighted_a_g << 8) | weighted_a_b;
-				}
-				else
-				{
-					*out++ = backdrop;
-				}
-			}
+			out[x] = get_backdrop_plane();
+			continue;
 		}
+		uint32_t plane_a_cur = MosaicA ? plane_a[x - (x % mosaic_count_a)] : plane_a[x];
+		uint32_t plane_b_cur = MosaicB ? plane_b[x - (x % mosaic_count_b)] : plane_b[x];
+
+		if (transparent_a[x])
+		{
+			plane_a_cur = 0;
+		}
+		else if (OrderAB && (m_transparency_control & TCR_DISABLE_MX))
+		{
+			plane_b_cur = 0;
+		}
+
+		if (transparent_b[x])
+		{
+			plane_b_cur = 0;
+		}
+		else if (!OrderAB && (m_transparency_control & TCR_DISABLE_MX))
+		{
+			plane_a_cur = 0;
+		}
+
+		const int32_t plane_a_r = 0xff & (plane_a_cur >> 16);
+		const int32_t plane_a_g = 0xff & (plane_a_cur >> 8);
+		const int32_t plane_a_b = 0xff & plane_a_cur;
+		const int32_t plane_b_r = 0xff & (plane_b_cur >> 16);
+		const int32_t plane_b_g = 0xff & (plane_b_cur >> 8);
+		const int32_t plane_b_b = 0xff & plane_b_cur;
+
+		const int32_t weighted_a_r = std::clamp((std::clamp(plane_a_r - 16, 0, 255) * weight_a[x]) >> 6, 0, 255);
+		const int32_t weighted_a_g = std::clamp((std::clamp(plane_a_g - 16, 0, 255) * weight_a[x]) >> 6, 0, 255);
+		const int32_t weighted_a_b = std::clamp((std::clamp(plane_a_b - 16, 0, 255) * weight_a[x]) >> 6, 0, 255);
+
+		const int32_t weighted_b_r = std::clamp((std::clamp(plane_b_r - 16, 0, 255) * weight_b[x]) >> 6, 0, 255);
+		const int32_t weighted_b_g = std::clamp((std::clamp(plane_b_g - 16, 0, 255) * weight_b[x]) >> 6, 0, 255);
+		const int32_t weighted_b_b = std::clamp((std::clamp(plane_b_b - 16, 0, 255) * weight_b[x]) >> 6, 0, 255);
+
+		const uint8_t out_r = std::clamp(weighted_a_r + weighted_b_r + 16, 0, 255);
+		const uint8_t out_g = std::clamp(weighted_a_g + weighted_b_g + 16, 0, 255);
+		const uint8_t out_b = std::clamp(weighted_a_b + weighted_b_b + 16, 0, 255);
+		out[x] = 0xff000000 | (out_r << 16) | (out_g << 8) | out_b;
 	}
 
 	if (border_width)
 	{
-		std::fill_n(out, border_width, 0xff101010);
+		std::fill_n(&out[width], border_width, s_4bpp_color[0]);
 	}
 }
 
 void mcd212_device::draw_cursor(uint32_t *scanline)
 {
-	if (m_cursor_control & CURCNT_EN)
+	if (!(m_cursor_control & CURCNT_EN))
+		return; // Cursor is Disabled
+
+	uint8_t color_index = m_cursor_control & CURCNT_COLOR;
+	if (m_blink_active)
 	{
-		uint16_t y = (uint16_t)screen().vpos();
-		const uint16_t cursor_x =  m_cursor_position & 0x3ff;
-		const uint16_t cursor_y = ((m_cursor_position >> 12) & 0x3ff) + m_ica_height;
-		if (y >= cursor_y && y < (cursor_y + 16))
+		const bool invert = BIT(m_cursor_control, CURCNT_BLKC_SHIFT);
+		if (!invert)
+			return; // Normal Blink
+		else
+			color_index = color_index ^ 0x7; // Inverted Color Blink. MCD212 Section 7.5
+	}
+
+	const uint16_t cursor_x = m_cursor_position & 0x3ff;
+	const uint16_t cursor_y = ((m_cursor_position >> 12) & 0x3ff) + m_ica_height;
+	const int32_t y = screen().vpos() - cursor_y;
+	const int width = get_screen_width();
+
+	if ((0 <= y) && (y < 16))
+	{
+		const uint32_t color = s_4bpp_color[color_index];
+		const uint8_t resolution = (m_cursor_control & CURCNT_CUW) ? 1 : 2;
+		for (int x = 0; x < 16; x++)
 		{
-			const int width = get_screen_width();
-			uint32_t color = s_4bpp_color[m_cursor_control & CURCNT_COLOR];
-			y -= cursor_y;
-			if (m_cursor_control & CURCNT_CUW)
+			if (BIT(m_cursor_pattern[y], 15 - x))
 			{
-				for (int x = cursor_x; x < cursor_x + 64 && x < width; x++)
+				for (uint32_t j = 0; j < resolution; j++)
 				{
-					if (m_cursor_pattern[y] & (1 << (15 - ((x - cursor_x) >> 2))))
-					{
-						scanline[x++] = color;
-						scanline[x++] = color;
-						scanline[x++] = color;
-						scanline[x] = color;
-					}
-				}
-			}
-			else
-			{
-				for (int x = cursor_x; x < cursor_x + 32 && x < width; x++)
-				{
-					if (m_cursor_pattern[y] & (1 << (15 - ((x - cursor_x) >> 1))))
-					{
-						scanline[x++] = color;
-						scanline[x] = color;
-					}
+					const uint32_t index = cursor_x + x * resolution + j;
+					if (index < width)
+						scanline[index] = color;
 				}
 			}
 		}
@@ -774,51 +779,61 @@ void mcd212_device::map(address_map &map)
 
 uint8_t mcd212_device::csr1_r()
 {
+	LOGMASKED(LOG_STATUS, "%s: Control/Status Register 1 Read: %02x\n", machine().describe_context(), m_csrr[0]);
 	return m_csrr[0];
 }
 
 void mcd212_device::csr1_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_WRITES, "%s: Control/Status Register 1 Write: %04x & %08x\n", machine().describe_context(), data, mem_mask);
 	COMBINE_DATA(&m_csrw[0]);
 }
 
 uint16_t mcd212_device::dcr1_r(offs_t offset, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_READS, "%s: Display Command Register 1 Read: %04x & %08x\n", machine().describe_context(), m_dcr[0], mem_mask);
 	return m_dcr[0];
 }
 
 void mcd212_device::dcr1_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_WRITES, "%s: Display Command Register 1 Write: %04x & %08x\n", machine().describe_context(), data, mem_mask);
 	COMBINE_DATA(&m_dcr[0]);
 }
 
 uint16_t mcd212_device::vsr1_r(offs_t offset, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_READS, "%s: Video Start Register 1 Read: %04x & %08x\n", machine().describe_context(), m_vsr[0], mem_mask);
 	return m_vsr[0];
 }
 
 void mcd212_device::vsr1_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_WRITES, "%s: Video Start Register 1 Write: %04x & %08x\n", machine().describe_context(), data, mem_mask);
 	COMBINE_DATA(&m_vsr[0]);
 }
 
 uint16_t mcd212_device::ddr1_r(offs_t offset, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_READS, "%s: Display Decoder Register 1 Read: %04x & %08x\n", machine().describe_context(), m_ddr[0], mem_mask);
 	return m_ddr[0];
 }
 
 void mcd212_device::ddr1_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_WRITES, "%s: Display Decoder Register 1 Write: %04x & %08x\n", machine().describe_context(), data, mem_mask);
 	COMBINE_DATA(&m_ddr[0]);
 }
 
 uint16_t mcd212_device::dca1_r(offs_t offset, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_READS, "%s: DCA Pointer 1 Read: %04x & %08x\n", machine().describe_context(), m_dca[0], mem_mask);
 	return m_dca[0];
 }
 
 void mcd212_device::dca1_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_WRITES, "%s: DCA Pointer 1 Write: %04x & %08x\n", machine().describe_context(), data, mem_mask);
 	COMBINE_DATA(&m_dca[0]);
 }
 
@@ -830,6 +845,7 @@ uint8_t mcd212_device::csr2_r()
 	}
 
 	const uint8_t data = m_csrr[1];
+	LOGMASKED(LOG_STATUS, "%s: Status Register 2: %02x\n", machine().describe_context(), data);
 
 	m_csrr[1] &= ~(CSR2R_IT1 | CSR2R_IT2);
 	if (data & (CSR2R_IT1 | CSR2R_IT2))
@@ -840,46 +856,55 @@ uint8_t mcd212_device::csr2_r()
 
 void mcd212_device::csr2_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_WRITES, "%s: Control/Status Register 2 Write: %04x & %08x\n", machine().describe_context(), data, mem_mask);
 	COMBINE_DATA(&m_csrw[1]);
 }
 
 uint16_t mcd212_device::dcr2_r(offs_t offset, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_READS, "%s: Display Command Register 2 Read: %04x & %08x\n", machine().describe_context(), m_dcr[1], mem_mask);
 	return m_dcr[1];
 }
 
 void mcd212_device::dcr2_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_WRITES, "%s: Display Command Register 2 Write: %04x & %08x\n", machine().describe_context(), data, mem_mask);
 	COMBINE_DATA(&m_dcr[1]);
 }
 
 uint16_t mcd212_device::vsr2_r(offs_t offset, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_READS, "%s: Video Start Register 2 Read: %04x & %08x\n", machine().describe_context(), m_vsr[1], mem_mask);
 	return m_vsr[1];
 }
 
 void mcd212_device::vsr2_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_WRITES, "%s: Video Start Register 2 Write: %04x & %08x\n", machine().describe_context(), data, mem_mask);
 	COMBINE_DATA(&m_vsr[1]);
 }
 
 uint16_t mcd212_device::ddr2_r(offs_t offset, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_READS, "%s: Display Decoder Register 2 Read: %04x & %08x\n", machine().describe_context(), m_ddr[1], mem_mask);
 	return m_ddr[1];
 }
 
 void mcd212_device::ddr2_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_WRITES, "%s: Display Decoder Register 2 Write: %04x & %08x\n", machine().describe_context(), data, mem_mask);
 	COMBINE_DATA(&m_ddr[1]);
 }
 
 uint16_t mcd212_device::dca2_r(offs_t offset, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_READS, "%s: DCA Pointer 2 Read: %04x & %08x\n", machine().describe_context(), m_dca[1], mem_mask);
 	return m_dca[1];
 }
 
 void mcd212_device::dca2_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
+	LOGMASKED(LOG_MAIN_REG_WRITES, "%s: DCA Pointer 2 Write: %04x & %08x\n", machine().describe_context(), data, mem_mask);
 	COMBINE_DATA(&m_dca[1]);
 }
 
@@ -899,6 +924,21 @@ TIMER_CALLBACK_MEMBER(mcd212_device::ica_tick)
 		m_dca[1] = get_dcp<1>();
 
 	m_ica_timer->adjust(screen().time_until_pos(0, 0));
+
+	// Cursor Blink
+	m_blink_time += 5 + BIT(m_dcr[0], DCR_FD_BIT); // FD bit * 8... Page 4-3 MCD
+	// Adjust the blink time once per frame
+	if (!m_blink_active && (m_blink_time >= ((m_cursor_control & CURCNT_CON) >> CURCNT_CON_SHIFT) * 60))
+	{
+		m_blink_active = true;
+		m_blink_time = 0;
+	}
+	// If blink off time is 0, immediately turn back on.
+	if (m_blink_active && (m_blink_time >= ((m_cursor_control & CURCNT_COF) >> CURCNT_COF_SHIFT) * 60))
+	{
+		m_blink_active = false;
+		m_blink_time = 0;
+	}
 }
 
 TIMER_CALLBACK_MEMBER(mcd212_device::dca_tick)
@@ -925,7 +965,7 @@ uint32_t mcd212_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 
 	int scanline = screen.vpos();
 
-	// Process VSR and mix if we're in the visible matte
+	// Process VSR and mix if we're in the visible region
 	if (scanline >= m_ica_height)
 	{
 		uint32_t *out = &bitmap.pix(scanline);
@@ -936,7 +976,7 @@ uint32_t mcd212_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 			// If PAL and 'Standard' bit set, insert a 20-line border on the top/bottom
 			if ((scanline - m_ica_height < 20) || (scanline >= (m_total_height - 20)))
 			{
-				std::fill_n(out, 768, 0xff101010);
+				std::fill_n(out, 768, s_4bpp_color[0]);
 				draw_line = false;
 			}
 		}
@@ -948,7 +988,7 @@ uint32_t mcd212_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 			// If PAL and 'Standard' bit set, insert a 24px border on the left/right
 			if (!BIT(m_dcr[0], DCR_CF_BIT) || BIT(m_csrw[0], CSR1W_ST_BIT))
 			{
-				std::fill_n(out, 24, 0xff101010);
+				std::fill_n(out, 24, s_4bpp_color[0]);
 				out += 24;
 			}
 
@@ -1032,7 +1072,7 @@ int mcd212_device::ram_dtack_cycle_count()
 		return 2;
 
 	// System access is restricted to the last 5 out of every 16 CLKs.
-	const int slot_cycle = (int)(machine().time().as_ticks(clock()) & 0xf);
+	const int slot_cycle = int(machine().time().as_ticks(clock()) & 0xf);
 	if (slot_cycle >= 11)
 		return 2;
 
@@ -1077,6 +1117,7 @@ void mcd212_device::device_reset()
 
 	m_ica_height = 32;
 	m_total_height = 312;
+	m_blink_time = 0;
 
 	m_int_callback(CLEAR_LINE);
 
@@ -1111,12 +1152,10 @@ void mcd212_device::device_start()
 		m_delta_uv_lut[d] = s_dyuv_deltas[d >> 4];
 	}
 
-	for (int16_t sw = 0; sw < 0x100; sw++)
+	for (uint16_t w = 0; w < 0x300; w++)
 	{
-		m_dyuv_u_to_b[sw] = (444 * (sw - 128)) / 256;
-		m_dyuv_u_to_g[sw] = - (86 * (sw - 128)) / 256;
-		m_dyuv_v_to_g[sw] = - (179 * (sw - 128)) / 256;
-		m_dyuv_v_to_r[sw] = (351 * (sw - 128)) / 256;
+		const uint8_t limit = (w < 0x100) ? 0 : (w < 0x200) ? (w - 0x100) : 0xff;
+		m_dyuv_limit_lut[w] = limit;
 	}
 
 	for (int16_t sw = 0; sw < 0x100; sw++)
@@ -1127,10 +1166,6 @@ void mcd212_device::device_start()
 		m_dyuv_v_to_r[sw] = (351 * (sw - 128)) / 256;
 	}
 
-	save_item(NAME(m_matte_flag[0]));
-	save_item(NAME(m_matte_flag[1]));
-	save_item(NAME(m_ica_height));
-	save_item(NAME(m_total_height));
 	save_item(NAME(m_csrr));
 	save_item(NAME(m_csrw));
 	save_item(NAME(m_dcr));
@@ -1154,6 +1189,13 @@ void mcd212_device::device_start()
 	save_item(NAME(m_mosaic_hold));
 	save_item(NAME(m_weight_factor[0]));
 	save_item(NAME(m_weight_factor[1]));
+
+	save_item(NAME(m_matte_flag));
+	save_item(NAME(m_ica_height));
+	save_item(NAME(m_total_height));
+
+	save_item(NAME(m_blink_time));
+	save_item(NAME(m_blink_active));
 
 	m_dca_timer = machine().scheduler().timer_alloc(timer_expired_delegate(FUNC(mcd212_device::dca_tick), this));
 	m_dca_timer->adjust(attotime::never);
