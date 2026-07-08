@@ -56,8 +56,10 @@ public:
 
 protected:
 	// device_t implementation
-	virtual void device_start() override ATTR_COLD;
-	virtual void device_reset() override ATTR_COLD;
+	// device-level overrides
+	virtual void device_resolve_objects() override;
+	virtual void device_start() override;
+	virtual void device_reset() override;
 
 	TIMER_CALLBACK_MEMBER(ica_tick);
 	TIMER_CALLBACK_MEMBER(dca_tick);
