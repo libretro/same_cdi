@@ -27,10 +27,16 @@ public:
 private:
 	void refresh() override
 	{
+
 		m_pos_size = osd_rect(0,0, fb_width, fb_height);
 		m_usuable_pos_size = osd_rect(0,0, fb_width, fb_height);
 		m_is_primary = (oshandle() == 0);
+
+	if(alternate_renderer==false)
+		set_aspect(retro_aspect);
+		//printf("refreshmonitor  (%d x %d) a:%f\n", fb_width, fb_height,retro_aspect);
 	}
+
 };
 
 //============================================================
@@ -82,29 +88,52 @@ public:
 protected:
 	int init_internal(const osd_options& options) override
 	{
-		int i;
-
-		for (i = 0; i < 1; i++)
+		// make a list of monitors
 		{
-			char temp[64];
-			snprintf(temp, sizeof(temp) - 1, "%s%d", OSDOPTION_SCREEN, i);
+			int i;
 
-			// allocate a new monitor info
-			std::shared_ptr<osd_monitor_info> monitor = std::make_shared<retro_monitor_info>(*this, i, temp, 1.0f);
+			osd_printf_verbose("Enter init_monitors\n");
 
-			// guess the aspect ratio assuming square pixels
-			monitor->set_aspect(static_cast<float>(monitor->position_size().width()) / static_cast<float>(monitor->position_size().height()));
+			for (i = 0; i < 1; i++)
+			{
+				char temp[64];
+				snprintf(temp, sizeof(temp) - 1, "%s%d", OSDOPTION_SCREEN, i);
 
-			// hook us into the list
-			add_monitor(monitor);
+				// allocate a new monitor info
+				std::shared_ptr<osd_monitor_info> monitor = std::make_shared<retro_monitor_info>(*this, i, temp, 1.0f);
+
+				osd_printf_verbose("Adding monitor %s (%d x %d)\n", monitor->devicename().c_str(),
+				monitor->position_size().width(), monitor->position_size().height());
+
+				// guess the aspect ratio assuming square pixels
+				monitor->set_aspect(static_cast<float>(monitor->position_size().width()) / static_cast<float>(monitor->position_size().height()));
+printf("Adding monitor %s (%d x %d) a:%f\n", monitor->devicename().c_str(),
+				monitor->position_size().width(), monitor->position_size().height(),(float)monitor->position_size().width()/(float) monitor->position_size().height());
+
+				// hook us into the list
+				add_monitor(monitor);
+			}
 		}
+		osd_printf_verbose("Leave init_monitors\n");
 
 		return 0;
 	}
 
 private:
+/*
+		sdl.h = osd.height();
+		sdl.w = osd.width();
+		sdl.x = osd.left();
+		sdl.y = osd.top();
+
+*/
 	static int compute_intersection(const osd_rect &rect1, const osd_rect &rect2)
 	{
+/*
+		SDL_Rect intersection;
+		if (SDL_IntersectRect(&sdl1, &sdl2, &intersection))
+			return intersection.w + intersection.h;
+*/
 		return 0;
 	}
 };
