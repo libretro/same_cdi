@@ -309,6 +309,7 @@ void cdi_state::cdimono1_base(machine_config &config)
 
 	CDI_SLAVE_HLE(config, m_slave_hle, 0);
 	m_slave_hle->int_callback().set(m_maincpu, FUNC(scc68070_device::in2_w));
+	m_slave_hle->atten_callback().set(m_cdic, FUNC(cdicdic_device::atten_w));
 
 	/* sound hardware */
 	SPEAKER(config, "lspeaker").front_left();
