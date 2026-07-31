@@ -311,7 +311,7 @@
 /*
 @@ LUA_COMPAT_BITLIB controls the presence of library 'bit32'.
 */
-#define LUA_COMPAT_BITLIB
+#define LUA_COMPAT_BITLIB 1
 
 /*
 @@ LUA_COMPAT_IPAIRS controls the effectiveness of the __ipairs metamethod.
