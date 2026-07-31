@@ -100,6 +100,21 @@ function opt_tool(hash, entry)
    return hash[entry]
 end
 
+local android = {}
+
+function androidToolchainRoot()
+	if android.toolchainRoot == nil then
+		local hostTags = {
+			windows = "windows-x86_64",
+			linux   = "linux-x86_64",
+			macosx  = "darwin-x86_64"
+		}
+		android.toolchainRoot = (os.getenv("ANDROID_NDK_HOME") or "") .. "/toolchains/llvm/prebuilt/" .. hostTags[os.get()]
+	end
+
+	return android.toolchainRoot;
+end
+
 CPUS = {}
 SOUNDS  = {}
 MACHINES  = {}
@@ -1042,10 +1057,10 @@ end
 
 		local version = str_to_version(_OPTIONS["gcc_version"])
 		if string.find(_OPTIONS["gcc"], "clang") or string.find(_OPTIONS["gcc"], "asmjs") or string.find(_OPTIONS["gcc"], "android") then
-			if (version < 60000) then
-				print("Clang version 6.0 or later needed")
-				os.exit(-1)
-			end
+--			if (version < 60000) then
+--				print("Clang version 6.0 or later needed")
+--				os.exit(-1)
+--			end
 			buildoptions {
 				"-fdiagnostics-show-note-include-stack",
 				"-Wno-cast-align",
