@@ -165,6 +165,57 @@ void retro_set_environment(retro_environment_t cb)
    sprintf(option_mame_paths, "%s_%s", core, "mame_paths_enable");
    sprintf(option_mame_4way, "%s_%s", core, "mame_4way_enable");
 
+   static struct retro_core_option_v2_category option_categories[] = {
+      { "system", "System", NULL },
+      { "video", "Video", NULL },
+      //{ "audio", "Audio", NULL },
+      { "input", "Input", NULL },
+      { "advanced", "Advanced", NULL },
+      { NULL, NULL, NULL },
+   };
+
+   static struct retro_core_option_v2_definition option_defs_v2[] = {
+       {option_read_config, "Read configuration", NULL, NULL, NULL, "system", {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_write_config, "Write configuration", NULL, NULL, NULL, "system", {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_saves, "Save state naming", NULL, NULL, NULL, "system", {{"game", NULL}, {"system", NULL}, {NULL, NULL}}, "game"},
+       {option_nvram_saves, "NVRAM Saves per game", NULL, NULL, NULL, "system", {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "enabled"},
+       {option_auto_save, "Auto save/load states", NULL, NULL, NULL, "system", {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_cli, "Boot from CLI", NULL, NULL, NULL, "system", {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_mame_paths, "MAME INI Paths", NULL, NULL, NULL, "system", {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_renderer, "Alternate render method", NULL, NULL, NULL, "video", {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_res, "Resolution", NULL, NULL, NULL, "video", {{"640x360", NULL}, {"640x480", NULL}, {"800x600", NULL}, {"800x450", NULL}, {"960x720", NULL}, {"960x540", NULL}, {"1024x768", NULL}, {"1024x576", NULL}, {"1280x960", NULL}, {"1280x720", NULL}, {"1600x1200", NULL}, {"1600x900", NULL}, {"1440x1080", NULL}, {"1920x1080", NULL}, {"1920x1440", NULL}, {"2560x1440", NULL}, {"2880x2160", NULL}, {"3840x2160", NULL}, {NULL, NULL}}, "640x480"},
+       {option_mouse, "Enable in-game mouse", NULL, NULL, NULL, "input", {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_lightgun, "Lightgun mode", NULL, NULL, NULL, "input", {{"none", NULL}, {"touchscreen", NULL}, {"lightgun", NULL}, {NULL, NULL}}, "none"},
+       {option_buttons_profiles, "Profile Buttons according to games (Restart)", NULL, NULL, NULL, "input", {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "enabled"},
+       {option_mame_4way, "MAME Joystick 4-way simulation", NULL, NULL, NULL, "input", {{"disabled", NULL}, {"4way", NULL}, {"strict", NULL}, {"qbert", NULL}, {NULL, NULL}}, "disabled"},
+       {option_throttle, "Enable throttle", NULL, NULL, NULL, "advanced", {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_cheats, "Enable cheats", NULL, NULL, NULL, "advanced", {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_overclock, "Main CPU Overclock", NULL, NULL, NULL, "advanced", {{"default", NULL}, {"30", NULL}, {"31", NULL}, {"32", NULL}, {"33", NULL}, {"34", NULL}, {"35", NULL}, {"36", NULL}, {"37", NULL}, {"38", NULL}, {"39", NULL}, {"40", NULL}, {"41", NULL}, {"42", NULL}, {"43", NULL}, {"44", NULL}, {"45", NULL}, {"46", NULL}, {"47", NULL}, {"48", NULL}, {"49", NULL}, {"50", NULL}, {"51", NULL}, {"52", NULL}, {"53", NULL}, {"54", NULL}, {"55", NULL}, {"60", NULL}, {"65", NULL}, {"70", NULL}, {"75", NULL}, {"80", NULL}, {"85", NULL}, {"90", NULL}, {"95", NULL}, {"100", NULL}, {"105", NULL}, {"110", NULL}, {"115", NULL}, {"120", NULL}, {"125", NULL}, {"130", NULL}, {"135", NULL}, {"140", NULL}, {"145", NULL}, {"150", NULL}, {NULL, NULL}}, "default"},
+       {NULL, NULL, NULL, NULL, NULL, NULL, {{0}}, NULL},
+   };
+
+   static struct retro_core_options_v2 options_v2 = {option_categories, option_defs_v2};
+
+   static struct retro_core_option_definition option_defs[] = {
+       {option_read_config, "Read configuration", NULL, {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_write_config, "Write configuration", NULL, {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_saves, "Save state naming", NULL, {{"game", NULL}, {"system", NULL}, {NULL, NULL}}, "game"},
+       {option_nvram_saves, "NVRAM Saves per game", NULL, {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "enabled"},
+       {option_auto_save, "Auto save/load states", NULL, {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_cli, "Boot from CLI", NULL, {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_mame_paths, "MAME INI Paths", NULL, {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_renderer, "Alternate render method", NULL, {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_res, "Resolution", NULL, {{"640x360", NULL}, {"640x480", NULL}, {"800x600", NULL}, {"800x450", NULL}, {"960x720", NULL}, {"960x540", NULL}, {"1024x768", NULL}, {"1024x576", NULL}, {"1280x960", NULL}, {"1280x720", NULL}, {"1600x1200", NULL}, {"1600x900", NULL}, {"1440x1080", NULL}, {"1920x1080", NULL}, {"1920x1440", NULL}, {"2560x1440", NULL}, {"2880x2160", NULL}, {"3840x2160", NULL}, {NULL, NULL}}, "640x480"},
+       {option_mouse, "Enable in-game mouse", NULL, {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_lightgun, "Lightgun mode", NULL, {{"none", NULL}, {"touchscreen", NULL}, {"lightgun", NULL}, {NULL, NULL}}, "none"},
+       {option_buttons_profiles, "Profile Buttons according to games (Restart)", NULL, {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "enabled"},
+       {option_mame_4way, "MAME Joystick 4-way simulation", NULL, {{"disabled", NULL}, {"4way", NULL}, {"strict", NULL}, {"qbert", NULL}, {NULL, NULL}}, "disabled"},
+       {option_throttle, "Enable throttle", NULL, {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_cheats, "Enable cheats", NULL, {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
+       {option_overclock, "Main CPU Overclock", NULL, {{"default", NULL}, {"30", NULL}, {"31", NULL}, {"32", NULL}, {"33", NULL}, {"34", NULL}, {"35", NULL}, {"36", NULL}, {"37", NULL}, {"38", NULL}, {"39", NULL}, {"40", NULL}, {"41", NULL}, {"42", NULL}, {"43", NULL}, {"44", NULL}, {"45", NULL}, {"46", NULL}, {"47", NULL}, {"48", NULL}, {"49", NULL}, {"50", NULL}, {"51", NULL}, {"52", NULL}, {"53", NULL}, {"54", NULL}, {"55", NULL}, {"60", NULL}, {"65", NULL}, {"70", NULL}, {"75", NULL}, {"80", NULL}, {"85", NULL}, {"90", NULL}, {"95", NULL}, {"100", NULL}, {"105", NULL}, {"110", NULL}, {"115", NULL}, {"120", NULL}, {"125", NULL}, {"130", NULL}, {"135", NULL}, {"140", NULL}, {"145", NULL}, {"150", NULL}, {NULL, NULL}}, "default"},
+       {NULL, NULL, NULL, {{0}}, NULL},
+   };
+
    static const struct retro_variable vars[] = {
     { option_read_config, "Read configuration; disabled|enabled" },
     { option_write_config, "Write configuration; disabled|enabled" },
@@ -195,7 +246,17 @@ void retro_set_environment(retro_environment_t cb)
 
    environ_cb = cb;
 
-   cb(RETRO_ENVIRONMENT_SET_VARIABLES, (void*)vars);
+   unsigned options_version = 0;
+
+   if (!cb(RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION, &options_version))
+      options_version = 0;
+
+   if (options_version >= 2)
+      cb(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_V2, (void*)&options_v2);
+   else if (options_version >= 1)
+      cb(RETRO_ENVIRONMENT_SET_CORE_OPTIONS, (void*)option_defs);
+   else
+      cb(RETRO_ENVIRONMENT_SET_VARIABLES, (void*)vars);
 }
 
 static void update_runtime_variables(void)
