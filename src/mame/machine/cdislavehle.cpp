@@ -240,14 +240,18 @@ void cdislave_hle_device::slave_w(offs_t offset, uint16_t data)
 			}
 			break;
 		case 2:
-			if (m_in_index)
+			if (m_in_index > 1)
 			{
-				m_in_buf[m_in_index] = data & 0x00ff;
-				m_in_index++;
 				if (m_in_index == m_in_count)
 				{
 					switch (m_in_buf[0])
 					{
+						case 0xc0: case 0xc1: case 0xc2: case 0xc3: case 0xc4: case 0xc5: case 0xc6: case 0xc7:
+						case 0xc8: case 0xc9: case 0xca: case 0xcb: case 0xcc: case 0xcd: case 0xce: case 0xcf:
+							m_atten_w((((u32)m_in_buf[1]) << 24) | (((u32)m_in_buf[2]) << 16) | (((u32)m_in_buf[3]) << 8) | (((u32)m_in_buf[4])));
+							m_in_index = 0;
+							m_in_count = 0;
+							break;
 						case 0xf0: // Set Front Panel LCD
 							memset(m_in_buf + 1, 0, 16);
 							m_in_count = 17;
@@ -262,12 +266,11 @@ void cdislave_hle_device::slave_w(offs_t offset, uint16_t data)
 			}
 			else
 			{
-				m_in_buf[m_in_index] = data & 0x00ff;
-				m_in_index++;
 				switch (data & 0x00ff)
 				{
 					case 0x82: // Mute Audio
 					{
+						LOGMASKED(LOG_COMMANDS, "slave_w: Channel %d: Mute Audio (0x82)\n", offset);
 						m_dmadac[0]->set_volume(0);
 						m_dmadac[1]->set_volume(0);
 						m_in_index = 0;
@@ -277,16 +280,24 @@ void cdislave_hle_device::slave_w(offs_t offset, uint16_t data)
 					}
 					case 0x83: // Unmute Audio
 					{
+						LOGMASKED(LOG_COMMANDS, "slave_w: Channel %d: Unmute Audio (0x83)\n", offset);
 						m_dmadac[0]->set_volume(0x100);
 						m_dmadac[1]->set_volume(0x100);
 						m_in_index = 0;
 						m_in_count = 0;
 						break;
 					}
+					case 0xc0: case 0xc1: case 0xc2: case 0xc3: case 0xc4: case 0xc5: case 0xc6: case 0xc7:
+					case 0xc8: case 0xc9: case 0xca: case 0xcb: case 0xcc: case 0xcd: case 0xce: case 0xcf:
+						LOGMASKED(LOG_COMMANDS, "slave_w: Channel %d: Set Attenuation Audio\n", offset);
+						m_in_count = 5;
+						break;
 					case 0xf0: // Set Front Panel LCD
+						LOGMASKED(LOG_COMMANDS, "slave_w: Channel %d: Set Front Panel LCD (0xf0)\n", offset);
 						m_in_count = 17;
 						break;
 					default:
+						LOGMASKED(LOG_COMMANDS | LOG_UNKNOWNS, "slave_w: Channel %d: Unknown register: %02x\n", offset, data & 0x00ff);
 						memset(m_in_buf, 0, 17);
 						m_in_index = 0;
 						m_in_count = 0;
@@ -385,6 +396,7 @@ cdislave_hle_device::cdislave_hle_device(const machine_config &mconfig, const ch
 	, m_mousex(*this, "MOUSEX")
 	, m_mousey(*this, "MOUSEY")
 	, m_mousebtn(*this, "MOUSEBTN")
+	, m_atten_w(*this)
 {
 }
 

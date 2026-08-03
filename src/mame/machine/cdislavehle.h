@@ -34,6 +34,7 @@ public:
 	// construction/destruction
 	cdislave_hle_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
+	auto atten_callback() { return m_atten_w.bind(); }
 	auto int_callback() { return m_int_callback.bind(); }
 
 	// external callbacks
@@ -43,6 +44,7 @@ public:
 
 	uint16_t slave_r(offs_t offset);
 	void slave_w(offs_t offset, uint16_t data);
+	void slave_w_mouse(offs_t offset, uint16_t data);
 
 protected:
 	// device-level overrides
@@ -61,6 +63,7 @@ private:
 	devcb_write_line m_int_callback;
 
 	required_device_array<dmadac_sound_device, 2> m_dmadac;
+	devcb_write32 m_atten_w;
 
 	required_ioport m_mousex;
 	required_ioport m_mousey;

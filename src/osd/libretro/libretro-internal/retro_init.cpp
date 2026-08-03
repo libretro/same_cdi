@@ -82,7 +82,7 @@ static char MgamePath[1024];
 static char MparentPath[1024];
 static char MgameName[512];
 static char MsystemName[512];
-static char gameName[1024];
+static char gameName[4096];
 static char forcedSystem[9] = "cdimono1";
 
 // args for cores
