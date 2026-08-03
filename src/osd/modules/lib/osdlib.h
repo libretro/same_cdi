@@ -16,6 +16,7 @@
 #ifndef __OSDLIB__
 #define __OSDLIB__
 
+#include <cstdint>
 #include <initializer_list>
 #include <string>
 #include <type_traits>

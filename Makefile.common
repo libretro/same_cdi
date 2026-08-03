@@ -1,0 +1,1163 @@
+##############################################################################
+# Makefile.common -- static source lists for same_cdi (MAME 0.239, cdi.cpp)
+#
+# All build system generation (GENie/regenie) has been removed.  Sources,
+# defines and include paths below were extracted from the project files GENie
+# produced for TARGET=mame SUBTARGET=mess SOURCES=src/mame/drivers/cdi.cpp
+# OSD=retro, and are now maintained by hand.
+#
+# Formerly-generated files (driver list, layouts, fonts, version) are
+# committed under gen/.
+#
+# Expects from includer: CORE_DIR, CORE_OBJ_DIR, and OS selection vars
+# (platform_is_windows/linux/macosx/android = 1/empty).
+##############################################################################
+
+GEN_DIR := $(CORE_DIR)/gen
+
+INCFLAGS := \
+	-I$(CORE_DIR)/src/osd \
+	-I$(CORE_DIR)/src/emu \
+	-I$(CORE_DIR)/src/devices \
+	-I$(CORE_DIR)/src/mame \
+	-I$(CORE_DIR)/src/frontend/mame \
+	-I$(CORE_DIR)/src/lib \
+	-I$(CORE_DIR)/src/lib/util \
+	-I$(CORE_DIR)/src/lib/netlist \
+	-I$(CORE_DIR)/src/osd/modules/file \
+	-I$(CORE_DIR)/src/osd/modules/render \
+	-I$(CORE_DIR)/src/osd/libretro \
+	-I$(CORE_DIR)/src/osd/libretro/libretro-internal \
+	-I$(GEN_DIR) \
+	-I$(GEN_DIR)/emu \
+	-I$(GEN_DIR)/emu/layout \
+	-I$(GEN_DIR)/mame/layout \
+	-I$(CORE_DIR)/3rdparty \
+	-I$(CORE_DIR)/3rdparty/asio/include \
+	-I$(CORE_DIR)/3rdparty/expat/lib \
+	-I$(CORE_DIR)/3rdparty/zlib \
+	-I$(CORE_DIR)/3rdparty/libflac/include \
+	-I$(CORE_DIR)/3rdparty/libjpeg \
+	-I$(CORE_DIR)/3rdparty/lua/src \
+	-I$(CORE_DIR)/3rdparty/pugixml/src \
+	-I$(CORE_DIR)/3rdparty/rapidjson/include \
+	-I$(CORE_DIR)/3rdparty/sol2 \
+	-I$(CORE_DIR)/3rdparty/sqlite3 \
+	-I$(CORE_DIR)/3rdparty/utf8proc
+
+ifeq ($(platform_is_windows), 1)
+INCFLAGS += -I$(CORE_DIR)/src/osd/windows -I$(CORE_DIR)/3rdparty/compat/mingw -I$(CORE_DIR)/3rdparty/compat/winsdk-override
+endif
+
+# Defines common to every translation unit
+COREDEFINES := -D__LIBRETRO__ -DNDEBUG -DFLAC__NO_DLL -DPUGIXML_HEADER_ONLY -DLUA_COMPAT_ALL -DLUA_COMPAT_5_1 -DLUA_COMPAT_5_2
+
+ifeq ($(platform_is_windows), 1)
+COREDEFINES += -DCRLF=3 -DUNICODE -D_UNICODE -Dmain=utf8_main -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0501
+else
+COREDEFINES += -DCRLF=2
+endif
+
+ifneq ($(BIGENDIAN), 1)
+COREDEFINES += -DLSB_FIRST
+endif
+
+ifeq ($(PTR64), 1)
+COREDEFINES += -DPTR64=1
+endif
+
+# Every TU is compiled with the retro prefix header, as under the old system
+COREDEFINES += -include $(CORE_DIR)/src/osd/libretro/retroprefix.h
+
+# OSD layer defines (osd_retro/ocore_retro groups only, as before)
+OSDDEFS := -DRETROMAME -DOSD_RETRO
+ifneq ($(platform_is_windows), 1)
+OSDDEFS += -DSDLMAME_UNIX -DRETROMAME_UNIX
+endif
+ifeq ($(platform_is_linux), 1)
+ifneq ($(DONT_USE_NETWORK), 1)
+OSDDEFS += -DUSE_NETWORK -DOSD_NET_USE_TAPTUN
+endif
+endif
+ifeq ($(platform_is_macosx), 1)
+OSDDEFS += -DSDLMAME_MACOSX -DSDLMAME_DARWIN
+endif
+
+EXPATDEFS := -DHAVE_MEMMOVE -DHAVE_STDINT_H -DHAVE_STDLIB_H -DHAVE_STRING_H \
+	-DPACKAGE=\"expat\" -DPACKAGE_BUGREPORT=\"expat-bugs@libexpat.org\" \
+	-DPACKAGE_NAME=\"expat\" '-DPACKAGE_STRING="expat 2.2.10"' \
+	-DPACKAGE_TARNAME=\"expat\" -DPACKAGE_URL=\"\" -DPACKAGE_VERSION=\"2.2.10\" \
+	-DSTDC_HEADERS -DVERSION=\"2.2.10\" -DXML_CONTEXT_BYTES=1024 -DXML_DTD -DXML_NS
+ifeq ($(BIGENDIAN), 1)
+EXPATDEFS += -DBYTEORDER=4321 -DWORDS_BIGENDIAN
+else
+EXPATDEFS += -DBYTEORDER=1234
+endif
+ifneq ($(platform_is_windows), 1)
+EXPATDEFS += -DHAVE_DLFCN_H -DHAVE_FCNTL_H -DHAVE_MMAP -DHAVE_SYS_STAT_H -DHAVE_SYS_TYPES_H -DHAVE_UNISTD_H -DXML_DEV_URANDOM
+endif
+ifeq ($(platform_is_macosx), 1)
+EXPATDEFS += -DHAVE_ARC4RANDOM
+endif
+
+LUADEFS :=
+ifneq ($(platform_is_windows), 1)
+LUADEFS += -DLUA_USE_POSIX
+endif
+
+
+##############################################################################
+# mess
+##############################################################################
+MESS_SRC_CXX := \
+	$(CORE_DIR)/gen/mame/mess/drivlist.cpp \
+	$(CORE_DIR)/gen/version.cpp \
+	$(CORE_DIR)/src/mame/mess.cpp \
+	$(CORE_DIR)/src/osd/libretro/libretro-internal/libretro.cpp \
+	$(CORE_DIR)/src/osd/libretro/retromain.cpp
+
+MESS_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(MESS_SRC_CXX:.cpp=.o))
+$(MESS_OBJS): GRPFLAGS :=
+OBJECTS += $(MESS_OBJS)
+
+##############################################################################
+# mame_mess
+##############################################################################
+MAME_MESS_SRC_CXX := \
+	$(CORE_DIR)/src/mame/drivers/cdi.cpp \
+	$(CORE_DIR)/src/mame/machine/cdicdic.cpp \
+	$(CORE_DIR)/src/mame/machine/cdislavehle.cpp \
+	$(CORE_DIR)/src/mame/video/mcd212.cpp
+
+MAME_MESS_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(MAME_MESS_SRC_CXX:.cpp=.o))
+$(MAME_MESS_OBJS): GRPFLAGS :=
+OBJECTS += $(MAME_MESS_OBJS)
+
+##############################################################################
+# frontend
+##############################################################################
+FRONTEND_SRC_CXX := \
+	$(CORE_DIR)/src/frontend/mame/audit.cpp \
+	$(CORE_DIR)/src/frontend/mame/cheat.cpp \
+	$(CORE_DIR)/src/frontend/mame/clifront.cpp \
+	$(CORE_DIR)/src/frontend/mame/infoxml.cpp \
+	$(CORE_DIR)/src/frontend/mame/iptseqpoll.cpp \
+	$(CORE_DIR)/src/frontend/mame/language.cpp \
+	$(CORE_DIR)/src/frontend/mame/luaengine.cpp \
+	$(CORE_DIR)/src/frontend/mame/luaengine_debug.cpp \
+	$(CORE_DIR)/src/frontend/mame/luaengine_input.cpp \
+	$(CORE_DIR)/src/frontend/mame/luaengine_mem.cpp \
+	$(CORE_DIR)/src/frontend/mame/luaengine_render.cpp \
+	$(CORE_DIR)/src/frontend/mame/mame.cpp \
+	$(CORE_DIR)/src/frontend/mame/mameopts.cpp \
+	$(CORE_DIR)/src/frontend/mame/media_ident.cpp \
+	$(CORE_DIR)/src/frontend/mame/pluginopts.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/about.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/analogipt.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/auditmenu.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/barcode.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/cheatopt.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/confswitch.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/custui.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/datmenu.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/devopt.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/dirmenu.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/filecreate.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/filemngr.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/filesel.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/floppycntrl.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/icorender.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/imgcntrl.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/info.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/info_pty.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/inifile.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/inputmap.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/keyboard.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/mainmenu.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/menu.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/miscmenu.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/moptions.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/optsmenu.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/pluginopt.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/quitmenu.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/selector.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/selgame.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/selmenu.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/selsoft.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/simpleselgame.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/sliders.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/slotopt.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/sndmenu.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/state.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/submenu.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/swlist.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/systemlist.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/tapectrl.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/text.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/textbox.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/ui.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/utils.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/videoopt.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/viewgfx.cpp \
+	$(CORE_DIR)/src/frontend/mame/ui/widgets.cpp
+
+FRONTEND_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(FRONTEND_SRC_CXX:.cpp=.o))
+$(FRONTEND_OBJS): GRPFLAGS :=
+OBJECTS += $(FRONTEND_OBJS)
+
+##############################################################################
+# emu
+##############################################################################
+EMU_SRC_CXX := \
+	$(CORE_DIR)/src/emu/addrmap.cpp \
+	$(CORE_DIR)/src/emu/attotime.cpp \
+	$(CORE_DIR)/src/emu/bookkeeping.cpp \
+	$(CORE_DIR)/src/emu/config.cpp \
+	$(CORE_DIR)/src/emu/crsshair.cpp \
+	$(CORE_DIR)/src/emu/debug/debugbuf.cpp \
+	$(CORE_DIR)/src/emu/debug/debugcmd.cpp \
+	$(CORE_DIR)/src/emu/debug/debugcon.cpp \
+	$(CORE_DIR)/src/emu/debug/debugcpu.cpp \
+	$(CORE_DIR)/src/emu/debug/debughlp.cpp \
+	$(CORE_DIR)/src/emu/debug/debugvw.cpp \
+	$(CORE_DIR)/src/emu/debug/dvbpoints.cpp \
+	$(CORE_DIR)/src/emu/debug/dvdisasm.cpp \
+	$(CORE_DIR)/src/emu/debug/dvmemory.cpp \
+	$(CORE_DIR)/src/emu/debug/dvrpoints.cpp \
+	$(CORE_DIR)/src/emu/debug/dvstate.cpp \
+	$(CORE_DIR)/src/emu/debug/dvtext.cpp \
+	$(CORE_DIR)/src/emu/debug/dvwpoints.cpp \
+	$(CORE_DIR)/src/emu/debug/express.cpp \
+	$(CORE_DIR)/src/emu/debug/points.cpp \
+	$(CORE_DIR)/src/emu/debug/textbuf.cpp \
+	$(CORE_DIR)/src/emu/debugger.cpp \
+	$(CORE_DIR)/src/emu/devcb.cpp \
+	$(CORE_DIR)/src/emu/devcpu.cpp \
+	$(CORE_DIR)/src/emu/devdelegate.cpp \
+	$(CORE_DIR)/src/emu/devfind.cpp \
+	$(CORE_DIR)/src/emu/device.cpp \
+	$(CORE_DIR)/src/emu/didisasm.cpp \
+	$(CORE_DIR)/src/emu/diexec.cpp \
+	$(CORE_DIR)/src/emu/digfx.cpp \
+	$(CORE_DIR)/src/emu/diimage.cpp \
+	$(CORE_DIR)/src/emu/dimemory.cpp \
+	$(CORE_DIR)/src/emu/dinetwork.cpp \
+	$(CORE_DIR)/src/emu/dinvram.cpp \
+	$(CORE_DIR)/src/emu/dipalette.cpp \
+	$(CORE_DIR)/src/emu/dipty.cpp \
+	$(CORE_DIR)/src/emu/dirtc.cpp \
+	$(CORE_DIR)/src/emu/diserial.cpp \
+	$(CORE_DIR)/src/emu/dislot.cpp \
+	$(CORE_DIR)/src/emu/disound.cpp \
+	$(CORE_DIR)/src/emu/distate.cpp \
+	$(CORE_DIR)/src/emu/divideo.cpp \
+	$(CORE_DIR)/src/emu/divtlb.cpp \
+	$(CORE_DIR)/src/emu/drawgfx.cpp \
+	$(CORE_DIR)/src/emu/drivenum.cpp \
+	$(CORE_DIR)/src/emu/driver.cpp \
+	$(CORE_DIR)/src/emu/drivers/empty.cpp \
+	$(CORE_DIR)/src/emu/emucore.cpp \
+	$(CORE_DIR)/src/emu/emumem.cpp \
+	$(CORE_DIR)/src/emu/emumem_aspace.cpp \
+	$(CORE_DIR)/src/emu/emumem_hedp.cpp \
+	$(CORE_DIR)/src/emu/emumem_hedr0.cpp \
+	$(CORE_DIR)/src/emu/emumem_hedr1.cpp \
+	$(CORE_DIR)/src/emu/emumem_hedr2.cpp \
+	$(CORE_DIR)/src/emu/emumem_hedr3.cpp \
+	$(CORE_DIR)/src/emu/emumem_hedw0.cpp \
+	$(CORE_DIR)/src/emu/emumem_hedw1.cpp \
+	$(CORE_DIR)/src/emu/emumem_hedw2.cpp \
+	$(CORE_DIR)/src/emu/emumem_hedw3.cpp \
+	$(CORE_DIR)/src/emu/emumem_hem.cpp \
+	$(CORE_DIR)/src/emu/emumem_hep.cpp \
+	$(CORE_DIR)/src/emu/emumem_het.cpp \
+	$(CORE_DIR)/src/emu/emumem_heu.cpp \
+	$(CORE_DIR)/src/emu/emumem_heun.cpp \
+	$(CORE_DIR)/src/emu/emumem_mud.cpp \
+	$(CORE_DIR)/src/emu/emumem_mview.cpp \
+	$(CORE_DIR)/src/emu/emuopts.cpp \
+	$(CORE_DIR)/src/emu/emupal.cpp \
+	$(CORE_DIR)/src/emu/fileio.cpp \
+	$(CORE_DIR)/src/emu/hashfile.cpp \
+	$(CORE_DIR)/src/emu/image.cpp \
+	$(CORE_DIR)/src/emu/input.cpp \
+	$(CORE_DIR)/src/emu/inputdev.cpp \
+	$(CORE_DIR)/src/emu/ioport.cpp \
+	$(CORE_DIR)/src/emu/machine.cpp \
+	$(CORE_DIR)/src/emu/main.cpp \
+	$(CORE_DIR)/src/emu/mconfig.cpp \
+	$(CORE_DIR)/src/emu/memarray.cpp \
+	$(CORE_DIR)/src/emu/natkeyboard.cpp \
+	$(CORE_DIR)/src/emu/network.cpp \
+	$(CORE_DIR)/src/emu/output.cpp \
+	$(CORE_DIR)/src/emu/parameters.cpp \
+	$(CORE_DIR)/src/emu/recording.cpp \
+	$(CORE_DIR)/src/emu/render.cpp \
+	$(CORE_DIR)/src/emu/rendfont.cpp \
+	$(CORE_DIR)/src/emu/rendlay.cpp \
+	$(CORE_DIR)/src/emu/rendutil.cpp \
+	$(CORE_DIR)/src/emu/romentry.cpp \
+	$(CORE_DIR)/src/emu/romload.cpp \
+	$(CORE_DIR)/src/emu/save.cpp \
+	$(CORE_DIR)/src/emu/schedule.cpp \
+	$(CORE_DIR)/src/emu/screen.cpp \
+	$(CORE_DIR)/src/emu/softlist.cpp \
+	$(CORE_DIR)/src/emu/softlist_dev.cpp \
+	$(CORE_DIR)/src/emu/sound.cpp \
+	$(CORE_DIR)/src/emu/speaker.cpp \
+	$(CORE_DIR)/src/emu/tilemap.cpp \
+	$(CORE_DIR)/src/emu/uiinput.cpp \
+	$(CORE_DIR)/src/emu/validity.cpp \
+	$(CORE_DIR)/src/emu/video.cpp \
+	$(CORE_DIR)/src/emu/video/generic.cpp \
+	$(CORE_DIR)/src/emu/video/resnet.cpp \
+	$(CORE_DIR)/src/emu/video/rgbgen.cpp \
+	$(CORE_DIR)/src/emu/video/rgbsse.cpp \
+	$(CORE_DIR)/src/emu/video/rgbvmx.cpp \
+	$(CORE_DIR)/src/emu/xtal.cpp
+
+EMU_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(EMU_SRC_CXX:.cpp=.o))
+$(EMU_OBJS): GRPFLAGS :=
+OBJECTS += $(EMU_OBJS)
+
+##############################################################################
+# optional
+##############################################################################
+OPTIONAL_SRC_CXX := \
+	$(CORE_DIR)/src/devices/cpu/m68000/m68kcpu.cpp \
+	$(CORE_DIR)/src/devices/cpu/m68000/m68kfpu.cpp \
+	$(CORE_DIR)/src/devices/cpu/m68000/m68kops.cpp \
+	$(CORE_DIR)/src/devices/cpu/m6805/m6805.cpp \
+	$(CORE_DIR)/src/devices/cpu/m6805/m68705.cpp \
+	$(CORE_DIR)/src/devices/cpu/m6805/m68hc05.cpp \
+	$(CORE_DIR)/src/devices/cpu/mcs51/axc51-core.cpp \
+	$(CORE_DIR)/src/devices/cpu/mcs51/mcs51.cpp \
+	$(CORE_DIR)/src/devices/imagedev/avivideo.cpp \
+	$(CORE_DIR)/src/devices/imagedev/bitbngr.cpp \
+	$(CORE_DIR)/src/devices/imagedev/cassette.cpp \
+	$(CORE_DIR)/src/devices/imagedev/chd_cd.cpp \
+	$(CORE_DIR)/src/devices/imagedev/diablo.cpp \
+	$(CORE_DIR)/src/devices/imagedev/flopdrv.cpp \
+	$(CORE_DIR)/src/devices/imagedev/floppy.cpp \
+	$(CORE_DIR)/src/devices/imagedev/harddriv.cpp \
+	$(CORE_DIR)/src/devices/imagedev/mfmhd.cpp \
+	$(CORE_DIR)/src/devices/imagedev/microdrv.cpp \
+	$(CORE_DIR)/src/devices/imagedev/midiin.cpp \
+	$(CORE_DIR)/src/devices/imagedev/midiout.cpp \
+	$(CORE_DIR)/src/devices/imagedev/picture.cpp \
+	$(CORE_DIR)/src/devices/imagedev/printer.cpp \
+	$(CORE_DIR)/src/devices/imagedev/snapquik.cpp \
+	$(CORE_DIR)/src/devices/imagedev/wafadrive.cpp \
+	$(CORE_DIR)/src/devices/machine/bcreader.cpp \
+	$(CORE_DIR)/src/devices/machine/buffer.cpp \
+	$(CORE_DIR)/src/devices/machine/clock.cpp \
+	$(CORE_DIR)/src/devices/machine/keyboard.cpp \
+	$(CORE_DIR)/src/devices/machine/laserdsc.cpp \
+	$(CORE_DIR)/src/devices/machine/legscsi.cpp \
+	$(CORE_DIR)/src/devices/machine/nvram.cpp \
+	$(CORE_DIR)/src/devices/machine/ram.cpp \
+	$(CORE_DIR)/src/devices/machine/scc68070.cpp \
+	$(CORE_DIR)/src/devices/machine/sdlc.cpp \
+	$(CORE_DIR)/src/devices/machine/terminal.cpp \
+	$(CORE_DIR)/src/devices/machine/timekpr.cpp \
+	$(CORE_DIR)/src/devices/machine/timer.cpp \
+	$(CORE_DIR)/src/devices/sound/bbd.cpp \
+	$(CORE_DIR)/src/devices/sound/cdda.cpp \
+	$(CORE_DIR)/src/devices/sound/dmadac.cpp \
+	$(CORE_DIR)/src/devices/sound/flt_biquad.cpp \
+	$(CORE_DIR)/src/devices/sound/flt_rc.cpp \
+	$(CORE_DIR)/src/devices/sound/flt_vol.cpp \
+	$(CORE_DIR)/src/devices/sound/mixer.cpp \
+	$(CORE_DIR)/src/devices/sound/samples.cpp \
+	$(CORE_DIR)/src/devices/video/sprite.cpp \
+	$(CORE_DIR)/src/devices/video/vector.cpp
+
+OPTIONAL_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(OPTIONAL_SRC_CXX:.cpp=.o))
+$(OPTIONAL_OBJS): GRPFLAGS :=
+OBJECTS += $(OPTIONAL_OBJS)
+
+##############################################################################
+# dasm
+##############################################################################
+DASM_SRC_CXX := \
+	$(CORE_DIR)/src/devices/cpu/m68000/m68kdasm.cpp \
+	$(CORE_DIR)/src/devices/cpu/m6805/6805dasm.cpp \
+	$(CORE_DIR)/src/devices/cpu/mcs51/axc51-core_dasm.cpp \
+	$(CORE_DIR)/src/devices/cpu/mcs51/mcs51dasm.cpp
+
+DASM_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(DASM_SRC_CXX:.cpp=.o))
+$(DASM_OBJS): GRPFLAGS :=
+OBJECTS += $(DASM_OBJS)
+
+##############################################################################
+# formats
+##############################################################################
+FORMATS_SRC_CXX := \
+	$(CORE_DIR)/src/lib/formats/all.cpp \
+	$(CORE_DIR)/src/lib/formats/cassimg.cpp \
+	$(CORE_DIR)/src/lib/formats/cqm_dsk.cpp \
+	$(CORE_DIR)/src/lib/formats/d88_dsk.cpp \
+	$(CORE_DIR)/src/lib/formats/dfi_dsk.cpp \
+	$(CORE_DIR)/src/lib/formats/dsk_dsk.cpp \
+	$(CORE_DIR)/src/lib/formats/fdi_dsk.cpp \
+	$(CORE_DIR)/src/lib/formats/flopimg.cpp \
+	$(CORE_DIR)/src/lib/formats/flopimg_legacy.cpp \
+	$(CORE_DIR)/src/lib/formats/fs_unformatted.cpp \
+	$(CORE_DIR)/src/lib/formats/fsblk_vec.cpp \
+	$(CORE_DIR)/src/lib/formats/fsmeta.cpp \
+	$(CORE_DIR)/src/lib/formats/fsmgr.cpp \
+	$(CORE_DIR)/src/lib/formats/hxchfe_dsk.cpp \
+	$(CORE_DIR)/src/lib/formats/hxcmfm_dsk.cpp \
+	$(CORE_DIR)/src/lib/formats/imageutl.cpp \
+	$(CORE_DIR)/src/lib/formats/imd_dsk.cpp \
+	$(CORE_DIR)/src/lib/formats/ipf_dsk.cpp \
+	$(CORE_DIR)/src/lib/formats/mfi_dsk.cpp \
+	$(CORE_DIR)/src/lib/formats/pc_dsk.cpp \
+	$(CORE_DIR)/src/lib/formats/rpk.cpp \
+	$(CORE_DIR)/src/lib/formats/td0_dsk.cpp \
+	$(CORE_DIR)/src/lib/formats/upd765_dsk.cpp \
+	$(CORE_DIR)/src/lib/formats/wavfile.cpp
+
+FORMATS_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(FORMATS_SRC_CXX:.cpp=.o))
+$(FORMATS_OBJS): GRPFLAGS :=
+OBJECTS += $(FORMATS_OBJS)
+
+##############################################################################
+# utils
+##############################################################################
+UTILS_SRC_CXX := \
+	$(CORE_DIR)/src/lib/util/avhuff.cpp \
+	$(CORE_DIR)/src/lib/util/aviio.cpp \
+	$(CORE_DIR)/src/lib/util/bitmap.cpp \
+	$(CORE_DIR)/src/lib/util/cdrom.cpp \
+	$(CORE_DIR)/src/lib/util/chd.cpp \
+	$(CORE_DIR)/src/lib/util/chdcd.cpp \
+	$(CORE_DIR)/src/lib/util/chdcodec.cpp \
+	$(CORE_DIR)/src/lib/util/corealloc.cpp \
+	$(CORE_DIR)/src/lib/util/corefile.cpp \
+	$(CORE_DIR)/src/lib/util/corestr.cpp \
+	$(CORE_DIR)/src/lib/util/coreutil.cpp \
+	$(CORE_DIR)/src/lib/util/delegate.cpp \
+	$(CORE_DIR)/src/lib/util/disasmintf.cpp \
+	$(CORE_DIR)/src/lib/util/dynamicclass.cpp \
+	$(CORE_DIR)/src/lib/util/flac.cpp \
+	$(CORE_DIR)/src/lib/util/harddisk.cpp \
+	$(CORE_DIR)/src/lib/util/hash.cpp \
+	$(CORE_DIR)/src/lib/util/hashing.cpp \
+	$(CORE_DIR)/src/lib/util/huffman.cpp \
+	$(CORE_DIR)/src/lib/util/ioprocs.cpp \
+	$(CORE_DIR)/src/lib/util/ioprocsfilter.cpp \
+	$(CORE_DIR)/src/lib/util/jedparse.cpp \
+	$(CORE_DIR)/src/lib/util/language.cpp \
+	$(CORE_DIR)/src/lib/util/md5.cpp \
+	$(CORE_DIR)/src/lib/util/msdib.cpp \
+	$(CORE_DIR)/src/lib/util/nanosvg.cpp \
+	$(CORE_DIR)/src/lib/util/opresolv.cpp \
+	$(CORE_DIR)/src/lib/util/options.cpp \
+	$(CORE_DIR)/src/lib/util/palette.cpp \
+	$(CORE_DIR)/src/lib/util/path.cpp \
+	$(CORE_DIR)/src/lib/util/path_to_regex.cpp \
+	$(CORE_DIR)/src/lib/util/plaparse.cpp \
+	$(CORE_DIR)/src/lib/util/png.cpp \
+	$(CORE_DIR)/src/lib/util/strformat.cpp \
+	$(CORE_DIR)/src/lib/util/timeconv.cpp \
+	$(CORE_DIR)/src/lib/util/un7z.cpp \
+	$(CORE_DIR)/src/lib/util/unicode.cpp \
+	$(CORE_DIR)/src/lib/util/unzip.cpp \
+	$(CORE_DIR)/src/lib/util/vbiparse.cpp \
+	$(CORE_DIR)/src/lib/util/vecstream.cpp \
+	$(CORE_DIR)/src/lib/util/wavwrite.cpp \
+	$(CORE_DIR)/src/lib/util/xmlfile.cpp \
+	$(CORE_DIR)/src/lib/util/zippath.cpp
+
+UTILS_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(UTILS_SRC_CXX:.cpp=.o))
+$(UTILS_OBJS): GRPFLAGS := -DUTF8PROC_STATIC
+OBJECTS += $(UTILS_OBJS)
+
+##############################################################################
+# osd_retro
+##############################################################################
+OSD_RETRO_SRC_CXX := \
+	$(CORE_DIR)/src/osd/libretro/libretro-internal/retro_init.cpp \
+	$(CORE_DIR)/src/osd/libretro/video.cpp \
+	$(CORE_DIR)/src/osd/libretro/window.cpp \
+	$(CORE_DIR)/src/osd/modules/debugger/none.cpp \
+	$(CORE_DIR)/src/osd/modules/diagnostics/none.cpp \
+	$(CORE_DIR)/src/osd/modules/font/font_none.cpp \
+	$(CORE_DIR)/src/osd/modules/input/input_common.cpp \
+	$(CORE_DIR)/src/osd/modules/input/input_none.cpp \
+	$(CORE_DIR)/src/osd/modules/input/input_retro.cpp \
+	$(CORE_DIR)/src/osd/modules/lib/osdobj_common.cpp \
+	$(CORE_DIR)/src/osd/modules/midi/none.cpp \
+	$(CORE_DIR)/src/osd/modules/monitor/monitor_common.cpp \
+	$(CORE_DIR)/src/osd/modules/monitor/monitor_retro.cpp \
+	$(CORE_DIR)/src/osd/modules/netdev/none.cpp \
+	$(CORE_DIR)/src/osd/modules/netdev/pcap.cpp \
+	$(CORE_DIR)/src/osd/modules/netdev/taptun.cpp \
+	$(CORE_DIR)/src/osd/modules/osdwindow.cpp \
+	$(CORE_DIR)/src/osd/modules/output/none.cpp \
+	$(CORE_DIR)/src/osd/modules/render/drawretro.cpp \
+	$(CORE_DIR)/src/osd/modules/sound/none.cpp \
+	$(CORE_DIR)/src/osd/modules/sound/retro_sound.cpp \
+	$(CORE_DIR)/src/osd/osdnet.cpp \
+	$(CORE_DIR)/src/osd/watchdog.cpp
+
+OSD_RETRO_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(OSD_RETRO_SRC_CXX:.cpp=.o))
+$(OSD_RETRO_OBJS): GRPFLAGS := $(OSDDEFS) -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_CONSTANT_MACROS -DIMGUI_DISABLE_OBSOLETE_FUNCTIONS -DNO_USE_MIDI
+OBJECTS += $(OSD_RETRO_OBJS)
+
+##############################################################################
+# ocore_retro
+##############################################################################
+OCORE_RETRO_SRC_CXX := \
+	$(CORE_DIR)/src/osd/modules/lib/osdlib_retro.cpp \
+	$(CORE_DIR)/src/osd/modules/osdmodule.cpp \
+	$(CORE_DIR)/src/osd/osdcore.cpp \
+	$(CORE_DIR)/src/osd/osdsync.cpp \
+	$(CORE_DIR)/src/osd/strconv.cpp
+
+ifeq ($(platform_is_windows), 1)
+OCORE_RETRO_SRC_CXX += \
+	$(CORE_DIR)/src/osd/modules/file/windir.cpp \
+	$(CORE_DIR)/src/osd/modules/file/winfile.cpp \
+	$(CORE_DIR)/src/osd/modules/file/winptty.cpp \
+	$(CORE_DIR)/src/osd/modules/file/winsocket.cpp \
+	$(CORE_DIR)/src/osd/windows/winutil.cpp
+else
+OCORE_RETRO_SRC_CXX += \
+	$(CORE_DIR)/src/osd/modules/file/posixdir.cpp \
+	$(CORE_DIR)/src/osd/modules/file/posixfile.cpp \
+	$(CORE_DIR)/src/osd/modules/file/posixptty.cpp \
+	$(CORE_DIR)/src/osd/modules/file/posixsocket.cpp
+endif
+
+OCORE_RETRO_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(OCORE_RETRO_SRC_CXX:.cpp=.o))
+$(OCORE_RETRO_OBJS): GRPFLAGS := $(OSDDEFS)
+OBJECTS += $(OCORE_RETRO_OBJS)
+
+##############################################################################
+# softfloat
+##############################################################################
+# NOTE: these .c files were compiled by the C++ driver under GENie; keep that.
+SOFTFLOAT_SRC_CXX_AS_C := \
+	$(CORE_DIR)/3rdparty/softfloat/fpatan.c \
+	$(CORE_DIR)/3rdparty/softfloat/fsincos.c \
+	$(CORE_DIR)/3rdparty/softfloat/fyl2x.c \
+	$(CORE_DIR)/3rdparty/softfloat/softfloat.c
+
+SOFTFLOAT_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(SOFTFLOAT_SRC_CXX_AS_C:.c=_cxx.o))
+$(SOFTFLOAT_OBJS): GRPFLAGS :=
+OBJECTS += $(SOFTFLOAT_OBJS)
+
+##############################################################################
+# softfloat3
+##############################################################################
+# NOTE: .c files compiled by the C++ driver under GENie; keep that.
+SOFTFLOAT3_SRC_CXX_AS_C := \
+	$(CORE_DIR)/3rdparty/softfloat3/source/8086/extF80M_isSignalingNaN.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/8086/f128M_isSignalingNaN.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/8086/s_commonNaNToExtF80UI.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/8086/s_commonNaNToF128UI.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/8086/s_commonNaNToF16UI.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/8086/s_commonNaNToF32UI.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/8086/s_commonNaNToF64UI.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/8086/s_extF80UIToCommonNaN.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/8086/s_f128UIToCommonNaN.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/8086/s_f32UIToCommonNaN.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/8086/s_f64UIToCommonNaN.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/8086/s_propagateNaNExtF80UI.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/8086/s_propagateNaNF128UI.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/8086/s_propagateNaNF16UI.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/8086/s_propagateNaNF32UI.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/8086/s_propagateNaNF64UI.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/8086/softfloat_raiseFlags.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_add.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_div.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_eq.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_eq_signaling.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_le.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_le_quiet.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_lt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_lt_quiet.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_mul.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_rem.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_roundToInt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_sqrt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_sub.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_to_f128M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_to_f16.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_to_f32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_to_f64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_to_i32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_to_i32_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_to_i64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_to_i64_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_to_ui32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_to_ui32_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_to_ui64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80M_to_ui64_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_add.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_div.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_eq.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_eq_signaling.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_isSignalingNaN.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_le.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_le_quiet.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_lt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_lt_quiet.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_mul.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_rem.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_roundToInt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_sqrt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_sub.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_to_f128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_to_f16.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_to_f32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_to_f64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_to_i32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_to_i32_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_to_i64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_to_i64_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_to_ui32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_to_ui32_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_to_ui64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/extF80_to_ui64_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_add.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_div.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_eq.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_eq_signaling.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_le.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_le_quiet.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_lt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_lt_quiet.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_mul.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_mulAdd.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_rem.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_roundToInt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_sqrt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_sub.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_to_extF80M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_to_f16.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_to_f32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_to_f64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_to_i32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_to_i32_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_to_i64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_to_i64_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_to_ui32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_to_ui32_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_to_ui64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128M_to_ui64_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_add.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_div.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_eq.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_eq_signaling.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_isSignalingNaN.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_le.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_le_quiet.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_lt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_lt_quiet.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_mul.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_mulAdd.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_rem.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_roundToInt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_sqrt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_sub.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_to_extF80.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_to_f16.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_to_f32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_to_f64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_to_i32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_to_i32_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_to_i64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_to_i64_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_to_ui32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_to_ui32_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_to_ui64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f128_to_ui64_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_add.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_div.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_eq.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_eq_signaling.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_isSignalingNaN.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_le.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_le_quiet.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_lt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_lt_quiet.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_mul.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_mulAdd.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_rem.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_roundToInt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_sqrt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_sub.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_to_extF80.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_to_extF80M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_to_f128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_to_f128M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_to_f32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_to_f64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_to_i32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_to_i32_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_to_i64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_to_i64_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_to_ui32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_to_ui32_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_to_ui64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f16_to_ui64_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_add.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_div.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_eq.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_eq_signaling.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_isSignalingNaN.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_le.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_le_quiet.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_lt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_lt_quiet.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_mul.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_mulAdd.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_rem.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_roundToInt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_sqrt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_sub.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_to_extF80.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_to_extF80M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_to_f128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_to_f128M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_to_f16.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_to_f64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_to_i32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_to_i32_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_to_i64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_to_i64_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_to_ui32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_to_ui32_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_to_ui64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f32_to_ui64_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_add.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_div.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_eq.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_eq_signaling.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_isSignalingNaN.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_le.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_le_quiet.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_lt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_lt_quiet.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_mul.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_mulAdd.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_rem.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_roundToInt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_sqrt.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_sub.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_to_extF80.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_to_extF80M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_to_f128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_to_f128M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_to_f16.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_to_f32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_to_i32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_to_i32_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_to_i64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_to_i64_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_to_ui32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_to_ui32_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_to_ui64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/f64_to_ui64_r_minMag.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/i32_to_extF80.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/i32_to_extF80M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/i32_to_f128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/i32_to_f128M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/i32_to_f16.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/i32_to_f32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/i32_to_f64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/i64_to_extF80.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/i64_to_extF80M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/i64_to_f128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/i64_to_f128M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/i64_to_f16.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/i64_to_f32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/i64_to_f64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_add128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_add256M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_addMagsExtF80.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_addMagsF128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_addMagsF16.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_addMagsF32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_addMagsF64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_approxRecip32_1.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_approxRecipSqrt32_1.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_approxRecipSqrt_1Ks.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_approxRecip_1Ks.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_countLeadingZeros16.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_countLeadingZeros32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_countLeadingZeros64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_countLeadingZeros8.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_eq128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_le128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_lt128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_mul128By32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_mul128To256M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_mul64ByShifted32To128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_mul64To128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_mulAddF128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_mulAddF16.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_mulAddF32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_mulAddF64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_normRoundPackToExtF80.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_normRoundPackToF128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_normRoundPackToF16.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_normRoundPackToF32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_normRoundPackToF64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_normSubnormalExtF80Sig.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_normSubnormalF128Sig.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_normSubnormalF16Sig.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_normSubnormalF32Sig.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_normSubnormalF64Sig.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_roundPackToExtF80.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_roundPackToF128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_roundPackToF16.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_roundPackToF32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_roundPackToF64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_roundToI32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_roundToI64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_roundToUI32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_roundToUI64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_shiftRightJam128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_shiftRightJam128Extra.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_shiftRightJam256M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_shiftRightJam32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_shiftRightJam64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_shiftRightJam64Extra.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_shortShiftLeft128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_shortShiftRight128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_shortShiftRightJam128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_shortShiftRightJam128Extra.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_shortShiftRightJam64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_shortShiftRightJam64Extra.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_sub128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_sub256M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_subMagsExtF80.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_subMagsF128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_subMagsF16.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_subMagsF32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/s_subMagsF64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/softfloat_state.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/ui32_to_extF80.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/ui32_to_extF80M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/ui32_to_f128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/ui32_to_f128M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/ui32_to_f16.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/ui32_to_f32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/ui32_to_f64.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/ui64_to_extF80.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/ui64_to_extF80M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/ui64_to_f128.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/ui64_to_f128M.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/ui64_to_f16.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/ui64_to_f32.c \
+	$(CORE_DIR)/3rdparty/softfloat3/source/ui64_to_f64.c
+
+SOFTFLOAT3_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(SOFTFLOAT3_SRC_CXX_AS_C:.c=_cxx.o))
+$(SOFTFLOAT3_OBJS): GRPFLAGS := -DSOFTFLOAT_ROUND_ODD -DINLINE_LEVEL=5 -DSOFTFLOAT_FAST_DIV32TO16 -DSOFTFLOAT_FAST_DIV64TO32 -DSOFTFLOAT_FAST_INT64
+$(SOFTFLOAT3_OBJS): GRPINCS := -I$(CORE_DIR)/src/osd -I$(CORE_DIR)/3rdparty/softfloat3/build/MAME -I$(CORE_DIR)/3rdparty/softfloat3/source -I$(CORE_DIR)/3rdparty/softfloat3/source/include -I$(CORE_DIR)/3rdparty/softfloat3/source/8086
+OBJECTS += $(SOFTFLOAT3_OBJS)
+
+##############################################################################
+# expat
+##############################################################################
+EXPAT_SRC_C := \
+	$(CORE_DIR)/3rdparty/expat/lib/xmlparse.c \
+	$(CORE_DIR)/3rdparty/expat/lib/xmlrole.c \
+	$(CORE_DIR)/3rdparty/expat/lib/xmltok.c
+
+EXPAT_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(EXPAT_SRC_C:.c=.o))
+$(EXPAT_OBJS): GRPFLAGS := $(EXPATDEFS)
+OBJECTS += $(EXPAT_OBJS)
+
+##############################################################################
+# zlib
+##############################################################################
+ZLIB_SRC_C := \
+	$(CORE_DIR)/3rdparty/zlib/adler32.c \
+	$(CORE_DIR)/3rdparty/zlib/compress.c \
+	$(CORE_DIR)/3rdparty/zlib/crc32.c \
+	$(CORE_DIR)/3rdparty/zlib/deflate.c \
+	$(CORE_DIR)/3rdparty/zlib/infback.c \
+	$(CORE_DIR)/3rdparty/zlib/inffast.c \
+	$(CORE_DIR)/3rdparty/zlib/inflate.c \
+	$(CORE_DIR)/3rdparty/zlib/inftrees.c \
+	$(CORE_DIR)/3rdparty/zlib/trees.c \
+	$(CORE_DIR)/3rdparty/zlib/uncompr.c \
+	$(CORE_DIR)/3rdparty/zlib/zutil.c
+
+ZLIB_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(ZLIB_SRC_C:.c=.o))
+$(ZLIB_OBJS): GRPFLAGS := -DZLIB_CONST
+OBJECTS += $(ZLIB_OBJS)
+
+##############################################################################
+# flac
+##############################################################################
+FLAC_SRC_C := \
+	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/bitmath.c \
+	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/bitreader.c \
+	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/bitwriter.c \
+	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/cpu.c \
+	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/crc.c \
+	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/fixed.c \
+	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/float.c \
+	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/format.c \
+	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/lpc.c \
+	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/md5.c \
+	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/memory.c \
+	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/stream_decoder.c \
+	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/stream_encoder.c \
+	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/stream_encoder_framing.c \
+	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/window.c
+
+FLAC_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(FLAC_SRC_C:.c=.o))
+$(FLAC_OBJS): GRPINCS := -I$(CORE_DIR)/3rdparty/libflac/src/libFLAC/include -I$(CORE_DIR)/3rdparty/libflac/include
+$(FLAC_OBJS): GRPFLAGS := -DWORDS_BIGENDIAN=0 -DFLAC__NO_ASM -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -DFLAC__HAS_OGG=0 -DHAVE_CONFIG_H=1
+OBJECTS += $(FLAC_OBJS)
+
+##############################################################################
+# jpeg
+##############################################################################
+JPEG_SRC_C := \
+	$(CORE_DIR)/3rdparty/libjpeg/jaricom.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jcapimin.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jcapistd.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jcarith.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jccoefct.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jccolor.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jcdctmgr.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jchuff.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jcinit.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jcmainct.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jcmarker.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jcmaster.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jcomapi.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jcparam.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jcprepct.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jcsample.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jctrans.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jdapimin.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jdapistd.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jdarith.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jdatadst.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jdatasrc.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jdcoefct.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jdcolor.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jddctmgr.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jdhuff.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jdinput.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jdmainct.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jdmarker.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jdmaster.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jdmerge.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jdpostct.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jdsample.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jdtrans.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jerror.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jfdctflt.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jfdctfst.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jfdctint.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jidctflt.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jidctfst.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jidctint.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jmemansi.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jmemmgr.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jquant1.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jquant2.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jutils.c
+
+JPEG_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(JPEG_SRC_C:.c=.o))
+$(JPEG_OBJS): GRPFLAGS :=
+OBJECTS += $(JPEG_OBJS)
+
+##############################################################################
+# 7z
+##############################################################################
+LZMA_SRC_C := \
+	$(CORE_DIR)/3rdparty/lzma/C/7zAlloc.c \
+	$(CORE_DIR)/3rdparty/lzma/C/7zArcIn.c \
+	$(CORE_DIR)/3rdparty/lzma/C/7zBuf.c \
+	$(CORE_DIR)/3rdparty/lzma/C/7zBuf2.c \
+	$(CORE_DIR)/3rdparty/lzma/C/7zCrc.c \
+	$(CORE_DIR)/3rdparty/lzma/C/7zCrcOpt.c \
+	$(CORE_DIR)/3rdparty/lzma/C/7zDec.c \
+	$(CORE_DIR)/3rdparty/lzma/C/7zFile.c \
+	$(CORE_DIR)/3rdparty/lzma/C/7zStream.c \
+	$(CORE_DIR)/3rdparty/lzma/C/Aes.c \
+	$(CORE_DIR)/3rdparty/lzma/C/AesOpt.c \
+	$(CORE_DIR)/3rdparty/lzma/C/Alloc.c \
+	$(CORE_DIR)/3rdparty/lzma/C/Bcj2.c \
+	$(CORE_DIR)/3rdparty/lzma/C/Bra.c \
+	$(CORE_DIR)/3rdparty/lzma/C/Bra86.c \
+	$(CORE_DIR)/3rdparty/lzma/C/BraIA64.c \
+	$(CORE_DIR)/3rdparty/lzma/C/CpuArch.c \
+	$(CORE_DIR)/3rdparty/lzma/C/Delta.c \
+	$(CORE_DIR)/3rdparty/lzma/C/LzFind.c \
+	$(CORE_DIR)/3rdparty/lzma/C/Lzma2Dec.c \
+	$(CORE_DIR)/3rdparty/lzma/C/Lzma2Enc.c \
+	$(CORE_DIR)/3rdparty/lzma/C/Lzma86Dec.c \
+	$(CORE_DIR)/3rdparty/lzma/C/Lzma86Enc.c \
+	$(CORE_DIR)/3rdparty/lzma/C/LzmaDec.c \
+	$(CORE_DIR)/3rdparty/lzma/C/LzmaEnc.c \
+	$(CORE_DIR)/3rdparty/lzma/C/Ppmd7.c \
+	$(CORE_DIR)/3rdparty/lzma/C/Ppmd7Dec.c \
+	$(CORE_DIR)/3rdparty/lzma/C/Ppmd7Enc.c \
+	$(CORE_DIR)/3rdparty/lzma/C/Sha256.c \
+	$(CORE_DIR)/3rdparty/lzma/C/Sort.c
+
+LZMA_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(LZMA_SRC_C:.c=.o))
+$(LZMA_OBJS): GRPFLAGS := -D_7ZIP_PPMD_SUPPPORT -D_7ZIP_ST
+OBJECTS += $(LZMA_OBJS)
+
+##############################################################################
+# lua
+##############################################################################
+LUA_SRC_C := \
+	$(CORE_DIR)/3rdparty/lua/src/lapi.c \
+	$(CORE_DIR)/3rdparty/lua/src/lauxlib.c \
+	$(CORE_DIR)/3rdparty/lua/src/lbaselib.c \
+	$(CORE_DIR)/3rdparty/lua/src/lbitlib.c \
+	$(CORE_DIR)/3rdparty/lua/src/lcode.c \
+	$(CORE_DIR)/3rdparty/lua/src/lcorolib.c \
+	$(CORE_DIR)/3rdparty/lua/src/lctype.c \
+	$(CORE_DIR)/3rdparty/lua/src/ldblib.c \
+	$(CORE_DIR)/3rdparty/lua/src/ldebug.c \
+	$(CORE_DIR)/3rdparty/lua/src/ldo.c \
+	$(CORE_DIR)/3rdparty/lua/src/ldump.c \
+	$(CORE_DIR)/3rdparty/lua/src/lfunc.c \
+	$(CORE_DIR)/3rdparty/lua/src/lgc.c \
+	$(CORE_DIR)/3rdparty/lua/src/linit.c \
+	$(CORE_DIR)/3rdparty/lua/src/liolib.c \
+	$(CORE_DIR)/3rdparty/lua/src/llex.c \
+	$(CORE_DIR)/3rdparty/lua/src/lmathlib.c \
+	$(CORE_DIR)/3rdparty/lua/src/lmem.c \
+	$(CORE_DIR)/3rdparty/lua/src/loadlib.c \
+	$(CORE_DIR)/3rdparty/lua/src/lobject.c \
+	$(CORE_DIR)/3rdparty/lua/src/lopcodes.c \
+	$(CORE_DIR)/3rdparty/lua/src/loslib.c \
+	$(CORE_DIR)/3rdparty/lua/src/lparser.c \
+	$(CORE_DIR)/3rdparty/lua/src/lstate.c \
+	$(CORE_DIR)/3rdparty/lua/src/lstring.c \
+	$(CORE_DIR)/3rdparty/lua/src/lstrlib.c \
+	$(CORE_DIR)/3rdparty/lua/src/ltable.c \
+	$(CORE_DIR)/3rdparty/lua/src/ltablib.c \
+	$(CORE_DIR)/3rdparty/lua/src/ltm.c \
+	$(CORE_DIR)/3rdparty/lua/src/lundump.c \
+	$(CORE_DIR)/3rdparty/lua/src/lutf8lib.c \
+	$(CORE_DIR)/3rdparty/lua/src/lvm.c \
+	$(CORE_DIR)/3rdparty/lua/src/lzio.c
+
+LUA_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(LUA_SRC_C:.c=.o))
+$(LUA_OBJS): GRPFLAGS := $(LUADEFS)
+OBJECTS += $(LUA_OBJS)
+
+##############################################################################
+# lualibs
+##############################################################################
+LUALIBS_SRC_C := \
+	$(CORE_DIR)/3rdparty/lsqlite3/lsqlite3.c \
+	$(CORE_DIR)/3rdparty/lua-linenoise/linenoise.c \
+	$(CORE_DIR)/3rdparty/lua-zlib/lua_zlib.c \
+	$(CORE_DIR)/3rdparty/luafilesystem/src/lfs.c
+
+LUALIBS_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(LUALIBS_SRC_C:.c=.o))
+$(LUALIBS_OBJS): GRPFLAGS := -I$(CORE_DIR)/3rdparty/linenoise -I$(CORE_DIR)/3rdparty/sqlite3
+OBJECTS += $(LUALIBS_OBJS)
+
+##############################################################################
+# sqlite3
+##############################################################################
+SQLITE3_SRC_C := \
+	$(CORE_DIR)/3rdparty/sqlite3/sqlite3.c
+
+SQLITE3_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(SQLITE3_SRC_C:.c=.o))
+$(SQLITE3_OBJS): GRPFLAGS :=
+OBJECTS += $(SQLITE3_OBJS)
+
+##############################################################################
+# linenoise
+##############################################################################
+LINENOISE_SRC_C := \
+	$(CORE_DIR)/3rdparty/linenoise/linenoise.c \
+	$(CORE_DIR)/3rdparty/linenoise/utf8.c
+
+LINENOISE_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(LINENOISE_SRC_C:.c=.o))
+$(LINENOISE_OBJS): GRPFLAGS := -I$(CORE_DIR)/3rdparty/linenoise
+OBJECTS += $(LINENOISE_OBJS)
+
+##############################################################################
+# utf8proc
+##############################################################################
+UTF8PROC_SRC_C := \
+	$(CORE_DIR)/3rdparty/utf8proc/utf8proc.c
+
+UTF8PROC_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(UTF8PROC_SRC_C:.c=.o))
+$(UTF8PROC_OBJS): GRPFLAGS := -DUTF8PROC_STATIC
+OBJECTS += $(UTF8PROC_OBJS)
+
+##############################################################################
+# Link layout
+#
+# The old system linked the mess "exe" objects against per-project static
+# archives; archive members are only pulled in when referenced.  Several
+# compiled objects (legscsi, mfmhd, ...) reference devices that are not part
+# of this build and are never pulled.  A flat object link would fail on those
+# dangling references, so the archive structure is preserved.
+##############################################################################
+
+# Objects linked directly (the old "mess" exe project)
+LINK_OBJS := $(MESS_OBJS)
+
+# Archives, in the old LIBDEPS order
+CORE_ARCHIVES := \
+	$(CORE_OBJ_DIR)/libmame_mess.a \
+	$(CORE_OBJ_DIR)/libfrontend.a \
+	$(CORE_OBJ_DIR)/libemu.a \
+	$(CORE_OBJ_DIR)/liboptional.a \
+	$(CORE_OBJ_DIR)/libdasm.a \
+	$(CORE_OBJ_DIR)/libformats.a \
+	$(CORE_OBJ_DIR)/libutils.a \
+	$(CORE_OBJ_DIR)/libosd_retro.a \
+	$(CORE_OBJ_DIR)/libocore_retro.a \
+	$(CORE_OBJ_DIR)/libsoftfloat.a \
+	$(CORE_OBJ_DIR)/libsoftfloat3.a \
+	$(CORE_OBJ_DIR)/libexpat.a \
+	$(CORE_OBJ_DIR)/libzlib.a \
+	$(CORE_OBJ_DIR)/libflac.a \
+	$(CORE_OBJ_DIR)/libjpeg.a \
+	$(CORE_OBJ_DIR)/liblzma.a \
+	$(CORE_OBJ_DIR)/liblua.a \
+	$(CORE_OBJ_DIR)/liblualibs.a \
+	$(CORE_OBJ_DIR)/libsqlite3.a \
+	$(CORE_OBJ_DIR)/liblinenoise.a \
+	$(CORE_OBJ_DIR)/libutf8proc.a
+
+$(CORE_OBJ_DIR)/libmame_mess.a: $(MAME_MESS_OBJS)
+$(CORE_OBJ_DIR)/libfrontend.a: $(FRONTEND_OBJS)
+$(CORE_OBJ_DIR)/libemu.a: $(EMU_OBJS)
+$(CORE_OBJ_DIR)/liboptional.a: $(OPTIONAL_OBJS)
+$(CORE_OBJ_DIR)/libdasm.a: $(DASM_OBJS)
+$(CORE_OBJ_DIR)/libformats.a: $(FORMATS_OBJS)
+$(CORE_OBJ_DIR)/libutils.a: $(UTILS_OBJS)
+$(CORE_OBJ_DIR)/libosd_retro.a: $(OSD_RETRO_OBJS)
+$(CORE_OBJ_DIR)/libocore_retro.a: $(OCORE_RETRO_OBJS)
+$(CORE_OBJ_DIR)/libsoftfloat.a: $(SOFTFLOAT_OBJS)
+$(CORE_OBJ_DIR)/libsoftfloat3.a: $(SOFTFLOAT3_OBJS)
+$(CORE_OBJ_DIR)/libexpat.a: $(EXPAT_OBJS)
+$(CORE_OBJ_DIR)/libzlib.a: $(ZLIB_OBJS)
+$(CORE_OBJ_DIR)/libflac.a: $(FLAC_OBJS)
+$(CORE_OBJ_DIR)/libjpeg.a: $(JPEG_OBJS)
+$(CORE_OBJ_DIR)/liblzma.a: $(LZMA_OBJS)
+$(CORE_OBJ_DIR)/liblua.a: $(LUA_OBJS)
+$(CORE_OBJ_DIR)/liblualibs.a: $(LUALIBS_OBJS)
+$(CORE_OBJ_DIR)/libsqlite3.a: $(SQLITE3_OBJS)
+$(CORE_OBJ_DIR)/liblinenoise.a: $(LINENOISE_OBJS)
+$(CORE_OBJ_DIR)/libutf8proc.a: $(UTF8PROC_OBJS)
+
+$(CORE_ARCHIVES):
+	@echo "AR $@"
+	@rm -f $@
+	@$(AR) rcs $@ $^

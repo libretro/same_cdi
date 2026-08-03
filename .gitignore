@@ -14,7 +14,6 @@
 /*/
 !/.github/
 !/3rdparty/
-!/android-project/
 !/benchmarks/
 !/artwork/
 !/bgfx/
@@ -25,10 +24,8 @@
 !/language/
 !/nl_examples/
 !/plugins/
-!/projects/
 !/regtests/
 !/samples/
-!/scripts/
 !/src/
 !/shaders/
 !/tests/
@@ -36,12 +33,10 @@
 !/web/
 !/.gitattributes
 !/.gitignore
-!/.travis.yml
-!/makefile
 !/Makefile.libretro
-!/mame.doxygen
+!/Makefile.common
+!/gen/
 !/*.md
-!/*.bdf
 !/LICENSE
 /.idea
 .vscode

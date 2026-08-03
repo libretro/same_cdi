@@ -1,31 +1,17 @@
+##############################################################################
+# Makefile.libretro -- same_cdi libretro core
+#
+# Plain GNU make build.  The GENie/regenie system has been removed; all
+# sources and flags live in Makefile.common.
+##############################################################################
 
-VERBOSE ?= 1
-RETRO ?= 1
-NOWERROR ?= 1
-CONFIG ?= libretro"
-NO_USE_MIDI ?= 1
-PTR64 ?= 1
-TARGET ?= mame
-SUBTARGET ?= mess
-SOURCES ?= src/mame/drivers/cdi.cpp
-SAME_SYSTEM ?= same_cdi
-# OS ?= linux
-# TARGETOS ?= linux
-PYTHON_EXECUTABLE ?= python3
-REGENIE ?= 1
-GITHUB_REPO ?= https://github.com/libretro/mame/
+CORE_NAME := same_cdi
 DEBUG ?= 0
+DONT_USE_NETWORK ?= 0
+BIGENDIAN ?= 0
 
-###########################################################################
-#
-#   LIBRETRO PLATFORM GUESSING
-#
-#   If the caller doesn't specify $platform and $ARCH, we guess
-#
-###########################################################################
-
-UNAME_S = $(shell uname -s)
-UNAME_M = $(shell uname -m)
+UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
 
 ifeq ($(platform),)
 	platform = unix
@@ -39,205 +25,204 @@ ifeq ($(platform),)
 		platform = osx
 	else ifneq ($(findstring win,$(UNAME_S)),)
 		platform = win
-	else ifeq ($(UNAME_M), "i686")
-		platform = linux32
-	endif
-endif
-ifeq ($(ARCH),)
-	LIBRETRO_CPU = $(ARCH)
-endif
-ifeq ($(LIBRETRO_CPU),)
-	ifeq ($(UNAME_M),)
-		ifeq ($(PROCESSOR_ARCHITECTURE),AMD64)
-			LIBRETRO_CPU = x86_64
-		endif
-		ifeq ($(PROCESSOR_ARCHITEW6432),AMD64)
-			LIBRETRO_CPU = x86_64
-		endif
-	else ifeq ($(UNAME_M),amd64)
-		LIBRETRO_CPU = x86_64
-	else
-		LIBRETRO_CPU = $(UNAME_M)
 	endif
 endif
 
-ifeq ($(ARCH),x86)
-	PTR64 := 0
-endif
-
-###########################################################################
-#
-#   BUILD FLAGS
-#
-###########################################################################
-
-BUILDFLAGS = RETRO=$(RETRO) REGENIE=$(REGENIE) VERBOSE=$(VERBOSE) NOWERROR=$(NOWERROR) OSD="retro" NO_USE_MIDI=$(NO_USE_MIDI)
-
-ifneq ($(PYTHON_EXECUTABLE),)
-	BUILDFLAGS += PYTHON_EXECUTABLE=$(PYTHON_EXECUTABLE)
-endif
-ifeq ($(DEBUG),1)
-	BUILDFLAGS += CONFIG=libretrodbg
-	BUILDFLAGS += SYMBOLS=1 SYMLEVEL=2 OPTIMIZE=0
-else
-	BUILDFLAGS += CONFIG=libretro
-endif
-
-###########################################################################
-#
-#   PLATFORM FLAGS
-#
-###########################################################################
-
-PLATFLAGS =
-
-ifneq ($(findstring win,$(platform)),)
+# 64-bit pointer detection (overridable: make PTR64=0)
+ifeq ($(PTR64),)
+	PTR64 = 0
+	ifneq ($(filter x86_64 amd64 arm64 aarch64 ppc64 ppc64le riscv64 mips64 loongarch64,$(UNAME_M)),)
+		PTR64 = 1
+	endif
+	ifeq ($(PROCESSOR_ARCHITECTURE),AMD64)
+		PTR64 = 1
+	endif
+	ifeq ($(PROCESSOR_ARCHITEW6432),AMD64)
+		PTR64 = 1
+	endif
 	ifeq ($(MSYSTEM),MINGW64)
-		MINGW64 ?= /mingw64
-		PLATFLAGS += MINGW64="$(MINGW64)"
-		LIBRETRO_CPU="x86_64"
-	else ifeq ($(MSYSTEM),MINGW32)
-		MINGW32 ?= /mingw32
-		PLATFLAGS += MINGW32="$(MINGW32)"
-		LIBRETRO_CPU="x86"
-		PTR64=0
-	endif
-	CC  ?= cc
-	CXX ?= cxx
-	AR  ?= ar
-	PLATFLAGS += TARGETOS="windows" OVERRIDE_CC="$(CC)" OVERRIDE_CXX="$(CXX)" "AR=$(AR)"
-	ifneq ($(WINDRES),)
-		PLATFLAGS += WINDRES="$(WINDRES)"
+		PTR64 = 1
 	endif
 endif
 
-ifeq ($(findstring android,$(platform)),android)
-    ANDROID_NDK_HOME ?= $(ANDROID_NDK_ROOT)
-	export ANDROID_NDK_HOME
+CC  ?= gcc
+CXX ?= g++
+LD  := $(CXX)
+
+TARGET_NAME := $(CORE_NAME)_libretro
+FPIC := -fPIC
+SHARED := -shared
+LDFLAGS :=
+LIBS :=
+VERSION_SCRIPT = -Wl,--version-script=$(CORE_DIR)/src/osd/libretro/libretro-internal/link.T
+
+platform_is_windows :=
+platform_is_linux :=
+platform_is_macosx :=
+platform_is_android :=
+
+CORE_DIR := $(abspath .)
+
+# Unix (Linux and other ELF platforms)
+ifneq ($(findstring unix,$(platform)),)
+	platform_is_linux = 1
+	TARGET := $(TARGET_NAME).so
+	LDFLAGS += $(SHARED) $(VERSION_SCRIPT) -Wl,--no-undefined
+	LIBS += -ldl -lrt -lm -lpthread -lutil
+
+else ifeq ($(platform),linux32)
+	platform_is_linux = 1
+	PTR64 = 0
+	TARGET := $(TARGET_NAME).so
+	CFLAGS += -m32
+	CXXFLAGS += -m32
+	LDFLAGS += -m32 $(SHARED) $(VERSION_SCRIPT) -Wl,--no-undefined
+	LIBS += -ldl -lrt -lm -lpthread -lutil
+
+# macOS
+else ifeq ($(platform),osx)
+	platform_is_macosx = 1
+	DONT_USE_NETWORK = 1
+	TARGET := $(TARGET_NAME).dylib
+	SHARED := -dynamiclib
+	LDFLAGS += $(SHARED)
+	LIBS += -lm -lpthread -lutil
+	ifeq ($(CROSS_COMPILE),1)
+		TARGET_RULE = -target $(LIBRETRO_APPLE_PLATFORM) -isysroot $(LIBRETRO_APPLE_ISYSROOT)
+		CFLAGS += $(TARGET_RULE)
+		CXXFLAGS += $(TARGET_RULE)
+		LDFLAGS += $(TARGET_RULE)
+	endif
+
+# iOS / tvOS
+else ifneq (,$(findstring ios,$(platform))$(findstring tvos,$(platform)))
+	platform_is_macosx = 1
+	DONT_USE_NETWORK = 1
+	PTR64 = 1
+	ifneq (,$(findstring tvos,$(platform)))
+		TARGET := $(TARGET_NAME)_tvos.dylib
+		IOSSDK := $(shell xcodebuild -version -sdk appletvos Path)
+		MINVER := -mappletvos-version-min=11.0
+	else
+		TARGET := $(TARGET_NAME)_ios.dylib
+		IOSSDK := $(shell xcodebuild -version -sdk iphoneos Path)
+		MINVER := -miphoneos-version-min=11.0
+	endif
+	CC  = cc -arch arm64 -isysroot $(IOSSDK) $(MINVER)
+	CXX = c++ -arch arm64 -isysroot $(IOSSDK) $(MINVER)
+	LD  = $(CXX)
+	SHARED := -dynamiclib
+	LDFLAGS += $(SHARED)
+	LIBS += -lm -lpthread
+
+# Android
+else ifneq ($(findstring android,$(platform)),)
+	platform_is_android = 1
+	DONT_USE_NETWORK = 1
+	TARGET := $(TARGET_NAME)_android.so
+	ANDROID_NDK_HOME ?= $(ANDROID_NDK_ROOT)
 	ANDROID_NDK_LLVM ?= $(ANDROID_NDK_HOME)/toolchains/llvm/prebuilt/linux-x86_64
-    LIBRETRO_CPU :=
-    LIBRETRO_OS :=
-	ARCH :=
-    PTR64 :=
+	ANDROID_API ?= 21
+	ifeq ($(platform),android-arm)
+		ANDROID_TRIPLE := armv7a-linux-androideabi
+		PTR64 = 0
+	else ifeq ($(platform),android-arm64)
+		ANDROID_TRIPLE := aarch64-linux-android
+		PTR64 = 1
+	else ifeq ($(platform),android-x86_64)
+		ANDROID_TRIPLE := x86_64-linux-android
+		PTR64 = 1
+	else ifeq ($(platform),android-x86)
+		ANDROID_TRIPLE := i686-linux-android
+		PTR64 = 0
+	endif
+	CC  := $(ANDROID_NDK_LLVM)/bin/$(ANDROID_TRIPLE)$(ANDROID_API)-clang
+	CXX := $(ANDROID_NDK_LLVM)/bin/$(ANDROID_TRIPLE)$(ANDROID_API)-clang++
+	LD  := $(CXX)
+	LDFLAGS += $(SHARED) $(VERSION_SCRIPT) -Wl,--no-undefined
+	LIBS += -ldl -lm
 
-    ifneq ($(ANDROID_NDK_HOME),)
-        OK := $(shell if [ -d $(ANDROID_NDK_HOME) ]; then echo "ok"; fi)
-        ifeq ($(OK),)
-            $(error  path $(ANDROID_NDK_HOME) does not exist! please set ANDROID_NDK_HOME!)
-        else
-            $(info  ANDROID_NDK_HOME path is a valid directory $(ANDROID_NDK_HOME))
-        endif
-    endif
+# Windows (MSYS2/MinGW native or cross)
+else ifneq ($(findstring win,$(platform)),)
+	platform_is_windows = 1
+	TARGET := $(TARGET_NAME).dll
+	FPIC :=
+	ifeq ($(MSYSTEM),MINGW32)
+		PTR64 = 0
+	endif
+	LDFLAGS += $(SHARED) $(VERSION_SCRIPT) -Wl,--no-undefined -static-libgcc -static-libstdc++
+	LIBS += -luser32 -lwinmm -ladvapi32 -lshlwapi -lwsock32 -lws2_32 -lpsapi -liphlpapi -lshell32 -luserenv -loleaut32
 endif
 
-ifeq ($(platform),android-arm)
-	PLATFLAGS += TARGETOS="android-arm" gcc="android-arm"
-endif
-ifeq ($(platform),android-arm64)
-	PLATFLAGS += TARGETOS="android-arm64" gcc="android-arm64"
-endif
-ifeq ($(platform),android-x86_64)
-	PLATFLAGS += TARGETOS="android-x64" gcc="android-x64"=
+ifeq ($(DEBUG), 1)
+	OPTFLAGS := -O0 -g
+else
+	OPTFLAGS := -O3 -fno-strict-aliasing
 endif
 
-ifeq ($(platform),linux32)
-	PTR64 := 0
+CORE_OBJ_DIR := obj/$(platform)
+
+.DEFAULT_GOAL := all
+.DELETE_ON_ERROR:
+
+include Makefile.common
+
+WARNINGS := -Wall -Wcast-align -Wformat-security -Wundef -Wwrite-strings \
+	-Wno-unknown-pragmas -Wno-conversion -Wno-sign-compare \
+	-Wno-error=deprecated-declarations -Wno-unused-result -Wno-array-bounds \
+	-Wno-error=attributes
+
+ifeq (,$(findstring clang,$(shell $(CXX) --version)))
+WARNINGS += -Wno-format-overflow -Wno-stringop-truncation -Wno-stringop-overflow \
+	-Wno-return-local-addr -Wno-nonnull -Wno-stringop-overread \
+	-Wno-misleading-indentation -Wno-maybe-uninitialized
+CXXONLYWARNINGS := -Wno-class-memaccess -flifetime-dse=1
 endif
 
-ifeq ($(platform),osx)
-  PLATFLAGS += DONT_USE_NETWORK=1
-  LIBRETRO_OS = osx
-   ifeq ($(CROSS_COMPILE),1)
-      TARGET_RULE   = -target $(LIBRETRO_APPLE_PLATFORM) -isysroot $(LIBRETRO_APPLE_ISYSROOT)
-      CFLAGS   += $(TARGET_RULE)
-      CPPFLAGS += $(TARGET_RULE)
-      CXXFLAGS += $(TARGET_RULE)
-      LDFLAGS  += $(TARGET_RULE)
-   endif
+# Per-group include override: groups default to the global INCFLAGS, but
+# 3rdparty libs that must not see MAME headers (flac: its config.h would be
+# shadowed by src/emu/config.h) set their own minimal GRPINCS.
+GRPINCS = $(INCFLAGS)
+
+ALL_CPPFLAGS := -MMD -MP $(COREDEFINES) $(FPIC) -pipe $(OPTFLAGS) $(WARNINGS)
+ALL_CFLAGS   := $(ALL_CPPFLAGS) -std=gnu99 -Wpointer-arith $(CFLAGS)
+ALL_CXXFLAGS := $(ALL_CPPFLAGS) -std=c++17 -Woverloaded-virtual $(CXXONLYWARNINGS) $(CXXFLAGS)
+
+all: $(TARGET)
+
+AR ?= ar
+
+ifeq ($(platform_is_macosx), 1)
+GROUP_START :=
+GROUP_END :=
+else
+GROUP_START := -Wl,--start-group
+GROUP_END := -Wl,--end-group
 endif
 
-ifeq ($(platform),ios-arm64)
-  PLATFLAGS += DONT_USE_NETWORK=1
-	LIBRETRO_CPU = arm64
-	ARCH = arm64
-	LIBRETRO_OS = ios-arm64
-	IOSSDK := $(shell xcodebuild -version -sdk iphoneos Path)
-	CC = cc -arch arm64 -isysroot $(IOSSDK) -miphoneos-version-min=11.0
-	CXX = c++ -arch arm64 -isysroot $(IOSSDK) -miphoneos-version-min=11.0
-	PLATFLAGS += OVERRIDE_CC="$(CC)" OVERRIDE_CXX="$(CXX)"
-endif
+$(TARGET): $(LINK_OBJS) $(CORE_ARCHIVES)
+	@echo "LD $@"
+	@$(LD) -o $@ $(LINK_OBJS) $(GROUP_START) $(CORE_ARCHIVES) $(GROUP_END) $(LDFLAGS) $(LIBS)
 
-ifeq ($(platform),tvos-arm64)
-  PLATFLAGS += DONT_USE_NETWORK=1
-	LIBRETRO_CPU = arm64
-	ARCH = arm64
-	LIBRETRO_OS = ios-arm64
-	IOSSDK := $(shell xcodebuild -version -sdk appletvos Path)
-	CC = cc -arch arm64 -isysroot $(IOSSDK) -mappletvos-version-min=11.0
-	CXX = c++ -arch arm64 -isysroot $(IOSSDK) -mappletvos-version-min=11.0
-	PLATFLAGS += OVERRIDE_CC="$(CC)" OVERRIDE_CXX="$(CXX)"
-endif
+$(CORE_OBJ_DIR)/%.o: $(CORE_DIR)/%.cpp
+	@echo "CXX $<"
+	@mkdir -p $(dir $@)
+	@$(CXX) -c -o $@ $< $(GRPINCS) $(ALL_CXXFLAGS) $(GRPFLAGS)
 
-ifneq ($(LIBRETRO_CPU),)
-	PLATFLAGS += ARCH="" LIBRETRO_CPU="$(LIBRETRO_CPU)"
-endif
-ifneq ($(FORCE_DRC_C_BACKEND),)
-	PLATFLAGS += FORCE_DRC_C_BACKEND="$(FORCE_DRC_C_BACKEND)"
-endif
-ifneq ($(LIBRETRO_OS),)
-	PLATFLAGS += LIBRETRO_OS="$(platform)"
-endif
-ifneq ($(PTR64),)
-	PLATFLAGS += PTR64=$(PTR64)
-endif
+$(CORE_OBJ_DIR)/%.o: $(CORE_DIR)/%.c
+	@echo "CC $<"
+	@mkdir -p $(dir $@)
+	@$(CC) -c -o $@ $< $(GRPINCS) $(ALL_CFLAGS) $(GRPFLAGS)
 
-###########################################################################
-#
-#   TARGET FLAGS
-#
-###########################################################################
+# .c sources historically compiled with the C++ driver (softfloat)
+$(CORE_OBJ_DIR)/%_cxx.o: $(CORE_DIR)/%.c
+	@echo "CXX $<"
+	@mkdir -p $(dir $@)
+	@$(CXX) -x c++ -c -o $@ $< $(GRPINCS) $(ALL_CXXFLAGS) $(GRPFLAGS)
 
-TARGETFLAGS =
-ifneq ($(TARGET),)
-	TARGETFLAGS += TARGET=$(TARGET)
-endif
-ifneq ($(SUBTARGET),)
-	TARGETFLAGS += SUBTARGET=$(SUBTARGET)
-endif
-ifneq ($(SOURCES),)
-	TARGETFLAGS += SOURCES=$(SOURCES)
-endif
-
-###########################################################################
-#
-#   MAKE RULES
-#
-#   We just call upstream GENie here with appropriate args
-#
-###########################################################################
-
-# MAKEFILE is set by libretro gitlab-ci, but it confuses GENIE. So, unset it.
-# undefine <var> is not supported on make 3.81 (used by macosx).
-MAKEFILE :=
-
-all: build
-
-build:
-	$(MAKE) $(BUILDFLAGS) $(PLATFLAGS) $(TARGETFLAGS)
-
-	@echo "Renaming compiled target"
-	@mv $(SUBTARGET)_libretro.dylib $(SAME_SYSTEM)_libretro.dylib 2> /dev/null || true
-	@mv $(SUBTARGET)_libretro_ios.dylib $(SAME_SYSTEM)_libretro_ios.dylib 2> /dev/null || true
-	@mv $(SUBTARGET)_libretro_tvos.dylib $(SAME_SYSTEM)_libretro_tvos.dylib 2> /dev/null || true
-	@mv $(SUBTARGET)_libretro.dll $(SAME_SYSTEM)_libretro.dll 2> /dev/null || true
-	@mv $(SUBTARGET)_libretro.so $(SAME_SYSTEM)_libretro.so 2> /dev/null || true
-	@mv $(SUBTARGET)_libretro_android.so $(SAME_SYSTEM)_libretro_android.so 2> /dev/null || true
-	@echo "Done!"
-
-vs2015:
-	$(MAKE) $(BUILDFLAGS) $(PLATFLAGS) $(TARGETFLAGS) vs2015
+-include $(OBJECTS:.o=.d)
 
 clean:
-	$(MAKE) $(BUILDFLAGS) $(PLATFLAGS) $(TARGETFLAGS) clean
+	rm -rf obj $(TARGET_NAME).so $(TARGET_NAME).dll $(TARGET_NAME).dylib $(TARGET_NAME)_ios.dylib $(TARGET_NAME)_tvos.dylib $(TARGET_NAME)_android.so
 
-.PHONY: all build clean vs2015
+.PHONY: all clean
