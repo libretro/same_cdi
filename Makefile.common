@@ -277,7 +277,6 @@ OPTIONAL_SRC_CXX := \
 	$(CORE_DIR)/src/devices/imagedev/chd_cd.cpp \
 	$(CORE_DIR)/src/devices/imagedev/floppy.cpp \
 	$(CORE_DIR)/src/devices/machine/bcreader.cpp \
-	$(CORE_DIR)/src/devices/machine/laserdsc.cpp \
 	$(CORE_DIR)/src/devices/machine/ram.cpp \
 	$(CORE_DIR)/src/devices/machine/scc68070.cpp \
 	$(CORE_DIR)/src/devices/machine/timekpr.cpp \
