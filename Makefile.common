@@ -24,10 +24,10 @@ INCFLAGS := \
 	-I$(CORE_DIR)/src/lib \
 	-I$(CORE_DIR)/src/lib/util \
 	-I$(CORE_DIR)/src/lib/netlist \
-	-I$(CORE_DIR)/src/osd/modules/file \
 	-I$(CORE_DIR)/src/osd/modules/render \
 	-I$(CORE_DIR)/src/osd/libretro \
 	-I$(CORE_DIR)/src/osd/libretro/libretro-internal \
+	-I$(CORE_DIR)/src/osd/libretro/libretro-common/include \
 	-I$(GEN_DIR) \
 	-I$(GEN_DIR)/emu \
 	-I$(GEN_DIR)/emu/layout \
@@ -373,8 +373,7 @@ UTILS_SRC_CXX := \
 	$(CORE_DIR)/src/lib/util/zippath.cpp
 
 UTILS_SRC_C := \
-	$(CORE_DIR)/src/lib/util/rxml/rxml.c \
-	$(CORE_DIR)/src/lib/util/rxml/rxml_filestream_stubs.c
+	$(CORE_DIR)/src/lib/util/rxml/rxml.c
 
 UTILS_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(UTILS_SRC_CXX:.cpp=.o)) \
 	$(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(UTILS_SRC_C:.c=.o))
@@ -400,8 +399,6 @@ OSD_RETRO_SRC_CXX := \
 	$(CORE_DIR)/src/osd/modules/monitor/monitor_common.cpp \
 	$(CORE_DIR)/src/osd/modules/monitor/monitor_retro.cpp \
 	$(CORE_DIR)/src/osd/modules/netdev/none.cpp \
-	$(CORE_DIR)/src/osd/modules/netdev/pcap.cpp \
-	$(CORE_DIR)/src/osd/modules/netdev/taptun.cpp \
 	$(CORE_DIR)/src/osd/modules/osdwindow.cpp \
 	$(CORE_DIR)/src/osd/modules/output/none.cpp \
 	$(CORE_DIR)/src/osd/modules/render/drawretro.cpp \
@@ -424,20 +421,25 @@ OCORE_RETRO_SRC_CXX := \
 	$(CORE_DIR)/src/osd/osdsync.cpp \
 	$(CORE_DIR)/src/osd/strconv.cpp
 
-ifeq ($(platform_is_windows), 1)
 OCORE_RETRO_SRC_CXX += \
-	$(CORE_DIR)/src/osd/modules/file/windir.cpp \
-	$(CORE_DIR)/src/osd/modules/file/winfile.cpp \
-	$(CORE_DIR)/src/osd/modules/file/winptty.cpp \
-	$(CORE_DIR)/src/osd/modules/file/winsocket.cpp \
-	$(CORE_DIR)/src/osd/windows/winutil.cpp
-else
-OCORE_RETRO_SRC_CXX += \
-	$(CORE_DIR)/src/osd/modules/file/posixdir.cpp \
-	$(CORE_DIR)/src/osd/modules/file/posixfile.cpp \
-	$(CORE_DIR)/src/osd/modules/file/posixptty.cpp \
-	$(CORE_DIR)/src/osd/modules/file/posixsocket.cpp
-endif
+	$(CORE_DIR)/src/osd/libretro/vfsfile.cpp
+
+LRC_VFS_SRC_C := \
+	$(CORE_DIR)/src/osd/libretro/libretro-common/compat/compat_posix_string.c \
+	$(CORE_DIR)/src/osd/libretro/libretro-common/compat/compat_strl.c \
+	$(CORE_DIR)/src/osd/libretro/libretro-common/compat/fopen_utf8.c \
+	$(CORE_DIR)/src/osd/libretro/libretro-common/encodings/encoding_utf.c \
+	$(CORE_DIR)/src/osd/libretro/libretro-common/file/file_path.c \
+	$(CORE_DIR)/src/osd/libretro/libretro-common/file/file_path_io.c \
+	$(CORE_DIR)/src/osd/libretro/libretro-common/file/retro_dirent.c \
+	$(CORE_DIR)/src/osd/libretro/libretro-common/streams/file_stream.c \
+	$(CORE_DIR)/src/osd/libretro/libretro-common/string/stdstring.c \
+	$(CORE_DIR)/src/osd/libretro/libretro-common/time/rtime.c \
+	$(CORE_DIR)/src/osd/libretro/libretro-common/vfs/vfs_implementation.c
+
+LRC_VFS_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(LRC_VFS_SRC_C:.c=.o))
+$(LRC_VFS_OBJS): GRPINCS := -I$(CORE_DIR)/src/osd/libretro/libretro-common/include -I$(CORE_DIR)/src/osd/libretro/libretro-internal
+OBJECTS += $(LRC_VFS_OBJS)
 
 OCORE_RETRO_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(OCORE_RETRO_SRC_CXX:.cpp=.o))
 $(OCORE_RETRO_OBJS): GRPFLAGS := $(OSDDEFS)
@@ -596,7 +598,7 @@ $(CORE_OBJ_DIR)/libdasm.a: $(DASM_OBJS)
 $(CORE_OBJ_DIR)/libformats.a: $(FORMATS_OBJS)
 $(CORE_OBJ_DIR)/libutils.a: $(UTILS_OBJS)
 $(CORE_OBJ_DIR)/libosd_retro.a: $(OSD_RETRO_OBJS)
-$(CORE_OBJ_DIR)/libocore_retro.a: $(OCORE_RETRO_OBJS)
+$(CORE_OBJ_DIR)/libocore_retro.a: $(OCORE_RETRO_OBJS) $(LRC_VFS_OBJS)
 $(CORE_OBJ_DIR)/libzlib.a: $(ZLIB_OBJS)
 $(CORE_OBJ_DIR)/libflac.a: $(FLAC_OBJS)
 $(CORE_OBJ_DIR)/libjpeg.a: $(JPEG_OBJS)

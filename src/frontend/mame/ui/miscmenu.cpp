@@ -30,8 +30,8 @@
 #include "corestr.h"
 
 #include <algorithm>
+#include <sstream>
 #include <cstring>
-#include <fstream>
 #include <iterator>
 
 
@@ -605,9 +605,9 @@ void menu_export::handle(event const *ev)
 				emu_file file(ui().options().ui_path(), OPEN_FLAG_WRITE | OPEN_FLAG_CREATE | OPEN_FLAG_CREATE_PATHS);
 				if (!file.open(filename + ".xml"))
 				{
-					const std::string fullpath(file.fullpath());
-					file.close();
-					std::ofstream pfile(fullpath);
+					// build the document in memory and write it through the
+					// emu_file, which routes via the VFS-backed osd_file
+					std::ostringstream pfile;
 
 					// prepare a filter for the drivers we want to show
 					std::unordered_set<const game_driver *> driver_list(m_list.begin(), m_list.end());
@@ -626,6 +626,9 @@ void menu_export::handle(event const *ev)
 					// and do the dirty work
 					info_xml_creator creator(machine().options());
 					creator.output(pfile, filter, include_devices);
+					std::string const document(pfile.str());
+					file.write(document.data(), document.size());
+					file.close();
 					machine().popmessage(_("%s.xml saved in UI settings folder."), filename);
 				}
 			}

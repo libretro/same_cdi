@@ -2,9 +2,10 @@
 // copyright-holders:Aaron Giles
 #include "wavwrite.h"
 
+#include "corefile.h"
+
 #include "osdcomm.h"
 
-#include <cstdio>
 #include <new>
 #include <string>
 #include <vector>
@@ -14,7 +15,7 @@ namespace util {
 
 struct wav_file
 {
-	FILE *file = nullptr;
+	util::core_file::ptr file;
 	std::vector<std::int16_t> temp;
 	std::uint32_t total_offs = 0U;
 	std::uint32_t data_offs = 0U;
@@ -32,61 +33,62 @@ wav_file_ptr wav_open(std::string_view filename, int sample_rate, int channels)
 		return nullptr;
 
 	// create the file
-	wav->file = std::fopen(std::string(filename).c_str(), "wb"); // ugly - need to force NUL termination on filename
+	if (util::core_file::open(std::string(filename), OPEN_FLAG_WRITE | OPEN_FLAG_CREATE, wav->file))
+		wav->file.reset();
 	if (!wav->file)
 		return nullptr;
 
 	// write the 'RIFF' header
-	std::fwrite("RIFF", 1, 4, wav->file);
+	{ size_t actual; wav->file->write("RIFF", 4, actual); }
 
 	// write the total size
 	temp32 = 0;
-	wav->total_offs = std::ftell(wav->file);
-	std::fwrite(&temp32, 1, 4, wav->file);
+	{ std::uint64_t pos = 0; wav->file->tell(pos); wav->total_offs = std::uint32_t(pos); }
+	{ size_t actual; wav->file->write(&temp32, 4, actual); }
 
 	// write the 'WAVE' type
-	std::fwrite("WAVE", 1, 4, wav->file);
+	{ size_t actual; wav->file->write("WAVE", 4, actual); }
 
 	// write the 'fmt ' tag
-	std::fwrite("fmt ", 1, 4, wav->file);
+	{ size_t actual; wav->file->write("fmt ", 4, actual); }
 
 	// write the format length
 	temp32 = little_endianize_int32(16);
-	std::fwrite(&temp32, 1, 4, wav->file);
+	{ size_t actual; wav->file->write(&temp32, 4, actual); }
 
 	// write the format (PCM)
 	temp16 = little_endianize_int16(1);
-	std::fwrite(&temp16, 1, 2, wav->file);
+	{ size_t actual; wav->file->write(&temp16, 2, actual); }
 
 	// write the channels
 	temp16 = little_endianize_int16(channels);
-	std::fwrite(&temp16, 1, 2, wav->file);
+	{ size_t actual; wav->file->write(&temp16, 2, actual); }
 
 	// write the sample rate
 	temp32 = little_endianize_int32(sample_rate);
-	std::fwrite(&temp32, 1, 4, wav->file);
+	{ size_t actual; wav->file->write(&temp32, 4, actual); }
 
 	// write the bytes/second
 	std::uint32_t const bps = sample_rate * 2 * channels;
 	temp32 = little_endianize_int32(bps);
-	std::fwrite(&temp32, 1, 4, wav->file);
+	{ size_t actual; wav->file->write(&temp32, 4, actual); }
 
 	// write the block align
 	std::uint16_t const align = 2 * channels;
 	temp16 = little_endianize_int16(align);
-	std::fwrite(&temp16, 1, 2, wav->file);
+	{ size_t actual; wav->file->write(&temp16, 2, actual); }
 
 	// write the bits/sample
 	temp16 = little_endianize_int16(16);
-	std::fwrite(&temp16, 1, 2, wav->file);
+	{ size_t actual; wav->file->write(&temp16, 2, actual); }
 
 	// write the 'data' tag
-	std::fwrite("data", 1, 4, wav->file);
+	{ size_t actual; wav->file->write("data", 4, actual); }
 
 	// write the data length
 	temp32 = 0;
-	wav->data_offs = std::ftell(wav->file);
-	std::fwrite(&temp32, 1, 4, wav->file);
+	{ std::uint64_t pos = 0; wav->file->tell(pos); wav->data_offs = std::uint32_t(pos); }
+	{ size_t actual; wav->file->write(&temp32, 4, actual); }
 
 	return wav;
 }
@@ -100,21 +102,23 @@ void wav_close(wav_file *wav)
 	if (wav->file)
 	{
 		std::uint32_t temp32;
-		std::uint32_t const total = std::ftell(wav->file);
+		std::uint64_t pos = 0;
+		wav->file->tell(pos);
+		std::uint32_t const total = std::uint32_t(pos);
 
 		// update the total file size
-		std::fseek(wav->file, wav->total_offs, SEEK_SET);
+		wav->file->seek(wav->total_offs, SEEK_SET);
 		temp32 = total - (wav->total_offs + 4);
 		temp32 = little_endianize_int32(temp32);
-		std::fwrite(&temp32, 1, 4, wav->file);
+		{ size_t actual; wav->file->write(&temp32, 4, actual); }
 
 		// update the data size
-		std::fseek(wav->file, wav->data_offs, SEEK_SET);
+		wav->file->seek(wav->data_offs, SEEK_SET);
 		temp32 = total - (wav->data_offs + 4);
 		temp32 = little_endianize_int32(temp32);
-		std::fwrite(&temp32, 1, 4, wav->file);
+		{ size_t actual; wav->file->write(&temp32, 4, actual); }
 
-		std::fclose(wav->file);
+		wav->file.reset();
 	}
 
 	delete wav;
@@ -124,8 +128,8 @@ void wav_close(wav_file *wav)
 void wav_add_data_16(wav_file &wav, int16_t *data, int samples)
 {
 	// just write and flush the data
-	std::fwrite(data, 2, samples, wav.file);
-	std::fflush(wav.file);
+	{ size_t actual; wav.file->write(data, size_t(2) * (samples), actual); }
+	wav.file->flush();
 }
 
 
@@ -146,8 +150,8 @@ void wav_add_data_32(wav_file &wav, int32_t *data, int samples, int shift)
 	}
 
 	// write and flush
-	std::fwrite(&wav.temp[0], 2, samples, wav.file);
-	std::fflush(wav.file);
+	{ size_t actual; wav.file->write(&wav.temp[0], size_t(2) * (samples), actual); }
+	wav.file->flush();
 }
 
 
@@ -165,8 +169,8 @@ void wav_add_data_16lr(wav_file &wav, int16_t *left, int16_t *right, int samples
 		wav.temp[i] = (i & 1) ? right[i / 2] : left[i / 2];
 
 	// write and flush
-	std::fwrite(&wav.temp[0], 4, samples, wav.file);
-	std::fflush(wav.file);
+	{ size_t actual; wav.file->write(&wav.temp[0], size_t(4) * (samples), actual); }
+	wav.file->flush();
 }
 
 
@@ -188,8 +192,8 @@ void wav_add_data_32lr(wav_file &wav, int32_t *left, int32_t *right, int samples
 	}
 
 	// write and flush
-	std::fwrite(&wav.temp[0], 4, samples, wav.file);
-	std::fflush(wav.file);
+	{ size_t actual; wav.file->write(&wav.temp[0], size_t(4) * (samples), actual); }
+	wav.file->flush();
 }
 
 } // namespace util

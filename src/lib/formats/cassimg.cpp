@@ -910,27 +910,3 @@ done:
 
 
 
-/*********************************************************************
-    cassette_dump
-
-    A debugging call to dump a cassette image to a disk based wave file
-*********************************************************************/
-
-void cassette_image::dump(const char *filename)
-{
-	util::random_read_write::ptr saved_io = util::stdio_read_write(fopen(filename, "wb"), 0);
-	if (!saved_io)
-		return;
-
-	Format const *const saved_format = m_format;
-
-	using std::swap;
-
-	swap(m_io, saved_io);
-	m_format = &wavfile_format;
-
-	perform_save();
-
-	swap(m_io, saved_io);
-	m_format = saved_format;
-}

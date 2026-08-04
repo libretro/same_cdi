@@ -732,21 +732,25 @@ if (log_cb)log_cb(RETRO_LOG_INFO,"ARGUV[0]=%s\n",ARGUV[0]);
    return 0;
 }
 
-#include <fstream>
+#include <streams/file_stream.h>
 #include <string>
 static char CMDFILE[512];
 
 int loadcmdfile(char *argv)
 {
-  std::ifstream cmdfile(argv);
-  std::string cmdstr;
+  RFILE *cmdfile = filestream_open(argv,
+        RETRO_VFS_FILE_ACCESS_READ, RETRO_VFS_FILE_ACCESS_HINT_NONE);
 
-  if(cmdfile.is_open()){
+  if (cmdfile)
+  {
+    char line[512];
+    line[0] = '\0';
+    filestream_gets(cmdfile, line, sizeof(line));
+    filestream_close(cmdfile);
 
-    std::getline(cmdfile, cmdstr);
-    cmdfile.close();
-
-    sprintf(CMDFILE, "%s", cmdstr.c_str());
+    /* strip the line ending, as std::getline did */
+    line[strcspn(line, "\r\n")] = '\0';
+    snprintf(CMDFILE, sizeof(CMDFILE), "%s", line);
 
     return 1;
   }
