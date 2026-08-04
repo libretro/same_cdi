@@ -233,12 +233,10 @@ EMU_SRC_CXX := \
 	$(CORE_DIR)/src/emu/dipalette.cpp \
 	$(CORE_DIR)/src/emu/dipty.cpp \
 	$(CORE_DIR)/src/emu/dirtc.cpp \
-	$(CORE_DIR)/src/emu/diserial.cpp \
 	$(CORE_DIR)/src/emu/dislot.cpp \
 	$(CORE_DIR)/src/emu/disound.cpp \
 	$(CORE_DIR)/src/emu/distate.cpp \
 	$(CORE_DIR)/src/emu/divideo.cpp \
-	$(CORE_DIR)/src/emu/divtlb.cpp \
 	$(CORE_DIR)/src/emu/drawgfx.cpp \
 	$(CORE_DIR)/src/emu/drivenum.cpp \
 	$(CORE_DIR)/src/emu/driver.cpp \
@@ -296,11 +294,7 @@ EMU_SRC_CXX := \
 	$(CORE_DIR)/src/emu/uiinput.cpp \
 	$(CORE_DIR)/src/emu/validity.cpp \
 	$(CORE_DIR)/src/emu/video.cpp \
-	$(CORE_DIR)/src/emu/video/generic.cpp \
-	$(CORE_DIR)/src/emu/video/resnet.cpp \
-	$(CORE_DIR)/src/emu/video/rgbgen.cpp \
 	$(CORE_DIR)/src/emu/video/rgbsse.cpp \
-	$(CORE_DIR)/src/emu/video/rgbvmx.cpp \
 	$(CORE_DIR)/src/emu/xtal.cpp
 
 EMU_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(EMU_SRC_CXX:.cpp=.o))
@@ -315,48 +309,17 @@ OPTIONAL_SRC_CXX := \
 	$(CORE_DIR)/src/devices/cpu/m68000/m68kfpu.cpp \
 	$(CORE_DIR)/src/devices/cpu/m68000/m68kops.cpp \
 	$(CORE_DIR)/src/devices/cpu/m6805/m6805.cpp \
-	$(CORE_DIR)/src/devices/cpu/m6805/m68705.cpp \
 	$(CORE_DIR)/src/devices/cpu/m6805/m68hc05.cpp \
-	$(CORE_DIR)/src/devices/cpu/mcs51/axc51-core.cpp \
-	$(CORE_DIR)/src/devices/cpu/mcs51/mcs51.cpp \
-	$(CORE_DIR)/src/devices/imagedev/avivideo.cpp \
-	$(CORE_DIR)/src/devices/imagedev/bitbngr.cpp \
 	$(CORE_DIR)/src/devices/imagedev/cassette.cpp \
 	$(CORE_DIR)/src/devices/imagedev/chd_cd.cpp \
-	$(CORE_DIR)/src/devices/imagedev/diablo.cpp \
-	$(CORE_DIR)/src/devices/imagedev/flopdrv.cpp \
 	$(CORE_DIR)/src/devices/imagedev/floppy.cpp \
-	$(CORE_DIR)/src/devices/imagedev/harddriv.cpp \
-	$(CORE_DIR)/src/devices/imagedev/mfmhd.cpp \
-	$(CORE_DIR)/src/devices/imagedev/microdrv.cpp \
-	$(CORE_DIR)/src/devices/imagedev/midiin.cpp \
-	$(CORE_DIR)/src/devices/imagedev/midiout.cpp \
-	$(CORE_DIR)/src/devices/imagedev/picture.cpp \
-	$(CORE_DIR)/src/devices/imagedev/printer.cpp \
-	$(CORE_DIR)/src/devices/imagedev/snapquik.cpp \
-	$(CORE_DIR)/src/devices/imagedev/wafadrive.cpp \
 	$(CORE_DIR)/src/devices/machine/bcreader.cpp \
-	$(CORE_DIR)/src/devices/machine/buffer.cpp \
-	$(CORE_DIR)/src/devices/machine/clock.cpp \
-	$(CORE_DIR)/src/devices/machine/keyboard.cpp \
 	$(CORE_DIR)/src/devices/machine/laserdsc.cpp \
-	$(CORE_DIR)/src/devices/machine/legscsi.cpp \
-	$(CORE_DIR)/src/devices/machine/nvram.cpp \
 	$(CORE_DIR)/src/devices/machine/ram.cpp \
 	$(CORE_DIR)/src/devices/machine/scc68070.cpp \
-	$(CORE_DIR)/src/devices/machine/sdlc.cpp \
-	$(CORE_DIR)/src/devices/machine/terminal.cpp \
 	$(CORE_DIR)/src/devices/machine/timekpr.cpp \
-	$(CORE_DIR)/src/devices/machine/timer.cpp \
-	$(CORE_DIR)/src/devices/sound/bbd.cpp \
-	$(CORE_DIR)/src/devices/sound/cdda.cpp \
 	$(CORE_DIR)/src/devices/sound/dmadac.cpp \
-	$(CORE_DIR)/src/devices/sound/flt_biquad.cpp \
-	$(CORE_DIR)/src/devices/sound/flt_rc.cpp \
-	$(CORE_DIR)/src/devices/sound/flt_vol.cpp \
-	$(CORE_DIR)/src/devices/sound/mixer.cpp \
 	$(CORE_DIR)/src/devices/sound/samples.cpp \
-	$(CORE_DIR)/src/devices/video/sprite.cpp \
 	$(CORE_DIR)/src/devices/video/vector.cpp
 
 OPTIONAL_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(OPTIONAL_SRC_CXX:.cpp=.o))
@@ -368,9 +331,7 @@ OBJECTS += $(OPTIONAL_OBJS)
 ##############################################################################
 DASM_SRC_CXX := \
 	$(CORE_DIR)/src/devices/cpu/m68000/m68kdasm.cpp \
-	$(CORE_DIR)/src/devices/cpu/m6805/6805dasm.cpp \
-	$(CORE_DIR)/src/devices/cpu/mcs51/axc51-core_dasm.cpp \
-	$(CORE_DIR)/src/devices/cpu/mcs51/mcs51dasm.cpp
+	$(CORE_DIR)/src/devices/cpu/m6805/6805dasm.cpp
 
 DASM_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(DASM_SRC_CXX:.cpp=.o))
 $(DASM_OBJS): GRPFLAGS :=
@@ -380,7 +341,6 @@ OBJECTS += $(DASM_OBJS)
 # formats
 ##############################################################################
 FORMATS_SRC_CXX := \
-	$(CORE_DIR)/src/lib/formats/all.cpp \
 	$(CORE_DIR)/src/lib/formats/cassimg.cpp \
 	$(CORE_DIR)/src/lib/formats/cqm_dsk.cpp \
 	$(CORE_DIR)/src/lib/formats/d88_dsk.cpp \
@@ -391,7 +351,6 @@ FORMATS_SRC_CXX := \
 	$(CORE_DIR)/src/lib/formats/flopimg_legacy.cpp \
 	$(CORE_DIR)/src/lib/formats/fs_unformatted.cpp \
 	$(CORE_DIR)/src/lib/formats/fsblk_vec.cpp \
-	$(CORE_DIR)/src/lib/formats/fsmeta.cpp \
 	$(CORE_DIR)/src/lib/formats/fsmgr.cpp \
 	$(CORE_DIR)/src/lib/formats/hxchfe_dsk.cpp \
 	$(CORE_DIR)/src/lib/formats/hxcmfm_dsk.cpp \
@@ -400,7 +359,6 @@ FORMATS_SRC_CXX := \
 	$(CORE_DIR)/src/lib/formats/ipf_dsk.cpp \
 	$(CORE_DIR)/src/lib/formats/mfi_dsk.cpp \
 	$(CORE_DIR)/src/lib/formats/pc_dsk.cpp \
-	$(CORE_DIR)/src/lib/formats/rpk.cpp \
 	$(CORE_DIR)/src/lib/formats/td0_dsk.cpp \
 	$(CORE_DIR)/src/lib/formats/upd765_dsk.cpp \
 	$(CORE_DIR)/src/lib/formats/wavfile.cpp
@@ -420,15 +378,12 @@ UTILS_SRC_CXX := \
 	$(CORE_DIR)/src/lib/util/chd.cpp \
 	$(CORE_DIR)/src/lib/util/chdcd.cpp \
 	$(CORE_DIR)/src/lib/util/chdcodec.cpp \
-	$(CORE_DIR)/src/lib/util/corealloc.cpp \
 	$(CORE_DIR)/src/lib/util/corefile.cpp \
 	$(CORE_DIR)/src/lib/util/corestr.cpp \
 	$(CORE_DIR)/src/lib/util/coreutil.cpp \
 	$(CORE_DIR)/src/lib/util/delegate.cpp \
 	$(CORE_DIR)/src/lib/util/disasmintf.cpp \
-	$(CORE_DIR)/src/lib/util/dynamicclass.cpp \
 	$(CORE_DIR)/src/lib/util/flac.cpp \
-	$(CORE_DIR)/src/lib/util/harddisk.cpp \
 	$(CORE_DIR)/src/lib/util/hash.cpp \
 	$(CORE_DIR)/src/lib/util/hashing.cpp \
 	$(CORE_DIR)/src/lib/util/huffman.cpp \
@@ -436,15 +391,11 @@ UTILS_SRC_CXX := \
 	$(CORE_DIR)/src/lib/util/ioprocsfilter.cpp \
 	$(CORE_DIR)/src/lib/util/jedparse.cpp \
 	$(CORE_DIR)/src/lib/util/language.cpp \
-	$(CORE_DIR)/src/lib/util/md5.cpp \
 	$(CORE_DIR)/src/lib/util/msdib.cpp \
 	$(CORE_DIR)/src/lib/util/nanosvg.cpp \
 	$(CORE_DIR)/src/lib/util/opresolv.cpp \
 	$(CORE_DIR)/src/lib/util/options.cpp \
 	$(CORE_DIR)/src/lib/util/palette.cpp \
-	$(CORE_DIR)/src/lib/util/path.cpp \
-	$(CORE_DIR)/src/lib/util/path_to_regex.cpp \
-	$(CORE_DIR)/src/lib/util/plaparse.cpp \
 	$(CORE_DIR)/src/lib/util/png.cpp \
 	$(CORE_DIR)/src/lib/util/strformat.cpp \
 	$(CORE_DIR)/src/lib/util/timeconv.cpp \
@@ -542,7 +493,6 @@ ZLIB_SRC_C := \
 	$(CORE_DIR)/3rdparty/zlib/compress.c \
 	$(CORE_DIR)/3rdparty/zlib/crc32.c \
 	$(CORE_DIR)/3rdparty/zlib/deflate.c \
-	$(CORE_DIR)/3rdparty/zlib/infback.c \
 	$(CORE_DIR)/3rdparty/zlib/inffast.c \
 	$(CORE_DIR)/3rdparty/zlib/inflate.c \
 	$(CORE_DIR)/3rdparty/zlib/inftrees.c \
@@ -564,7 +514,6 @@ FLAC_SRC_C := \
 	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/cpu.c \
 	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/crc.c \
 	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/fixed.c \
-	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/float.c \
 	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/format.c \
 	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/lpc.c \
 	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/md5.c \
@@ -584,27 +533,10 @@ OBJECTS += $(FLAC_OBJS)
 ##############################################################################
 JPEG_SRC_C := \
 	$(CORE_DIR)/3rdparty/libjpeg/jaricom.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jcapimin.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jcapistd.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jcarith.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jccoefct.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jccolor.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jcdctmgr.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jchuff.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jcinit.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jcmainct.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jcmarker.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jcmaster.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jcomapi.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jcparam.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jcprepct.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jcsample.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jctrans.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jdapimin.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jdapistd.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jdarith.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jdatadst.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jdatasrc.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jdcoefct.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jdcolor.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jddctmgr.c \
@@ -616,11 +548,7 @@ JPEG_SRC_C := \
 	$(CORE_DIR)/3rdparty/libjpeg/jdmerge.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jdpostct.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jdsample.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jdtrans.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jerror.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jfdctflt.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jfdctfst.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jfdctint.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jidctflt.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jidctfst.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jidctint.c \
@@ -641,15 +569,10 @@ LZMA_SRC_C := \
 	$(CORE_DIR)/3rdparty/lzma/C/7zAlloc.c \
 	$(CORE_DIR)/3rdparty/lzma/C/7zArcIn.c \
 	$(CORE_DIR)/3rdparty/lzma/C/7zBuf.c \
-	$(CORE_DIR)/3rdparty/lzma/C/7zBuf2.c \
 	$(CORE_DIR)/3rdparty/lzma/C/7zCrc.c \
 	$(CORE_DIR)/3rdparty/lzma/C/7zCrcOpt.c \
 	$(CORE_DIR)/3rdparty/lzma/C/7zDec.c \
-	$(CORE_DIR)/3rdparty/lzma/C/7zFile.c \
 	$(CORE_DIR)/3rdparty/lzma/C/7zStream.c \
-	$(CORE_DIR)/3rdparty/lzma/C/Aes.c \
-	$(CORE_DIR)/3rdparty/lzma/C/AesOpt.c \
-	$(CORE_DIR)/3rdparty/lzma/C/Alloc.c \
 	$(CORE_DIR)/3rdparty/lzma/C/Bcj2.c \
 	$(CORE_DIR)/3rdparty/lzma/C/Bra.c \
 	$(CORE_DIR)/3rdparty/lzma/C/Bra86.c \
@@ -658,16 +581,10 @@ LZMA_SRC_C := \
 	$(CORE_DIR)/3rdparty/lzma/C/Delta.c \
 	$(CORE_DIR)/3rdparty/lzma/C/LzFind.c \
 	$(CORE_DIR)/3rdparty/lzma/C/Lzma2Dec.c \
-	$(CORE_DIR)/3rdparty/lzma/C/Lzma2Enc.c \
-	$(CORE_DIR)/3rdparty/lzma/C/Lzma86Dec.c \
-	$(CORE_DIR)/3rdparty/lzma/C/Lzma86Enc.c \
 	$(CORE_DIR)/3rdparty/lzma/C/LzmaDec.c \
 	$(CORE_DIR)/3rdparty/lzma/C/LzmaEnc.c \
 	$(CORE_DIR)/3rdparty/lzma/C/Ppmd7.c \
-	$(CORE_DIR)/3rdparty/lzma/C/Ppmd7Dec.c \
-	$(CORE_DIR)/3rdparty/lzma/C/Ppmd7Enc.c \
-	$(CORE_DIR)/3rdparty/lzma/C/Sha256.c \
-	$(CORE_DIR)/3rdparty/lzma/C/Sort.c
+	$(CORE_DIR)/3rdparty/lzma/C/Ppmd7Dec.c
 
 LZMA_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(LZMA_SRC_C:.c=.o))
 $(LZMA_OBJS): GRPFLAGS := -D_7ZIP_PPMD_SUPPPORT -D_7ZIP_ST
