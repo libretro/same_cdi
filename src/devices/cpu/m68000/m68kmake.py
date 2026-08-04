@@ -20,6 +20,14 @@ CPU_COUNT = 8
 
 cpu_names = '071234fc'
 
+# This core instantiates a single CPU: the Philips SCC68070 of the CD-i
+# machines.  Restrict generation to that class -- handlers never reachable
+# from the 68070 dispatch row are not emitted, and the opcode table carries
+# the 68070 cycle column alone.  The internal cycle tables above keep the
+# full per-family layout so the .lst timing data stays untouched.
+cpu_keep = [CPU_070]
+cpu_keep_names = ''.join([cpu_names[i] for i in cpu_keep])
+
 cc_table_up = [ "T", "F", "HI", "LS", "CC", "CS", "NE", "EQ", "VC", "VS", "PL", "MI", "GE", "LT", "GT", "LE" ]
 cc_table_dn = [ "t", "f", "hi", "ls", "cc", "cs", "ne", "eq", "vc", "vs", "pl", "mi", "ge", "lt", "gt", "le" ]
 
@@ -200,7 +208,7 @@ class OpcodeHandler:
         self.op_value = op.op_value | ea_info_table[ea_mode][2]
         self.op_mask  = op.op_mask  | ea_info_table[ea_mode][1]
         self.function_name = 'x%04x_%s%s%s_' % (self.op_value, op.name, '' if op.size == '.' else '_' + op.size, '' if ea_mode == 'none' else '_' + ea_mode)
-        for i in range(0, CPU_COUNT):
+        for i in cpu_keep:
             if self.cycles[i] != None:
                 self.function_name += cpu_names[i]
         self.bits = 0
@@ -243,6 +251,8 @@ class Info:
         self.opcode_handlers = []
         for op in self.opcodes:
             op.generate(self.opcode_handlers)
+        self.opcode_handlers = [h for h in self.opcode_handlers
+                                if any(h.cycles[i] != None for i in cpu_keep)]
 
     def save_header(self, f):
         f.write("// Generated source, edits will be lost.  Run m68kmake.py instead\n")
@@ -268,7 +278,7 @@ class Info:
         for id in order:
             oh = self.opcode_handlers[id]
             f.write("\t&m68000_base_device::%s,\n" % oh.function_name)
-            if oh.function_name == 'x4afc_illegal_' + cpu_names:
+            if oh.function_name == 'x4afc_illegal_' + cpu_keep_names:
                 illegal_id = nid
             nid += 1
         f.write("};\n\n")
@@ -277,12 +287,14 @@ class Info:
         for id in order:
             oh = self.opcode_handlers[id]
             f.write("\t{ 0x%04x, 0x%04x, {" % (oh.op_value, oh.op_mask))
-            for i in range(0, CPU_COUNT):
-                if i != 0:
+            first = True
+            for i in cpu_keep:
+                if not first:
                     f.write(", ")
+                first = False
                 f.write("%3d" % (255 if oh.cycles[i] == None else oh.cycles[i]))
             f.write("}},\n")
-        f.write("\t{ 0, 0, {0, 0, 0, 0, 0}}\n};\n")
+        f.write("\t{ 0, 0, {" + ", ".join(["0"] * len(cpu_keep)) + "}}\n};\n")
 
 def main(argv):
     if len(argv) != 4:
