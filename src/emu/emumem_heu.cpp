@@ -312,30 +312,8 @@ template<int Width, int AddrShift> std::string handler_entry_write_units<Width, 
 }
 
 
-template class handler_entry_read_units<0,  1>;
 template class handler_entry_read_units<0,  0>;
-template class handler_entry_read_units<1,  3>;
 template class handler_entry_read_units<1,  0>;
-template class handler_entry_read_units<1, -1>;
-template class handler_entry_read_units<2,  3>;
-template class handler_entry_read_units<2,  0>;
-template class handler_entry_read_units<2, -1>;
-template class handler_entry_read_units<2, -2>;
-template class handler_entry_read_units<3,  0>;
-template class handler_entry_read_units<3, -1>;
-template class handler_entry_read_units<3, -2>;
-template class handler_entry_read_units<3, -3>;
 
-template class handler_entry_write_units<0,  1>;
 template class handler_entry_write_units<0,  0>;
-template class handler_entry_write_units<1,  3>;
 template class handler_entry_write_units<1,  0>;
-template class handler_entry_write_units<1, -1>;
-template class handler_entry_write_units<2,  3>;
-template class handler_entry_write_units<2,  0>;
-template class handler_entry_write_units<2, -1>;
-template class handler_entry_write_units<2, -2>;
-template class handler_entry_write_units<3,  0>;
-template class handler_entry_write_units<3, -1>;
-template class handler_entry_write_units<3, -2>;
-template class handler_entry_write_units<3, -3>;

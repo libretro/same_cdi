@@ -723,73 +723,18 @@ void memory_manager::allocate(device_memory_interface &memory)
 			// allocate one of the appropriate type
 			switch ((level << 8) | (spaceconfig->endianness() == ENDIANNESS_BIG ? 0x1000 : 0) |spaceconfig->data_width() | (spaceconfig->addr_shift() + 4))
 			{
-				case 0x0000|0x000| 8|(4+1): memory.allocate<address_space_specific<0, 0,  1, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x000| 8|(4+1): memory.allocate<address_space_specific<0, 0,  1, ENDIANNESS_BIG   >>(*this, spacenum); break;
-				case 0x0000|0x100| 8|(4+1): memory.allocate<address_space_specific<1, 0,  1, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x100| 8|(4+1): memory.allocate<address_space_specific<1, 0,  1, ENDIANNESS_BIG   >>(*this, spacenum); break;
-
-				case 0x0000|0x000| 8|(4-0): memory.allocate<address_space_specific<0, 0,  0, ENDIANNESS_LITTLE>>(*this, spacenum); break;
+				// Trimmed to the combinations the CD-i machines can allocate:
+				// scc68070 program/oprogram/cpu_space (16-bit, shift 0, BE, level 1)
+				// and m68hc05 program (8-bit, shift 0, BE, level 0).  Anything
+				// else lands in the fatalerror below; re-add cases (and the
+				// matching template instantiations) if a new device needs them.
 				case 0x1000|0x000| 8|(4-0): memory.allocate<address_space_specific<0, 0,  0, ENDIANNESS_BIG   >>(*this, spacenum); break;
-				case 0x0000|0x100| 8|(4-0): memory.allocate<address_space_specific<1, 0,  0, ENDIANNESS_LITTLE>>(*this, spacenum); break;
 				case 0x1000|0x100| 8|(4-0): memory.allocate<address_space_specific<1, 0,  0, ENDIANNESS_BIG   >>(*this, spacenum); break;
-
-				case 0x0000|0x000|16|(4+3): memory.allocate<address_space_specific<0, 1,  3, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x000|16|(4+3): memory.allocate<address_space_specific<0, 1,  3, ENDIANNESS_BIG   >>(*this, spacenum); break;
-				case 0x0000|0x100|16|(4+3): memory.allocate<address_space_specific<1, 1,  3, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x100|16|(4+3): memory.allocate<address_space_specific<1, 1,  3, ENDIANNESS_BIG   >>(*this, spacenum); break;
-
-				case 0x0000|0x000|16|(4-0): memory.allocate<address_space_specific<0, 1,  0, ENDIANNESS_LITTLE>>(*this, spacenum); break;
 				case 0x1000|0x000|16|(4-0): memory.allocate<address_space_specific<0, 1,  0, ENDIANNESS_BIG   >>(*this, spacenum); break;
-				case 0x0000|0x100|16|(4-0): memory.allocate<address_space_specific<1, 1,  0, ENDIANNESS_LITTLE>>(*this, spacenum); break;
 				case 0x1000|0x100|16|(4-0): memory.allocate<address_space_specific<1, 1,  0, ENDIANNESS_BIG   >>(*this, spacenum); break;
 
-				case 0x0000|0x000|16|(4-1): memory.allocate<address_space_specific<0, 1, -1, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x000|16|(4-1): memory.allocate<address_space_specific<0, 1, -1, ENDIANNESS_BIG   >>(*this, spacenum); break;
-				case 0x0000|0x100|16|(4-1): memory.allocate<address_space_specific<1, 1, -1, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x100|16|(4-1): memory.allocate<address_space_specific<1, 1, -1, ENDIANNESS_BIG   >>(*this, spacenum); break;
-
-				case 0x0000|0x000|32|(4+3): memory.allocate<address_space_specific<0, 2,  3, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x000|32|(4+3): memory.allocate<address_space_specific<0, 2,  3, ENDIANNESS_BIG   >>(*this, spacenum); break;
-				case 0x0000|0x100|32|(4+3): memory.allocate<address_space_specific<1, 2,  3, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x100|32|(4+3): memory.allocate<address_space_specific<1, 2,  3, ENDIANNESS_BIG   >>(*this, spacenum); break;
-
-				case 0x0000|0x000|32|(4-0): memory.allocate<address_space_specific<0, 2,  0, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x000|32|(4-0): memory.allocate<address_space_specific<0, 2,  0, ENDIANNESS_BIG   >>(*this, spacenum); break;
-				case 0x0000|0x100|32|(4-0): memory.allocate<address_space_specific<1, 2,  0, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x100|32|(4-0): memory.allocate<address_space_specific<1, 2,  0, ENDIANNESS_BIG   >>(*this, spacenum); break;
-
-				case 0x0000|0x000|32|(4-1): memory.allocate<address_space_specific<0, 2, -1, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x000|32|(4-1): memory.allocate<address_space_specific<0, 2, -1, ENDIANNESS_BIG   >>(*this, spacenum); break;
-				case 0x0000|0x100|32|(4-1): memory.allocate<address_space_specific<1, 2, -1, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x100|32|(4-1): memory.allocate<address_space_specific<1, 2, -1, ENDIANNESS_BIG   >>(*this, spacenum); break;
-
-				case 0x0000|0x000|32|(4-2): memory.allocate<address_space_specific<0, 2, -2, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x000|32|(4-2): memory.allocate<address_space_specific<0, 2, -2, ENDIANNESS_BIG   >>(*this, spacenum); break;
-				case 0x0000|0x100|32|(4-2): memory.allocate<address_space_specific<1, 2, -2, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x100|32|(4-2): memory.allocate<address_space_specific<1, 2, -2, ENDIANNESS_BIG   >>(*this, spacenum); break;
-
-				case 0x0000|0x000|64|(4-0): memory.allocate<address_space_specific<0, 3,  0, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x000|64|(4-0): memory.allocate<address_space_specific<0, 3,  0, ENDIANNESS_BIG   >>(*this, spacenum); break;
-				case 0x0000|0x100|64|(4-0): memory.allocate<address_space_specific<1, 3,  0, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x100|64|(4-0): memory.allocate<address_space_specific<1, 3,  0, ENDIANNESS_BIG   >>(*this, spacenum); break;
-
-				case 0x0000|0x000|64|(4-1): memory.allocate<address_space_specific<0, 3, -1, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x000|64|(4-1): memory.allocate<address_space_specific<0, 3, -1, ENDIANNESS_BIG   >>(*this, spacenum); break;
-				case 0x0000|0x100|64|(4-1): memory.allocate<address_space_specific<1, 3, -1, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x100|64|(4-1): memory.allocate<address_space_specific<1, 3, -1, ENDIANNESS_BIG   >>(*this, spacenum); break;
-
-				case 0x0000|0x000|64|(4-2): memory.allocate<address_space_specific<0, 3, -2, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x000|64|(4-2): memory.allocate<address_space_specific<0, 3, -2, ENDIANNESS_BIG   >>(*this, spacenum); break;
-				case 0x0000|0x100|64|(4-2): memory.allocate<address_space_specific<1, 3, -2, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x100|64|(4-2): memory.allocate<address_space_specific<1, 3, -2, ENDIANNESS_BIG   >>(*this, spacenum); break;
-
-				case 0x0000|0x000|64|(4-3): memory.allocate<address_space_specific<0, 3, -3, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x000|64|(4-3): memory.allocate<address_space_specific<0, 3, -3, ENDIANNESS_BIG   >>(*this, spacenum); break;
-				case 0x0000|0x100|64|(4-3): memory.allocate<address_space_specific<1, 3, -3, ENDIANNESS_LITTLE>>(*this, spacenum); break;
-				case 0x1000|0x100|64|(4-3): memory.allocate<address_space_specific<1, 3, -3, ENDIANNESS_BIG   >>(*this, spacenum); break;
-
 				default:
-					throw emu_fatalerror("Invalid width %d/shift %d specified for address_space::allocate", spaceconfig->data_width(), spaceconfig->addr_shift());
+					throw emu_fatalerror("Unsupported memory space configuration: width %d shift %d %s (trimmed build, see memory_manager::allocate)", spaceconfig->data_width(), spaceconfig->addr_shift(), spaceconfig->endianness() == ENDIANNESS_BIG ? "BE" : "LE");
 			}
 		}
 	}

@@ -214,12 +214,6 @@ $(CORE_OBJ_DIR)/%.o: $(CORE_DIR)/%.c
 	@mkdir -p $(dir $@)
 	@$(CC) -c -o $@ $< $(GRPINCS) $(ALL_CFLAGS) $(GRPFLAGS)
 
-# .c sources historically compiled with the C++ driver (softfloat)
-$(CORE_OBJ_DIR)/%_cxx.o: $(CORE_DIR)/%.c
-	@echo "CXX $<"
-	@mkdir -p $(dir $@)
-	@$(CXX) -x c++ -c -o $@ $< $(GRPINCS) $(ALL_CXXFLAGS) $(GRPFLAGS)
-
 -include $(OBJECTS:.o=.d)
 
 clean:

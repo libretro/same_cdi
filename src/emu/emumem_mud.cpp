@@ -110,14 +110,4 @@ template<int Width, int AddrShift> void memory_units_descriptor<Width, AddrShift
 	}
 }
 
-template class memory_units_descriptor<1,  3>;
 template class memory_units_descriptor<1,  0>;
-template class memory_units_descriptor<1, -1>;
-template class memory_units_descriptor<2,  3>;
-template class memory_units_descriptor<2,  0>;
-template class memory_units_descriptor<2, -1>;
-template class memory_units_descriptor<2, -2>;
-template class memory_units_descriptor<3,  0>;
-template class memory_units_descriptor<3, -1>;
-template class memory_units_descriptor<3, -2>;
-template class memory_units_descriptor<3, -3>;
