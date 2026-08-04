@@ -201,21 +201,7 @@ EMU_SRC_CXX := \
 	$(CORE_DIR)/src/emu/bookkeeping.cpp \
 	$(CORE_DIR)/src/emu/config.cpp \
 	$(CORE_DIR)/src/emu/crsshair.cpp \
-	$(CORE_DIR)/src/emu/debug/debugbuf.cpp \
-	$(CORE_DIR)/src/emu/debug/debugcmd.cpp \
-	$(CORE_DIR)/src/emu/debug/debugcon.cpp \
-	$(CORE_DIR)/src/emu/debug/debugcpu.cpp \
-	$(CORE_DIR)/src/emu/debug/debughlp.cpp \
-	$(CORE_DIR)/src/emu/debug/debugvw.cpp \
-	$(CORE_DIR)/src/emu/debug/dvbpoints.cpp \
-	$(CORE_DIR)/src/emu/debug/dvdisasm.cpp \
-	$(CORE_DIR)/src/emu/debug/dvmemory.cpp \
-	$(CORE_DIR)/src/emu/debug/dvrpoints.cpp \
-	$(CORE_DIR)/src/emu/debug/dvstate.cpp \
-	$(CORE_DIR)/src/emu/debug/dvtext.cpp \
-	$(CORE_DIR)/src/emu/debug/dvwpoints.cpp \
 	$(CORE_DIR)/src/emu/debug/express.cpp \
-	$(CORE_DIR)/src/emu/debug/points.cpp \
 	$(CORE_DIR)/src/emu/debug/textbuf.cpp \
 	$(CORE_DIR)/src/emu/debugger.cpp \
 	$(CORE_DIR)/src/emu/devcb.cpp \

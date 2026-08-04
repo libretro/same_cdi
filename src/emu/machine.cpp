@@ -17,7 +17,6 @@
 #include "render.h"
 #include "uiinput.h"
 #include "crsshair.h"
-#include "debug/debugvw.h"
 #include "debug/debugcpu.h"
 #include "dirtc.h"
 #include "image.h"
@@ -190,7 +189,6 @@ void running_machine::start()
 	// initialize the debugger
 	if ((debug_flags & DEBUG_FLAG_ENABLED) != 0)
 	{
-		m_debug_view = std::make_unique<debug_view_manager>(*this);
 		m_debugger = std::make_unique<debugger_manager>(*this);
 	}
 
