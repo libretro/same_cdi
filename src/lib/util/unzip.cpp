@@ -18,9 +18,9 @@
 #include "osdcore.h"
 #include "osdfile.h"
 
-#include "lzma/C/LzmaDec.h"
 
-#include <zlib.h>
+#include <7z/r7z_lzma.h>
+#include <encodings/deflate.h>
 
 #include <algorithm>
 #include <array>
@@ -1243,45 +1243,22 @@ std::error_condition zip_file_impl::decompress_data_type_0(std::uint64_t offset,
 
 std::error_condition zip_file_impl::decompress_data_type_8(std::uint64_t offset, void *buffer, std::size_t length) noexcept
 {
-	auto const convert_zerr =
-			[] (int e) -> std::error_condition
-			{
-				switch (e)
-				{
-				case Z_OK:
-					return std::error_condition();
-				case Z_ERRNO:
-					return std::error_condition(errno, std::generic_category());
-				case Z_MEM_ERROR:
-					return std::errc::not_enough_memory;
-				default:
-					return archive_file::error::DECOMPRESS_ERROR;
-				}
-			};
 	std::uint64_t input_remaining = m_header.compressed_length;
-	int zerr;
 
-	// reset the stream
-	z_stream stream;
-	stream.zalloc = Z_NULL;
-	stream.zfree = Z_NULL;
-	stream.opaque = Z_NULL;
-	stream.avail_in = 0;
-	stream.next_out = reinterpret_cast<Bytef *>(buffer);
-	stream.avail_out = length;
-
-	// initialize the decompressor
-	zerr = inflateInit2(&stream, -MAX_WBITS);
-	if (zerr != Z_OK)
+	// initialize the decompressor for raw DEFLATE
+	void *const stream = rinflate_new(-15);
+	if (!stream)
 	{
-		auto result = convert_zerr(zerr);
 		osd_printf_error(
-				"unzip: error allocating zlib stream to inflate %s from %s (%d)\n",
-				m_header.file_name, m_filename, zerr);
-		return result;
+				"unzip: error allocating stream to inflate %s from %s\n",
+				m_header.file_name, m_filename);
+		return std::errc::not_enough_memory;
 	}
+	rinflate_set_out(stream, reinterpret_cast<std::uint8_t *>(buffer), length);
 
 	// loop until we're done
+	std::size_t total_written = 0;
+	bool stream_ended = false;
 	while (true)
 	{
 		// read in the next chunk of data
@@ -1296,7 +1273,7 @@ std::error_condition zip_file_impl::decompress_data_type_8(std::uint64_t offset,
 			osd_printf_error(
 					"unzip: error reading compressed data for %s in %s (%s:%d %s)\n",
 					m_header.file_name, m_filename, filerr.category().name(), filerr.value(), filerr.message());
-			inflateEnd(&stream);
+			rinflate_free(stream);
 			return filerr;
 		}
 		offset += read_length;
@@ -1307,49 +1284,41 @@ std::error_condition zip_file_impl::decompress_data_type_8(std::uint64_t offset,
 			osd_printf_error(
 					"unzip: unexpectedly reached end-of-file while reading compressed data for %s in %s\n",
 					m_header.file_name, m_filename);
-			inflateEnd(&stream);
+			rinflate_free(stream);
 			return archive_file::error::FILE_TRUNCATED;
 		}
 
 		// fill out the input data
-		stream.next_in = &m_buffer[0];
-		stream.avail_in = read_length;
+		rinflate_set_in(stream, &m_buffer[0], read_length);
 		input_remaining -= read_length;
 
-		// add a dummy byte at end of compressed data
-		if (input_remaining == 0)
-			stream.avail_in++;
-
 		// now inflate
-		zerr = inflate(&stream, Z_NO_FLUSH);
-		if (zerr == Z_STREAM_END)
+		std::size_t consumed = 0, wrote = 0;
+		int const result = rinflate_process(stream, &consumed, &wrote);
+		total_written += wrote;
+		if (result == RDEFLATE_PROCESS_END)
 		{
+			stream_ended = true;
 			break;
 		}
-		else if (zerr != Z_OK)
+		else if (result != RDEFLATE_PROCESS_NEXT)
 		{
-			auto result = convert_zerr(zerr);
 			osd_printf_error(
 					"unzip: error inflating %s from %s (%d)\n",
-					m_header.file_name, m_filename, zerr);
-			inflateEnd(&stream);
-			return result;
+					m_header.file_name, m_filename, result);
+			rinflate_free(stream);
+			return archive_file::error::DECOMPRESS_ERROR;
+		}
+		else if (!input_remaining && !wrote)
+		{
+			// out of input, stream not ended, no forward progress
+			break;
 		}
 	}
-
-	// finish decompression
-	zerr = inflateEnd(&stream);
-	if (zerr != Z_OK)
-	{
-		auto result = convert_zerr(zerr);
-		osd_printf_error(
-				"unzip: error finishing inflation of %s from %s (%d)\n",
-				m_header.file_name, m_filename, zerr);
-		return result;
-	}
+	rinflate_free(stream);
 
 	// if anything looks funny, report an error
-	if (stream.avail_out || input_remaining)
+	if (!stream_ended || (total_written != length) || input_remaining)
 	{
 		osd_printf_error(
 				"unzip: inflation of %s from %s doesn't appear to have completed correctly\n",
@@ -1374,24 +1343,10 @@ std::error_condition zip_file_impl::decompress_data_type_14(std::uint64_t offset
 	// compressed data
 
 	assert(4 <= m_buffer.size());
-	assert(LZMA_PROPS_SIZE <= m_buffer.size());
 
-	bool const eos_mark(general_flag_reader(m_header.bit_flag).lzma_eos_mark());
-	Byte *const output(reinterpret_cast<Byte *>(buffer));
-	SizeT output_remaining(length);
 	std::uint64_t input_remaining(m_header.compressed_length);
-
 	std::size_t read_length;
 	std::error_condition filerr;
-	SRes lzerr;
-	ELzmaStatus lzstatus(LZMA_STATUS_MAYBE_FINISHED_WITHOUT_MARK);
-
-	// reset the stream
-	ISzAlloc alloc_imp;
-	alloc_imp.Alloc = [] (void *p, std::size_t size) -> void * { return size ? std::malloc(size) : nullptr; };
-	alloc_imp.Free = [] (void *p, void *address) -> void { std::free(address); };
-	CLzmaDec stream;
-	LzmaDec_Construct(&stream);
 
 	// need to read LZMA properties before we can initialise the decompressor
 	if (4 > input_remaining)
@@ -1419,11 +1374,11 @@ std::error_condition zip_file_impl::decompress_data_type_14(std::uint64_t offset
 		return archive_file::error::FILE_TRUNCATED;
 	}
 	std::uint16_t const props_size((std::uint16_t(m_buffer[3]) << 8) | std::uint16_t(m_buffer[2]));
-	if (props_size > m_buffer.size())
+	if (RLZMA_PROPS_SIZE != props_size)
 	{
 		osd_printf_error(
-				"unzip: %s in %s has excessively large LZMA properties\n",
-				m_header.file_name, m_filename);
+				"unzip: %s in %s has unsupported LZMA properties size %u\n",
+				m_header.file_name, m_filename, unsigned(props_size));
 		return archive_file::error::UNSUPPORTED;
 	}
 	else if (props_size > input_remaining)
@@ -1433,7 +1388,8 @@ std::error_condition zip_file_impl::decompress_data_type_14(std::uint64_t offset
 				m_header.file_name, m_filename);
 		return archive_file::error::DECOMPRESS_ERROR;
 	}
-	filerr = m_file->read_at(offset, &m_buffer[0], props_size, read_length);
+	std::uint8_t props[RLZMA_PROPS_SIZE];
+	filerr = m_file->read_at(offset, props, props_size, read_length);
 	if (filerr)
 	{
 		osd_printf_error(
@@ -1451,107 +1407,50 @@ std::error_condition zip_file_impl::decompress_data_type_14(std::uint64_t offset
 		return archive_file::error::FILE_TRUNCATED;
 	}
 
-	// initialize the decompressor
-	lzerr = LzmaDec_Allocate(&stream, &m_buffer[0], props_size, &alloc_imp);
-	if (SZ_ERROR_MEM == lzerr)
+	// the decoder consumes one whole block, so read the payload in
+	std::vector<std::uint8_t> compressed;
+	try { compressed.resize(std::size_t(input_remaining)); }
+	catch (...) { return std::errc::not_enough_memory; }
+	filerr = m_file->read_at(offset, compressed.data(), compressed.size(), read_length);
+	if (filerr)
 	{
 		osd_printf_error(
-				"unzip: memory error allocating LZMA decoder to decompress %s from %s\n",
-				m_header.file_name, m_filename);
-		return std::errc::not_enough_memory;
+				"unzip: error reading compressed data for %s in %s (%s:%d %s)\n",
+				m_header.file_name, m_filename, filerr.category().name(), filerr.value(), filerr.message());
+		return filerr;
 	}
-	else if (SZ_ERROR_UNSUPPORTED)
+	if (read_length != compressed.size())
+	{
+		osd_printf_error(
+				"unzip: unexpectedly reached end-of-file while reading compressed data for %s in %s\n",
+				m_header.file_name, m_filename);
+		return archive_file::error::FILE_TRUNCATED;
+	}
+
+	// initialise and run the decoder; an end-of-stream marker at the
+	// tail (stated by the general-purpose flags) is tolerated either way
+	std::unique_ptr<rlzma_dec_t> decoder(new (std::nothrow) rlzma_dec_t);
+	if (!decoder)
+		return std::errc::not_enough_memory;
+	if (RLZMA_OK != rlzma_dec_init(decoder.get(), props))
 	{
 		osd_printf_error(
 				"unzip: LZMA decoder does not support properties for %s in %s\n",
 				m_header.file_name, m_filename);
 		return archive_file::error::UNSUPPORTED;
 	}
-	else if (SZ_OK != lzerr)
+	if (RLZMA_OK != rlzma_dec_decode(
+			decoder.get(),
+			reinterpret_cast<std::uint8_t *>(buffer), length,
+			compressed.data(), compressed.size()))
 	{
 		osd_printf_error(
-				"unzip: error allocating LZMA decoder to decompress %s from %s (%d)\n",
-				m_header.file_name, m_filename, int(lzerr));
+				"unzip: error decompressing %s in %s\n",
+				m_header.file_name, m_filename);
 		return archive_file::error::DECOMPRESS_ERROR;
 	}
-	LzmaDec_Init(&stream);
 
-	// loop until we're done
-	while (0 < input_remaining)
-	{
-		// read in the next chunk of data
-		filerr = m_file->read_at(
-				offset,
-				&m_buffer[0],
-				std::size_t((std::min<std::uint64_t>)(input_remaining, m_buffer.size())),
-				read_length);
-		if (filerr)
-		{
-			osd_printf_error(
-					"unzip: error reading compressed data for %s in %s (%s)\n",
-					m_header.file_name, m_filename);
-			LzmaDec_Free(&stream, &alloc_imp);
-			return filerr;
-		}
-		offset += read_length;
-		input_remaining -= read_length;
-
-		// if we read nothing, but still have data left, the file is truncated
-		if (!read_length && input_remaining)
-		{
-			osd_printf_error(
-					"unzip: unexpectedly reached end-of-file while reading compressed data for %s in %s\n",
-					m_header.file_name, m_filename);
-			LzmaDec_Free(&stream, &alloc_imp);
-			return archive_file::error::FILE_TRUNCATED;
-		}
-
-		// now decompress
-		SizeT len(read_length);
-		// FIXME: is the input length really an in/out parameter or not?
-		// At least on reaching the end of the input, the input length doesn't seem to get updated
-		lzerr = LzmaDec_DecodeToBuf(
-				&stream,
-				output + length - output_remaining,
-				&output_remaining,
-				reinterpret_cast<Byte const *>(&m_buffer[0]),
-				&len,
-				(!input_remaining && eos_mark) ? LZMA_FINISH_END :  LZMA_FINISH_ANY,
-				&lzstatus);
-		if (SZ_OK != lzerr)
-		{
-			osd_printf_error("unzip: error decoding LZMA data for %s in %s (%d)\n", m_header.file_name, m_filename, int(lzerr));
-			LzmaDec_Free(&stream, &alloc_imp);
-			return archive_file::error::DECOMPRESS_ERROR;
-		}
-	}
-
-	// finish decompression
-	LzmaDec_Free(&stream, &alloc_imp);
-
-	// if anything looks funny, report an error
-	if (LZMA_STATUS_FINISHED_WITH_MARK == lzstatus)
-	{
-		return std::error_condition();
-	}
-	else if (eos_mark)
-	{
-		osd_printf_error(
-				"unzip: LZMA end mark not found for %s in %s (%d)\n",
-				m_header.file_name, m_filename, int(lzstatus));
-		return archive_file::error::DECOMPRESS_ERROR;
-	}
-	else if (LZMA_STATUS_MAYBE_FINISHED_WITHOUT_MARK != lzstatus)
-	{
-		osd_printf_error(
-				"unzip: LZMA decompression of %s from %s doesn't appear to have completed correctly (%d)\n",
-				m_header.file_name, m_filename, int(lzstatus));
-		return archive_file::error::DECOMPRESS_ERROR;
-	}
-	else
-	{
-		return std::error_condition();
-	}
+	return std::error_condition();
 }
 
 } // anonymous namespace

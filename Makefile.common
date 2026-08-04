@@ -507,34 +507,6 @@ $(JPEG_OBJS): GRPFLAGS :=
 OBJECTS += $(JPEG_OBJS)
 
 ##############################################################################
-# 7z
-##############################################################################
-LZMA_SRC_C := \
-	$(CORE_DIR)/3rdparty/lzma/C/7zAlloc.c \
-	$(CORE_DIR)/3rdparty/lzma/C/7zArcIn.c \
-	$(CORE_DIR)/3rdparty/lzma/C/7zBuf.c \
-	$(CORE_DIR)/3rdparty/lzma/C/7zCrc.c \
-	$(CORE_DIR)/3rdparty/lzma/C/7zCrcOpt.c \
-	$(CORE_DIR)/3rdparty/lzma/C/7zDec.c \
-	$(CORE_DIR)/3rdparty/lzma/C/7zStream.c \
-	$(CORE_DIR)/3rdparty/lzma/C/Bcj2.c \
-	$(CORE_DIR)/3rdparty/lzma/C/Bra.c \
-	$(CORE_DIR)/3rdparty/lzma/C/Bra86.c \
-	$(CORE_DIR)/3rdparty/lzma/C/BraIA64.c \
-	$(CORE_DIR)/3rdparty/lzma/C/CpuArch.c \
-	$(CORE_DIR)/3rdparty/lzma/C/Delta.c \
-	$(CORE_DIR)/3rdparty/lzma/C/LzFind.c \
-	$(CORE_DIR)/3rdparty/lzma/C/Lzma2Dec.c \
-	$(CORE_DIR)/3rdparty/lzma/C/LzmaDec.c \
-	$(CORE_DIR)/3rdparty/lzma/C/LzmaEnc.c \
-	$(CORE_DIR)/3rdparty/lzma/C/Ppmd7.c \
-	$(CORE_DIR)/3rdparty/lzma/C/Ppmd7Dec.c
-
-LZMA_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(LZMA_SRC_C:.c=.o))
-$(LZMA_OBJS): GRPFLAGS := -D_7ZIP_PPMD_SUPPPORT -D_7ZIP_ST
-OBJECTS += $(LZMA_OBJS)
-
-##############################################################################
 # utf8proc
 ##############################################################################
 UTF8PROC_SRC_C := \
@@ -570,7 +542,6 @@ CORE_ARCHIVES := \
 	$(CORE_OBJ_DIR)/libocore_retro.a \
 	$(CORE_OBJ_DIR)/libzlib.a \
 	$(CORE_OBJ_DIR)/libjpeg.a \
-	$(CORE_OBJ_DIR)/liblzma.a \
 	$(CORE_OBJ_DIR)/libutf8proc.a
 
 $(CORE_OBJ_DIR)/libmame_mess.a: $(MAME_MESS_OBJS)
@@ -584,7 +555,6 @@ $(CORE_OBJ_DIR)/libosd_retro.a: $(OSD_RETRO_OBJS)
 $(CORE_OBJ_DIR)/libocore_retro.a: $(OCORE_RETRO_OBJS) $(LRC_VFS_OBJS)
 $(CORE_OBJ_DIR)/libzlib.a: $(ZLIB_OBJS)
 $(CORE_OBJ_DIR)/libjpeg.a: $(JPEG_OBJS)
-$(CORE_OBJ_DIR)/liblzma.a: $(LZMA_OBJS)
 $(CORE_OBJ_DIR)/libutf8proc.a: $(UTF8PROC_OBJS)
 
 $(CORE_ARCHIVES):
