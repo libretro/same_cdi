@@ -33,7 +33,6 @@ INCFLAGS := \
 	-I$(GEN_DIR)/emu/layout \
 	-I$(GEN_DIR)/mame/layout \
 	-I$(CORE_DIR)/3rdparty \
-	-I$(CORE_DIR)/3rdparty/asio/include \
 	-I$(CORE_DIR)/3rdparty/expat/lib \
 	-I$(CORE_DIR)/3rdparty/zlib \
 	-I$(CORE_DIR)/3rdparty/libflac/include \
