@@ -12,7 +12,7 @@
 
 #include "osdcore.h"
 
-#include <expat.h>
+#include "formats/rxml.h"
 
 #include <algorithm>
 #include <cassert>
@@ -75,25 +75,63 @@ void write_escaped(core_file &file, std::string const &str)
 //  TYPE DEFINITIONS
 //**************************************************************************
 
-struct parse_info
+//**************************************************************************
+//  RXML BRIDGE
+//**************************************************************************
+
+// Build the util::xml::data_node tree from a parsed rxml document.
+// Replicates what the expat callbacks used to do: every element becomes
+// a child node carrying its source line and attributes in document
+// order; element text becomes the node's value, trimmed of leading and
+// trailing whitespace as before.  Semantic deltas versus expat, none of
+// which the XML dialects in this tree (layouts, cfg, cheats, software
+// lists) exercise, are documented in the commit that made the switch:
+// whitespace-only runs inside mixed content are dropped rather than
+// preserved between the non-whitespace fragments, and input is
+// required to be UTF-8 (declared legacy encodings are not transcoded).
+static bool rxml_to_data_node(data_node *parent, ::rxml_node_t *src)
 {
-	XML_Parser      parser;
-	file::ptr       rootnode;
-	data_node *     curnode;
-	uint32_t        flags;
-};
+	for ( ; src; src = src->next)
+	{
+		data_node *const node = parent->add_child(src->name, nullptr);
+		if (!node)
+			return false;
+		node->line = int(src->line);
+		for (::rxml_attrib_node *at = src->attrib; at; at = at->next)
+			node->add_attribute(at->attrib, at->value ? at->value : "");
+		if (src->data)
+		{
+			node->append_value(src->data, int(strlen(src->data)));
+			node->trim_whitespace();
+		}
+		if (src->children && !rxml_to_data_node(node, src->children))
+			return false;
+	}
+	return true;
+}
 
+static file::ptr parse_string(char const *string, parse_options const *opts)
+{
+	::rxml_parse_error_t rerr;
+	::rxml_document_t *const doc = ::rxml_load_document_string_opts(
+			string, RXML_OPT_STRICT_EOF | RXML_OPT_LINES, &rerr);
+	if (!doc)
+	{
+		if (opts && opts->error)
+		{
+			opts->error->error_message = "malformed XML";
+			opts->error->error_line = int(rerr.line);
+			opts->error->error_column = int(rerr.col);
+		}
+		return file::ptr();
+	}
 
-
-//**************************************************************************
-//  PROTOTYPES
-//**************************************************************************
-
-// expat interfaces
-static bool expat_setup_parser(parse_info &info, parse_options const *opts);
-static void expat_element_start(void *data, const XML_Char *name, const XML_Char **attributes);
-static void expat_data(void *data, const XML_Char *s, int len);
-static void expat_element_end(void *data, const XML_Char *name);
+	file::ptr result = file::create();
+	if (result && !rxml_to_data_node(result.get(), ::rxml_root_node(doc)))
+		result.reset();
+	::rxml_free_document(doc);
+	return result;
+}
 
 
 
@@ -122,44 +160,18 @@ file::ptr file::create()
 
 file::ptr file::read(read_stream &file, parse_options const *opts)
 {
-	// set up the parser
-	parse_info info;
-	if (!expat_setup_parser(info, opts))
-		return ptr();
-
-	// loop through the file and parse it
-	bool done;
-	do
+	// slurp the stream; rxml parses from a single in-memory document
+	std::string buffer;
+	for (;;)
 	{
 		char tempbuf[TEMP_BUFFER_SIZE];
-
-		// read as much as we can
 		size_t bytes;
 		file.read(tempbuf, sizeof(tempbuf), bytes); // TODO: better error handling
-		done = !bytes;
-
-		// parse the data
-		if (XML_Parse(info.parser, tempbuf, bytes, done) == XML_STATUS_ERROR)
-		{
-			if (opts && opts->error)
-			{
-				opts->error->error_message = XML_ErrorString(XML_GetErrorCode(info.parser));
-				opts->error->error_line = XML_GetCurrentLineNumber(info.parser);
-				opts->error->error_column = XML_GetCurrentColumnNumber(info.parser);
-			}
-
-			info.rootnode.reset();
-			XML_ParserFree(info.parser);
-			return ptr();
-		}
+		if (!bytes)
+			break;
+		buffer.append(tempbuf, bytes);
 	}
-	while (!done);
-
-	// free the parser
-	XML_ParserFree(info.parser);
-
-	// return the root node
-	return std::move(info.rootnode);
+	return parse_string(buffer.c_str(), opts);
 }
 
 
@@ -170,33 +182,7 @@ file::ptr file::read(read_stream &file, parse_options const *opts)
 
 file::ptr file::string_read(const char *string, parse_options const *opts)
 {
-	parse_info info;
-	int length = (int)strlen(string);
-
-	// set up the parser
-	if (!expat_setup_parser(info, opts))
-		return ptr();
-
-	// parse the data
-	if (XML_Parse(info.parser, string, length, 1) == XML_STATUS_ERROR)
-	{
-		if (opts != nullptr && opts->error != nullptr)
-		{
-			opts->error->error_message = XML_ErrorString(XML_GetErrorCode(info.parser));
-			opts->error->error_line = XML_GetCurrentLineNumber(info.parser);
-			opts->error->error_column = XML_GetCurrentColumnNumber(info.parser);
-		}
-
-		info.rootnode.reset();
-		XML_ParserFree(info.parser);
-		return ptr();
-	}
-
-	// free the parser
-	XML_ParserFree(info.parser);
-
-	// return the root node
-	return std::move(info.rootnode);
+	return parse_string(string, opts);
 }
 
 
@@ -805,155 +791,6 @@ const char *normalize_string(const char *string)
 
 //**************************************************************************
 //  EXPAT INTERFACES
-//**************************************************************************
-
-//-------------------------------------------------
-//  expat_malloc/expat_realloc/expat_free -
-//  wrappers for memory allocation functions so
-//  that they pass through out memory tracking
-//  systems
-//-------------------------------------------------
-
-static void *expat_malloc(size_t size)
-{
-	auto *result = (uint32_t *)malloc(size + 4 * sizeof(uint32_t));
-	*result = size;
-	return &result[4];
-}
-
-static void expat_free(void *ptr)
-{
-	if (ptr != nullptr)
-		free(&((uint32_t *)ptr)[-4]);
-}
-
-static void *expat_realloc(void *ptr, size_t size)
-{
-	void *newptr = expat_malloc(size);
-	if (newptr == nullptr)
-		return nullptr;
-	if (ptr != nullptr)
-	{
-		uint32_t oldsize = ((uint32_t *)ptr)[-4];
-		memcpy(newptr, ptr, oldsize);
-		expat_free(ptr);
-	}
-	return newptr;
-}
-
-
-//-------------------------------------------------
-//  expat_setup_parser - set up expat for parsing
-//-------------------------------------------------
-
-static bool expat_setup_parser(parse_info &info, parse_options const *opts)
-{
-	XML_Memory_Handling_Suite memcallbacks;
-
-	// setup info structure
-	memset(&info, 0, sizeof(info));
-	if (opts != nullptr)
-	{
-		info.flags = opts->flags;
-		if (opts->error != nullptr)
-		{
-			opts->error->error_message = nullptr;
-			opts->error->error_line = 0;
-			opts->error->error_column = 0;
-		}
-	}
-
-	// create a root node
-	info.rootnode = file::create();
-	if (!info.rootnode)
-		return false;
-	info.curnode = info.rootnode.get();
-
-	// create the XML parser
-	memcallbacks.malloc_fcn = expat_malloc;
-	memcallbacks.realloc_fcn = expat_realloc;
-	memcallbacks.free_fcn = expat_free;
-	info.parser = XML_ParserCreate_MM(nullptr, &memcallbacks, nullptr);
-	if (info.parser == nullptr)
-	{
-		info.rootnode.reset();
-		return false;
-	}
-
-	// configure the parser
-	XML_SetElementHandler(info.parser, expat_element_start, expat_element_end);
-	XML_SetCharacterDataHandler(info.parser, expat_data);
-	XML_SetUserData(info.parser, &info);
-
-	// optional parser initialization step
-	if (opts != nullptr && opts->init_parser != nullptr)
-		(*opts->init_parser)(info.parser);
-	return true;
-}
-
-
-//------------------------------------------------
-//  expat_element_start - expat callback for a new
-//  element
-//------------------------------------------------
-
-static void expat_element_start(void *data, const XML_Char *name, const XML_Char **attributes)
-{
-	auto *info = (parse_info *) data;
-	data_node **curnode = &info->curnode;
-	data_node *newnode;
-	int attr;
-
-	// add a new child node to the current node
-	newnode = (*curnode)->add_child(name, nullptr);
-	if (newnode == nullptr)
-		return;
-
-	// remember the line number
-	newnode->line = XML_GetCurrentLineNumber(info->parser);
-
-	// add all the attributes as well
-	for (attr = 0; attributes[attr]; attr += 2)
-		newnode->add_attribute(attributes[attr+0], attributes[attr+1]);
-
-	// set us up as the current node
-	*curnode = newnode;
-}
-
-
-//-------------------------------------------------
-//  expat_data - expat callback for an additional
-//  element data
-//-------------------------------------------------
-
-static void expat_data(void *data, const XML_Char *s, int len)
-{
-	auto *info = (parse_info *) data;
-	data_node **curnode = &info->curnode;
-	(*curnode)->append_value(s, len);
-}
-
-
-//-------------------------------------------------
-//  expat_element_end - expat callback for the end
-//  of an element
-//-------------------------------------------------
-
-static void expat_element_end(void *data, const XML_Char *name)
-{
-	auto *info = (parse_info *) data;
-	data_node **curnode = &info->curnode;
-
-	// strip leading/trailing spaces from the value data
-	if (!(info->flags & PARSE_FLAG_WHITESPACE_SIGNIFICANT))
-		(*curnode)->trim_whitespace();
-
-	// back us up a node
-	*curnode = (*curnode)->get_parent();
-}
-
-
-
 //**************************************************************************
 //  NODE/ATTRIBUTE ADDITIONS
 //**************************************************************************

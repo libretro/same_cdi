@@ -22,7 +22,6 @@
 //----------------------------------
 
 // declared in expat.h
-struct XML_ParserStruct;
 
 
 

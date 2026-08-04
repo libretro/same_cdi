@@ -13,7 +13,7 @@
 
 #include "hash.h"
 
-#include "expat.h"
+#include "formats/rxml.h"
 
 #include <array>
 #include <cstring>
@@ -206,9 +206,8 @@ private:
 
 	// internal parsing helpers
 	const char *infoname() const { return m_current_info ? m_current_info->shortname().c_str() : "???"; }
-	int line() const { return XML_GetCurrentLineNumber(m_parser); }
-	int column() const { return XML_GetCurrentColumnNumber(m_parser); }
-	const char *parser_error() const { return XML_ErrorString(XML_GetErrorCode(m_parser)); }
+	int line() const { return m_cur_line; }
+	int column() const { return m_cur_col; }
 
 	// internal error helpers
 	template <typename Format, typename... Params> void parse_error(Format &&fmt, Params &&... args);
@@ -221,6 +220,7 @@ private:
 	void add_rom_entry(std::string &&name, std::string &&hashdata, u32 offset, u32 length, u32 flags);
 
 	// expat callbacks
+	void replay_node(::rxml_node_t *node);
 	static void start_handler(void *data, const char *tagname, const char **attributes);
 	static void data_handler(void *data, const char *s, int len);
 	static void end_handler(void *data, const char *name);
@@ -238,7 +238,8 @@ private:
 	const std::string_view      m_filename;
 	std::list<software_info> &  m_infolist;
 	std::ostream &              m_errors;
-	struct XML_ParserStruct *   m_parser;
+	int                         m_cur_line = 0;
+	int                         m_cur_col = 0;
 	std::string &               m_listname;
 	std::string &               m_description;
 	bool                        m_data_accum_expected;
@@ -272,33 +273,64 @@ softlist_parser::softlist_parser(
 	m_current_part(nullptr),
 	m_pos(POS_ROOT)
 {
-	// create the parser
-	m_parser = XML_ParserCreate_MM(nullptr, nullptr, nullptr);
-	if (!m_parser)
-		throw std::bad_alloc();
-
-	// set the handlers
-	XML_SetUserData(m_parser, this);
-	XML_SetElementHandler(m_parser, &softlist_parser::start_handler, &softlist_parser::end_handler);
-	XML_SetCharacterDataHandler(m_parser, &softlist_parser::data_handler);
-
-	// parse the file contents
-	char buffer[1024];
-	for (bool done = false; !done; )
+	// slurp the stream; rxml parses from a single in-memory document
+	std::string buffer;
+	for (;;)
 	{
+		char tempbuf[1024];
 		size_t length;
-		file.read(buffer, sizeof(buffer), length); // TODO: better error handling
+		file.read(tempbuf, sizeof(tempbuf), length); // TODO: better error handling
 		if (!length)
-			done = true;
-		if (XML_Parse(m_parser, buffer, length, done) == XML_STATUS_ERROR)
-		{
-			parse_error("%s", parser_error());
 			break;
-		}
+		buffer.append(tempbuf, length);
 	}
 
-	// free the parser
-	XML_ParserFree(m_parser);
+	// parse it and replay the tree through the expat-shaped handlers,
+	// which keeps the state machine below untouched
+	::rxml_parse_error_t rerr;
+	::rxml_document_t *const doc = ::rxml_load_document_string_opts(
+			buffer.c_str(), RXML_OPT_STRICT_EOF | RXML_OPT_LINES, &rerr);
+	if (!doc)
+	{
+		m_cur_line = int(rerr.line);
+		m_cur_col = int(rerr.col);
+		parse_error("malformed XML");
+	}
+	else
+	{
+		replay_node(::rxml_root_node(doc));
+		::rxml_free_document(doc);
+	}
+}
+
+
+//-------------------------------------------------
+//  replay_node - drive the streaming handlers
+//  from a parsed rxml tree, in document order
+//-------------------------------------------------
+
+void softlist_parser::replay_node(::rxml_node_t *node)
+{
+	for ( ; node; node = node->next)
+	{
+		m_cur_line = int(node->line);
+
+		// expat-style attribute vector: name/value pairs, NULL-terminated
+		std::vector<const char *> attrs;
+		for (::rxml_attrib_node *at = node->attrib; at; at = at->next)
+		{
+			attrs.push_back(at->attrib);
+			attrs.push_back(at->value ? at->value : "");
+		}
+		attrs.push_back(nullptr);
+
+		start_handler(this, node->name, attrs.data());
+		if (node->data)
+			data_handler(this, node->data, int(strlen(node->data)));
+		if (node->children)
+			replay_node(node->children);
+		end_handler(this, node->name);
+	}
 }
 
 

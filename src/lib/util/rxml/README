@@ -1,0 +1,7 @@
+Vendored from libretro-common (MIT), formats/xml/rxml.c and
+include/formats/rxml.h, byte-identical to upstream at the commit named
+in the log.  The retro_*/streams headers here are minimal local shims
+so the file compiles without the rest of libretro-common; the file
+stream functions are stubbed (rxml_filestream_stubs.c) because this
+tree only parses from memory.  Resync by copying the two upstream
+files over.
