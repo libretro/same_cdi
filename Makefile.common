@@ -34,7 +34,6 @@ INCFLAGS := \
 	-I$(GEN_DIR)/mame/layout \
 	-I$(CORE_DIR)/3rdparty \
 	-I$(CORE_DIR)/3rdparty/zlib \
-	-I$(CORE_DIR)/3rdparty/libflac/include \
 	-I$(CORE_DIR)/3rdparty/libjpeg \
 	-I$(CORE_DIR)/3rdparty/utf8proc
 
@@ -333,13 +332,11 @@ OBJECTS += $(FORMATS_OBJS)
 # utils
 ##############################################################################
 UTILS_SRC_CXX := \
-	$(CORE_DIR)/src/lib/util/avhuff.cpp \
 	$(CORE_DIR)/src/lib/util/aviio.cpp \
 	$(CORE_DIR)/src/lib/util/bitmap.cpp \
 	$(CORE_DIR)/src/lib/util/cdrom.cpp \
 	$(CORE_DIR)/src/lib/util/chd.cpp \
 	$(CORE_DIR)/src/lib/util/chdcd.cpp \
-	$(CORE_DIR)/src/lib/util/chdcodec.cpp \
 	$(CORE_DIR)/src/lib/util/corefile.cpp \
 	$(CORE_DIR)/src/lib/util/corestr.cpp \
 	$(CORE_DIR)/src/lib/util/coreutil.cpp \
@@ -348,7 +345,6 @@ UTILS_SRC_CXX := \
 	$(CORE_DIR)/src/lib/util/flac.cpp \
 	$(CORE_DIR)/src/lib/util/hash.cpp \
 	$(CORE_DIR)/src/lib/util/hashing.cpp \
-	$(CORE_DIR)/src/lib/util/huffman.cpp \
 	$(CORE_DIR)/src/lib/util/ioprocs.cpp \
 	$(CORE_DIR)/src/lib/util/ioprocsfilter.cpp \
 	$(CORE_DIR)/src/lib/util/jedparse.cpp \
@@ -477,30 +473,6 @@ $(ZLIB_OBJS): GRPFLAGS := -DZLIB_CONST
 OBJECTS += $(ZLIB_OBJS)
 
 ##############################################################################
-# flac
-##############################################################################
-FLAC_SRC_C := \
-	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/bitmath.c \
-	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/bitreader.c \
-	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/bitwriter.c \
-	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/cpu.c \
-	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/crc.c \
-	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/fixed.c \
-	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/format.c \
-	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/lpc.c \
-	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/md5.c \
-	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/memory.c \
-	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/stream_decoder.c \
-	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/stream_encoder.c \
-	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/stream_encoder_framing.c \
-	$(CORE_DIR)/3rdparty/libflac/src/libFLAC/window.c
-
-FLAC_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(FLAC_SRC_C:.c=.o))
-$(FLAC_OBJS): GRPINCS := -I$(CORE_DIR)/3rdparty/libflac/src/libFLAC/include -I$(CORE_DIR)/3rdparty/libflac/include
-$(FLAC_OBJS): GRPFLAGS := -DWORDS_BIGENDIAN=0 -DFLAC__NO_ASM -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -DFLAC__HAS_OGG=0 -DHAVE_CONFIG_H=1 -DFLAC__NO_STDIO
-OBJECTS += $(FLAC_OBJS)
-
-##############################################################################
 # jpeg
 ##############################################################################
 JPEG_SRC_C := \
@@ -597,7 +569,6 @@ CORE_ARCHIVES := \
 	$(CORE_OBJ_DIR)/libosd_retro.a \
 	$(CORE_OBJ_DIR)/libocore_retro.a \
 	$(CORE_OBJ_DIR)/libzlib.a \
-	$(CORE_OBJ_DIR)/libflac.a \
 	$(CORE_OBJ_DIR)/libjpeg.a \
 	$(CORE_OBJ_DIR)/liblzma.a \
 	$(CORE_OBJ_DIR)/libutf8proc.a
@@ -612,7 +583,6 @@ $(CORE_OBJ_DIR)/libutils.a: $(UTILS_OBJS)
 $(CORE_OBJ_DIR)/libosd_retro.a: $(OSD_RETRO_OBJS)
 $(CORE_OBJ_DIR)/libocore_retro.a: $(OCORE_RETRO_OBJS) $(LRC_VFS_OBJS)
 $(CORE_OBJ_DIR)/libzlib.a: $(ZLIB_OBJS)
-$(CORE_OBJ_DIR)/libflac.a: $(FLAC_OBJS)
 $(CORE_OBJ_DIR)/libjpeg.a: $(JPEG_OBJS)
 $(CORE_OBJ_DIR)/liblzma.a: $(LZMA_OBJS)
 $(CORE_OBJ_DIR)/libutf8proc.a: $(UTF8PROC_OBJS)
