@@ -58,17 +58,6 @@
 // screenless layouts
 #include "noscreens.lh"
 
-// dual screen layouts
-#include "dualhsxs.lh"
-#include "dualhovu.lh"
-#include "dualhuov.lh"
-
-// triple screen layouts
-#include "triphsxs.lh"
-
-// quad screen layouts
-#include "quadhsxs.lh"
-
 
 namespace {
 

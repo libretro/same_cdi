@@ -118,7 +118,6 @@ FRONTEND_SRC_CXX := \
 	$(CORE_DIR)/src/frontend/mame/ui/about.cpp \
 	$(CORE_DIR)/src/frontend/mame/ui/analogipt.cpp \
 	$(CORE_DIR)/src/frontend/mame/ui/auditmenu.cpp \
-	$(CORE_DIR)/src/frontend/mame/ui/barcode.cpp \
 	$(CORE_DIR)/src/frontend/mame/ui/cheatopt.cpp \
 	$(CORE_DIR)/src/frontend/mame/ui/confswitch.cpp \
 	$(CORE_DIR)/src/frontend/mame/ui/custui.cpp \
@@ -273,8 +272,6 @@ OPTIONAL_SRC_CXX := \
 	$(CORE_DIR)/src/devices/imagedev/cassette.cpp \
 	$(CORE_DIR)/src/devices/imagedev/chd_cd.cpp \
 	$(CORE_DIR)/src/devices/imagedev/floppy.cpp \
-	$(CORE_DIR)/src/devices/machine/bcreader.cpp \
-	$(CORE_DIR)/src/devices/machine/ram.cpp \
 	$(CORE_DIR)/src/devices/machine/scc68070.cpp \
 	$(CORE_DIR)/src/devices/machine/timekpr.cpp \
 	$(CORE_DIR)/src/devices/sound/dmadac.cpp \
@@ -358,7 +355,6 @@ UTILS_SRC_CXX := \
 	$(CORE_DIR)/src/lib/util/un7z.cpp \
 	$(CORE_DIR)/src/lib/util/unicode.cpp \
 	$(CORE_DIR)/src/lib/util/unzip.cpp \
-	$(CORE_DIR)/src/lib/util/vbiparse.cpp \
 	$(CORE_DIR)/src/lib/util/vecstream.cpp \
 	$(CORE_DIR)/src/lib/util/wavwrite.cpp \
 	$(CORE_DIR)/src/lib/util/xmlfile.cpp \

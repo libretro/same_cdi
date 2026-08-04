@@ -13,7 +13,6 @@
 
 #include "ui/about.h"
 #include "ui/analogipt.h"
-#include "ui/barcode.h"
 #include "ui/cheatopt.h"
 #include "ui/confswitch.h"
 #include "ui/datmenu.h"
@@ -34,7 +33,6 @@
 #include "mame.h"
 #include "luaengine.h"
 
-#include "machine/bcreader.h"
 
 #include "crsshair.h"
 #include "dipty.h"
@@ -66,7 +64,6 @@ enum : unsigned {
 	CHEAT,
 	PLUGINS,
 	BIOS_SELECTION,
-	BARCODE_READ,
 	PTY_INFO,
 	EXTERNAL_DATS,
 	ADD_FAVORITE,
@@ -155,8 +152,6 @@ void menu_main::populate(float &customtop, float &custombottom)
 	if (slot_interface_enumerator(machine().root_device()).first() != nullptr)
 		item_append(_("Slot Devices"), 0, (void *)SLOT_DEVICES);
 
-	if (barcode_reader_device_enumerator(machine().root_device()).first() != nullptr)
-		item_append(_("Barcode Reader"), 0, (void *)BARCODE_READ);
 
 	if (network_interface_enumerator(machine().root_device()).first() != nullptr)
 		item_append(_("Network Devices"), 0, (void*)NETWORK_DEVICES);
@@ -314,10 +309,6 @@ void menu_main::handle(event const *ev)
 
 		case BIOS_SELECTION:
 			menu::stack_push<menu_bios_selection>(ui(), container());
-			break;
-
-		case BARCODE_READ:
-			menu::stack_push<menu_barcode_reader>(ui(), container(), nullptr);
 			break;
 
 		case EXTERNAL_DATS:

@@ -9,7 +9,6 @@
 #include "machine/cdicdic.h"
 #include "sound/dmadac.h"
 #include "video/mcd212.h"
-#include "cpu/mcs51/mcs51.h"
 #include "cpu/m6805/m68hc05.h"
 #include "diserial.h"
 #include "screen.h"

@@ -28,7 +28,6 @@ TODO:
 
 #include "imagedev/chd_cd.h"
 #include "machine/scc68070.h"
-#include "sound/cdda.h"
 #include "sound/dmadac.h"
 #include "cdrom.h"
 

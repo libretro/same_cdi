@@ -13,7 +13,6 @@
 
 #include "mameopts.h"
 
-#include "machine/ram.h"
 #include "sound/samples.h"
 
 #include "config.h"
@@ -126,7 +125,6 @@ void output_features(std::ostream &out, device_type type, device_t::feature_type
 void output_images(std::ostream &out, device_t &device, const char *root_tag);
 void output_slots(std::ostream &out, machine_config &config, device_t &device, const char *root_tag, device_type_set *devtypes);
 void output_software_lists(std::ostream &out, device_t &root, const char *root_tag);
-void output_ramoptions(std::ostream &out, device_t &root);
 
 void output_one_device(std::ostream &out, machine_config &config, device_t &device, const char *devtag);
 void output_devices(std::ostream &out, emu_options &lookup_options, device_type_set const *filter);
@@ -795,7 +793,6 @@ void output_one(std::ostream &out, driver_enumerator &drivlist, const game_drive
 	output_images(out, config.root_device(), "");
 	output_slots(out, config, config.root_device(), "", devtypes);
 	output_software_lists(out, config.root_device(), "");
-	output_ramoptions(out, config.root_device());
 
 	// close the topmost tag
 	util::stream_format(out, "\t</%s>\n", XML_TOP);
@@ -2130,38 +2127,6 @@ void output_software_lists(std::ostream &out, device_t &root, const char *root_t
 
 
 
-//-------------------------------------------------
-//  output_ramoptions - prints m_output all RAM
-//  options for this system
-//-------------------------------------------------
-
-void output_ramoptions(std::ostream &out, device_t &root)
-{
-	for (const ram_device &ram : ram_device_enumerator(root, 1))
-	{
-		if (!std::strcmp(ram.tag(), ":" RAM_TAG))
-		{
-			uint32_t const defsize(ram.default_size());
-			bool havedefault(false);
-			for (ram_device::extra_option const &option : ram.extra_options())
-			{
-				if (defsize == option.second)
-				{
-					assert(!havedefault);
-					havedefault = true;
-					util::stream_format(out, "\t\t<ramoption name=\"%s\" default=\"yes\">%u</ramoption>\n", normalize_string(option.first), option.second);
-				}
-				else
-				{
-					util::stream_format(out, "\t\t<ramoption name=\"%s\">%u</ramoption>\n", normalize_string(option.first), option.second);
-				}
-			}
-			if (!havedefault)
-				util::stream_format(out, "\t\t<ramoption name=\"%s\" default=\"yes\">%u</ramoption>\n", ram.default_size_string(), defsize);
-			break;
-		}
-	}
-}
 
 
 //-------------------------------------------------

@@ -53,7 +53,6 @@ TODO:
 #include "cpu/m6805/m6805.h"
 #include "imagedev/chd_cd.h"
 #include "machine/timekpr.h"
-#include "sound/cdda.h"
 
 #include "emupal.h"
 #include "screen.h"
