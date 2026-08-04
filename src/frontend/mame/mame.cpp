@@ -533,19 +533,8 @@ void emulator_info::sound_hook()
 
 void emulator_info::layout_script_cb(layout_file &file, const char *script)
 {
-	// TODO: come up with a better way to pass multiple arguments to plugin
-	//mame_machine_manager::instance()->lua()->call_plugin_set("layout", std::make_tuple(&file, script->get_value()));
-	auto &lua(mame_machine_manager::instance()->lua()->sol());
-	sol::object obj = lua.registry()["cb_layout"];
-	if (obj.is<sol::protected_function>())
-	{
-		auto res = obj.as<sol::protected_function>()(sol::make_reference(lua, &file), sol::make_reference(lua, script));
-		if (!res.valid())
-		{
-			sol::error err = res;
-			osd_printf_error("[LUA ERROR] in call_plugin: %s\n", err.what());
-		}
-	}
+	// Lua has been removed from this core; layout scripts are not supported.
+	osd_printf_error("Layout scripts are not supported (Lua removed)\n");
 }
 
 bool emulator_info::standalone() { return false; }

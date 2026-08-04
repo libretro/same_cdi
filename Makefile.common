@@ -38,11 +38,8 @@ INCFLAGS := \
 	-I$(CORE_DIR)/3rdparty/zlib \
 	-I$(CORE_DIR)/3rdparty/libflac/include \
 	-I$(CORE_DIR)/3rdparty/libjpeg \
-	-I$(CORE_DIR)/3rdparty/lua/src \
 	-I$(CORE_DIR)/3rdparty/pugixml/src \
 	-I$(CORE_DIR)/3rdparty/rapidjson/include \
-	-I$(CORE_DIR)/3rdparty/sol2 \
-	-I$(CORE_DIR)/3rdparty/sqlite3 \
 	-I$(CORE_DIR)/3rdparty/utf8proc
 
 ifeq ($(platform_is_windows), 1)
@@ -50,7 +47,7 @@ INCFLAGS += -I$(CORE_DIR)/src/osd/windows -I$(CORE_DIR)/3rdparty/compat/mingw -I
 endif
 
 # Defines common to every translation unit
-COREDEFINES := -D__LIBRETRO__ -DNDEBUG -DFLAC__NO_DLL -DPUGIXML_HEADER_ONLY -DLUA_COMPAT_ALL -DLUA_COMPAT_5_1 -DLUA_COMPAT_5_2
+COREDEFINES := -D__LIBRETRO__ -DNDEBUG -DFLAC__NO_DLL -DPUGIXML_HEADER_ONLY
 
 ifeq ($(platform_is_windows), 1)
 COREDEFINES += -DCRLF=3 -DUNICODE -D_UNICODE -Dmain=utf8_main -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0501
@@ -100,11 +97,6 @@ ifeq ($(platform_is_macosx), 1)
 EXPATDEFS += -DHAVE_ARC4RANDOM
 endif
 
-LUADEFS :=
-ifneq ($(platform_is_windows), 1)
-LUADEFS += -DLUA_USE_POSIX
-endif
-
 
 ##############################################################################
 # mess
@@ -143,11 +135,6 @@ FRONTEND_SRC_CXX := \
 	$(CORE_DIR)/src/frontend/mame/infoxml.cpp \
 	$(CORE_DIR)/src/frontend/mame/iptseqpoll.cpp \
 	$(CORE_DIR)/src/frontend/mame/language.cpp \
-	$(CORE_DIR)/src/frontend/mame/luaengine.cpp \
-	$(CORE_DIR)/src/frontend/mame/luaengine_debug.cpp \
-	$(CORE_DIR)/src/frontend/mame/luaengine_input.cpp \
-	$(CORE_DIR)/src/frontend/mame/luaengine_mem.cpp \
-	$(CORE_DIR)/src/frontend/mame/luaengine_render.cpp \
 	$(CORE_DIR)/src/frontend/mame/mame.cpp \
 	$(CORE_DIR)/src/frontend/mame/mameopts.cpp \
 	$(CORE_DIR)/src/frontend/mame/media_ident.cpp \
@@ -1013,82 +1000,6 @@ $(LZMA_OBJS): GRPFLAGS := -D_7ZIP_PPMD_SUPPPORT -D_7ZIP_ST
 OBJECTS += $(LZMA_OBJS)
 
 ##############################################################################
-# lua
-##############################################################################
-LUA_SRC_C := \
-	$(CORE_DIR)/3rdparty/lua/src/lapi.c \
-	$(CORE_DIR)/3rdparty/lua/src/lauxlib.c \
-	$(CORE_DIR)/3rdparty/lua/src/lbaselib.c \
-	$(CORE_DIR)/3rdparty/lua/src/lbitlib.c \
-	$(CORE_DIR)/3rdparty/lua/src/lcode.c \
-	$(CORE_DIR)/3rdparty/lua/src/lcorolib.c \
-	$(CORE_DIR)/3rdparty/lua/src/lctype.c \
-	$(CORE_DIR)/3rdparty/lua/src/ldblib.c \
-	$(CORE_DIR)/3rdparty/lua/src/ldebug.c \
-	$(CORE_DIR)/3rdparty/lua/src/ldo.c \
-	$(CORE_DIR)/3rdparty/lua/src/ldump.c \
-	$(CORE_DIR)/3rdparty/lua/src/lfunc.c \
-	$(CORE_DIR)/3rdparty/lua/src/lgc.c \
-	$(CORE_DIR)/3rdparty/lua/src/linit.c \
-	$(CORE_DIR)/3rdparty/lua/src/liolib.c \
-	$(CORE_DIR)/3rdparty/lua/src/llex.c \
-	$(CORE_DIR)/3rdparty/lua/src/lmathlib.c \
-	$(CORE_DIR)/3rdparty/lua/src/lmem.c \
-	$(CORE_DIR)/3rdparty/lua/src/loadlib.c \
-	$(CORE_DIR)/3rdparty/lua/src/lobject.c \
-	$(CORE_DIR)/3rdparty/lua/src/lopcodes.c \
-	$(CORE_DIR)/3rdparty/lua/src/loslib.c \
-	$(CORE_DIR)/3rdparty/lua/src/lparser.c \
-	$(CORE_DIR)/3rdparty/lua/src/lstate.c \
-	$(CORE_DIR)/3rdparty/lua/src/lstring.c \
-	$(CORE_DIR)/3rdparty/lua/src/lstrlib.c \
-	$(CORE_DIR)/3rdparty/lua/src/ltable.c \
-	$(CORE_DIR)/3rdparty/lua/src/ltablib.c \
-	$(CORE_DIR)/3rdparty/lua/src/ltm.c \
-	$(CORE_DIR)/3rdparty/lua/src/lundump.c \
-	$(CORE_DIR)/3rdparty/lua/src/lutf8lib.c \
-	$(CORE_DIR)/3rdparty/lua/src/lvm.c \
-	$(CORE_DIR)/3rdparty/lua/src/lzio.c
-
-LUA_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(LUA_SRC_C:.c=.o))
-$(LUA_OBJS): GRPFLAGS := $(LUADEFS)
-OBJECTS += $(LUA_OBJS)
-
-##############################################################################
-# lualibs
-##############################################################################
-LUALIBS_SRC_C := \
-	$(CORE_DIR)/3rdparty/lsqlite3/lsqlite3.c \
-	$(CORE_DIR)/3rdparty/lua-linenoise/linenoise.c \
-	$(CORE_DIR)/3rdparty/lua-zlib/lua_zlib.c \
-	$(CORE_DIR)/3rdparty/luafilesystem/src/lfs.c
-
-LUALIBS_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(LUALIBS_SRC_C:.c=.o))
-$(LUALIBS_OBJS): GRPFLAGS := -I$(CORE_DIR)/3rdparty/linenoise -I$(CORE_DIR)/3rdparty/sqlite3
-OBJECTS += $(LUALIBS_OBJS)
-
-##############################################################################
-# sqlite3
-##############################################################################
-SQLITE3_SRC_C := \
-	$(CORE_DIR)/3rdparty/sqlite3/sqlite3.c
-
-SQLITE3_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(SQLITE3_SRC_C:.c=.o))
-$(SQLITE3_OBJS): GRPFLAGS :=
-OBJECTS += $(SQLITE3_OBJS)
-
-##############################################################################
-# linenoise
-##############################################################################
-LINENOISE_SRC_C := \
-	$(CORE_DIR)/3rdparty/linenoise/linenoise.c \
-	$(CORE_DIR)/3rdparty/linenoise/utf8.c
-
-LINENOISE_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(LINENOISE_SRC_C:.c=.o))
-$(LINENOISE_OBJS): GRPFLAGS := -I$(CORE_DIR)/3rdparty/linenoise
-OBJECTS += $(LINENOISE_OBJS)
-
-##############################################################################
 # utf8proc
 ##############################################################################
 UTF8PROC_SRC_C := \
@@ -1129,10 +1040,6 @@ CORE_ARCHIVES := \
 	$(CORE_OBJ_DIR)/libflac.a \
 	$(CORE_OBJ_DIR)/libjpeg.a \
 	$(CORE_OBJ_DIR)/liblzma.a \
-	$(CORE_OBJ_DIR)/liblua.a \
-	$(CORE_OBJ_DIR)/liblualibs.a \
-	$(CORE_OBJ_DIR)/libsqlite3.a \
-	$(CORE_OBJ_DIR)/liblinenoise.a \
 	$(CORE_OBJ_DIR)/libutf8proc.a
 
 $(CORE_OBJ_DIR)/libmame_mess.a: $(MAME_MESS_OBJS)
@@ -1151,10 +1058,6 @@ $(CORE_OBJ_DIR)/libzlib.a: $(ZLIB_OBJS)
 $(CORE_OBJ_DIR)/libflac.a: $(FLAC_OBJS)
 $(CORE_OBJ_DIR)/libjpeg.a: $(JPEG_OBJS)
 $(CORE_OBJ_DIR)/liblzma.a: $(LZMA_OBJS)
-$(CORE_OBJ_DIR)/liblua.a: $(LUA_OBJS)
-$(CORE_OBJ_DIR)/liblualibs.a: $(LUALIBS_OBJS)
-$(CORE_OBJ_DIR)/libsqlite3.a: $(SQLITE3_OBJS)
-$(CORE_OBJ_DIR)/liblinenoise.a: $(LINENOISE_OBJS)
 $(CORE_OBJ_DIR)/libutf8proc.a: $(UTF8PROC_OBJS)
 
 $(CORE_ARCHIVES):
