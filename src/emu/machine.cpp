@@ -29,8 +29,6 @@
 #include "corestr.h"
 #include "unzip.h"
 
-#include <rapidjson/writer.h>
-#include <rapidjson/stringbuffer.h>
 
 #include <ctime>
 
