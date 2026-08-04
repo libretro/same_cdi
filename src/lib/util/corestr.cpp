@@ -17,6 +17,7 @@
 
 #include <cctype>
 #include <cstdlib>
+#include <stdint.h>
 
 
 /*-------------------------------------------------
