@@ -20,7 +20,6 @@
 
 
 // forward type declarations
-struct XML_ParserStruct;
 
 
 namespace util::xml {
@@ -57,7 +56,6 @@ struct parse_options
 	parse_options() = default;
 
 	parse_error *       error = nullptr;
-	void                (*init_parser)(XML_ParserStruct *parser) = nullptr;
 	uint32_t            flags = 0;
 };
 

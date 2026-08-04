@@ -33,7 +33,6 @@ INCFLAGS := \
 	-I$(GEN_DIR)/emu/layout \
 	-I$(GEN_DIR)/mame/layout \
 	-I$(CORE_DIR)/3rdparty \
-	-I$(CORE_DIR)/3rdparty/expat/lib \
 	-I$(CORE_DIR)/3rdparty/zlib \
 	-I$(CORE_DIR)/3rdparty/libflac/include \
 	-I$(CORE_DIR)/3rdparty/libjpeg \
@@ -77,23 +76,6 @@ endif
 endif
 ifeq ($(platform_is_macosx), 1)
 OSDDEFS += -DSDLMAME_MACOSX -DSDLMAME_DARWIN
-endif
-
-EXPATDEFS := -DHAVE_MEMMOVE -DHAVE_STDINT_H -DHAVE_STDLIB_H -DHAVE_STRING_H \
-	-DPACKAGE=\"expat\" -DPACKAGE_BUGREPORT=\"expat-bugs@libexpat.org\" \
-	-DPACKAGE_NAME=\"expat\" '-DPACKAGE_STRING="expat 2.2.10"' \
-	-DPACKAGE_TARNAME=\"expat\" -DPACKAGE_URL=\"\" -DPACKAGE_VERSION=\"2.2.10\" \
-	-DSTDC_HEADERS -DVERSION=\"2.2.10\" -DXML_CONTEXT_BYTES=1024 -DXML_DTD -DXML_NS
-ifeq ($(BIGENDIAN), 1)
-EXPATDEFS += -DBYTEORDER=4321 -DWORDS_BIGENDIAN
-else
-EXPATDEFS += -DBYTEORDER=1234
-endif
-ifneq ($(platform_is_windows), 1)
-EXPATDEFS += -DHAVE_DLFCN_H -DHAVE_FCNTL_H -DHAVE_MMAP -DHAVE_SYS_STAT_H -DHAVE_SYS_TYPES_H -DHAVE_UNISTD_H -DXML_DEV_URANDOM
-endif
-ifeq ($(platform_is_macosx), 1)
-EXPATDEFS += -DHAVE_ARC4RANDOM
 endif
 
 
@@ -284,6 +266,7 @@ EMU_SRC_CXX := \
 
 EMU_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(EMU_SRC_CXX:.cpp=.o))
 $(EMU_OBJS): GRPFLAGS :=
+$(EMU_OBJS): GRPINCS := $(INCFLAGS) -I$(CORE_DIR)/src/lib/util/rxml
 OBJECTS += $(EMU_OBJS)
 
 ##############################################################################
@@ -393,8 +376,14 @@ UTILS_SRC_CXX := \
 	$(CORE_DIR)/src/lib/util/xmlfile.cpp \
 	$(CORE_DIR)/src/lib/util/zippath.cpp
 
-UTILS_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(UTILS_SRC_CXX:.cpp=.o))
+UTILS_SRC_C := \
+	$(CORE_DIR)/src/lib/util/rxml/rxml.c \
+	$(CORE_DIR)/src/lib/util/rxml/rxml_filestream_stubs.c
+
+UTILS_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(UTILS_SRC_CXX:.cpp=.o)) \
+	$(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(UTILS_SRC_C:.c=.o))
 $(UTILS_OBJS): GRPFLAGS := -DUTF8PROC_STATIC
+$(UTILS_OBJS): GRPINCS := $(INCFLAGS) -I$(CORE_DIR)/src/lib/util/rxml
 OBJECTS += $(UTILS_OBJS)
 
 ##############################################################################
@@ -457,18 +446,6 @@ endif
 OCORE_RETRO_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(OCORE_RETRO_SRC_CXX:.cpp=.o))
 $(OCORE_RETRO_OBJS): GRPFLAGS := $(OSDDEFS)
 OBJECTS += $(OCORE_RETRO_OBJS)
-
-##############################################################################
-# expat
-##############################################################################
-EXPAT_SRC_C := \
-	$(CORE_DIR)/3rdparty/expat/lib/xmlparse.c \
-	$(CORE_DIR)/3rdparty/expat/lib/xmlrole.c \
-	$(CORE_DIR)/3rdparty/expat/lib/xmltok.c
-
-EXPAT_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(EXPAT_SRC_C:.c=.o))
-$(EXPAT_OBJS): GRPFLAGS := $(EXPATDEFS)
-OBJECTS += $(EXPAT_OBJS)
 
 ##############################################################################
 # zlib
@@ -609,7 +586,6 @@ CORE_ARCHIVES := \
 	$(CORE_OBJ_DIR)/libutils.a \
 	$(CORE_OBJ_DIR)/libosd_retro.a \
 	$(CORE_OBJ_DIR)/libocore_retro.a \
-	$(CORE_OBJ_DIR)/libexpat.a \
 	$(CORE_OBJ_DIR)/libzlib.a \
 	$(CORE_OBJ_DIR)/libflac.a \
 	$(CORE_OBJ_DIR)/libjpeg.a \
@@ -625,7 +601,6 @@ $(CORE_OBJ_DIR)/libformats.a: $(FORMATS_OBJS)
 $(CORE_OBJ_DIR)/libutils.a: $(UTILS_OBJS)
 $(CORE_OBJ_DIR)/libosd_retro.a: $(OSD_RETRO_OBJS)
 $(CORE_OBJ_DIR)/libocore_retro.a: $(OCORE_RETRO_OBJS)
-$(CORE_OBJ_DIR)/libexpat.a: $(EXPAT_OBJS)
 $(CORE_OBJ_DIR)/libzlib.a: $(ZLIB_OBJS)
 $(CORE_OBJ_DIR)/libflac.a: $(FLAC_OBJS)
 $(CORE_OBJ_DIR)/libjpeg.a: $(JPEG_OBJS)
