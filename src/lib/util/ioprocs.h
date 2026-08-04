@@ -15,7 +15,6 @@
 #include "utilfwd.h"
 
 #include <cstdint>
-#include <cstdio>
 #include <cstdlib>
 #include <memory>
 #include <system_error>
@@ -237,15 +236,7 @@ random_read::ptr ram_read(void const *data, std::size_t size, std::uint8_t fille
 random_read::ptr ram_read_copy(void const *data, std::size_t size) noexcept;
 random_read::ptr ram_read_copy(void const *data, std::size_t size, std::uint8_t filler) noexcept;
 
-random_read::ptr stdio_read(FILE *file) noexcept;
-random_read::ptr stdio_read(FILE *file, std::uint8_t filler) noexcept;
-random_read::ptr stdio_read_noclose(FILE *file) noexcept;
-random_read::ptr stdio_read_noclose(FILE *file, std::uint8_t filler) noexcept;
 
-random_read_write::ptr stdio_read_write(FILE *file) noexcept;
-random_read_write::ptr stdio_read_write(FILE *file, std::uint8_t filler) noexcept;
-random_read_write::ptr stdio_read_write_noclose(FILE *file) noexcept;
-random_read_write::ptr stdio_read_write_noclose(FILE *file, std::uint8_t filler) noexcept;
 
 random_read::ptr osd_file_read(std::unique_ptr<osd_file> &&file) noexcept;
 random_read::ptr osd_file_read(osd_file &file) noexcept;

@@ -176,7 +176,6 @@ public:
 	error legacy_construct(const LegacyWaveFiller *legacy_args);
 
 	/* debug calls */
-	void dump(const char *filename);
 
 	error save();
 	void change(util::random_read_write::ptr &&io, const Format *format, int flags);

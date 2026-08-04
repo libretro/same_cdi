@@ -1,5 +1,8 @@
 #ifdef __GNUC__
 #include <unistd.h>
+#include <streams/file_stream.h>
+#include <file/file_path.h>
+#include <retro_dirent.h>
 #endif
 #include <stdint.h>
 #include <string.h>
@@ -245,6 +248,23 @@ void retro_set_environment(retro_environment_t cb)
    };
 
    environ_cb = cb;
+
+   /* Route all core file and directory I/O through the frontend's VFS
+    * when it provides one; libretro-common falls back to its local
+    * implementation otherwise.  Interface v3 covers everything the
+    * osd_file layer needs (open/read/write/truncate/flush/remove,
+    * stat, mkdir, dirent). */
+   {
+      struct retro_vfs_interface_info vfs_info;
+      vfs_info.required_interface_version = 3;
+      vfs_info.iface = NULL;
+      if (cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_info) && vfs_info.iface)
+      {
+         filestream_vfs_init(&vfs_info);
+         path_vfs_init(&vfs_info);
+         dirent_vfs_init(&vfs_info);
+      }
+   }
 
    unsigned options_version = 0;
 

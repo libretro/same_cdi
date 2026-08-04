@@ -9,6 +9,8 @@
 *********************************************************************/
 
 #include "emu.h"
+
+#include <streams/file_stream.h>
 #include "romload.h"
 
 #include "corestr.h"
@@ -307,17 +309,23 @@ u32 rom_file_size(const rom_entry *romp)
 
 static void CLIB_DECL ATTR_PRINTF(1,2) debugload(const char *string, ...)
 {
-	static int opened;
+	static RFILE *f;
+	char buffer[512];
 	va_list arg;
-	FILE *f;
 
-	f = fopen("romload.log", opened++ ? "a" : "w");
+	if (!f)
+		f = filestream_open("romload.log",
+				RETRO_VFS_FILE_ACCESS_WRITE, RETRO_VFS_FILE_ACCESS_HINT_NONE);
 	if (f)
 	{
 		va_start(arg, string);
-		vfprintf(f, string, arg);
+		int const len = vsnprintf(buffer, sizeof(buffer), string, arg);
 		va_end(arg);
-		fclose(f);
+		if (len > 0)
+		{
+			filestream_write(f, buffer, (len < int(sizeof(buffer))) ? len : int(sizeof(buffer)));
+			filestream_flush(f);
+		}
 	}
 }
 
