@@ -2,7 +2,6 @@
 
 asio - [Boost Software License](http://www.boost.org/LICENSE_1_0.txt)
 
-asmjit - [zlib license](http://opensource.org/licenses/Zlib)
 
 benchmark - [Apache License, Version 2.0](http://opensource.org/licenses/Apache-2.0) (used only for testing, not part of distribution)
 
@@ -54,7 +53,6 @@ sol2 - [The MIT License (MIT)](http://opensource.org/licenses/MIT)
 
 sqlite3 - Custom public domain license
 
-tap-windows6.h - Dual-licensed [The GNU General Public License, version 2](https://opensource.org/licenses/GPL-2.0) and [The MIT License (MIT)](http://opensource.org/licenses/MIT)
 
 utf8proc - [The MIT License (MIT)](http://opensource.org/licenses/MIT)
 

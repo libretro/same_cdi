@@ -66,7 +66,7 @@ OSDDEFS += -DSDLMAME_UNIX -DRETROMAME_UNIX
 endif
 ifeq ($(platform_is_linux), 1)
 ifneq ($(DONT_USE_NETWORK), 1)
-OSDDEFS += -DUSE_NETWORK -DOSD_NET_USE_TAPTUN
+OSDDEFS += -DUSE_NETWORK
 endif
 endif
 ifeq ($(platform_is_macosx), 1)
