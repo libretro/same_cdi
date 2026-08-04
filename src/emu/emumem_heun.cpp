@@ -67,59 +67,15 @@ template<int Width, int AddrShift> std::string handler_entry_write_nop<Width, Ad
 }
 
 
-template class handler_entry_read_unmapped<0,  1>;
 template class handler_entry_read_unmapped<0,  0>;
-template class handler_entry_read_unmapped<1,  3>;
 template class handler_entry_read_unmapped<1,  0>;
-template class handler_entry_read_unmapped<1, -1>;
-template class handler_entry_read_unmapped<2,  3>;
-template class handler_entry_read_unmapped<2,  0>;
-template class handler_entry_read_unmapped<2, -1>;
-template class handler_entry_read_unmapped<2, -2>;
-template class handler_entry_read_unmapped<3,  0>;
-template class handler_entry_read_unmapped<3, -1>;
-template class handler_entry_read_unmapped<3, -2>;
-template class handler_entry_read_unmapped<3, -3>;
 
-template class handler_entry_write_unmapped<0,  1>;
 template class handler_entry_write_unmapped<0,  0>;
-template class handler_entry_write_unmapped<1,  3>;
 template class handler_entry_write_unmapped<1,  0>;
-template class handler_entry_write_unmapped<1, -1>;
-template class handler_entry_write_unmapped<2,  3>;
-template class handler_entry_write_unmapped<2,  0>;
-template class handler_entry_write_unmapped<2, -1>;
-template class handler_entry_write_unmapped<2, -2>;
-template class handler_entry_write_unmapped<3,  0>;
-template class handler_entry_write_unmapped<3, -1>;
-template class handler_entry_write_unmapped<3, -2>;
-template class handler_entry_write_unmapped<3, -3>;
 
 
-template class handler_entry_read_nop<0,  1>;
 template class handler_entry_read_nop<0,  0>;
-template class handler_entry_read_nop<1,  3>;
 template class handler_entry_read_nop<1,  0>;
-template class handler_entry_read_nop<1, -1>;
-template class handler_entry_read_nop<2,  3>;
-template class handler_entry_read_nop<2,  0>;
-template class handler_entry_read_nop<2, -1>;
-template class handler_entry_read_nop<2, -2>;
-template class handler_entry_read_nop<3,  0>;
-template class handler_entry_read_nop<3, -1>;
-template class handler_entry_read_nop<3, -2>;
-template class handler_entry_read_nop<3, -3>;
 
-template class handler_entry_write_nop<0,  1>;
 template class handler_entry_write_nop<0,  0>;
-template class handler_entry_write_nop<1,  3>;
 template class handler_entry_write_nop<1,  0>;
-template class handler_entry_write_nop<1, -1>;
-template class handler_entry_write_nop<2,  3>;
-template class handler_entry_write_nop<2,  0>;
-template class handler_entry_write_nop<2, -1>;
-template class handler_entry_write_nop<2, -2>;
-template class handler_entry_write_nop<3,  0>;
-template class handler_entry_write_nop<3, -1>;
-template class handler_entry_write_nop<3, -2>;
-template class handler_entry_write_nop<3, -3>;

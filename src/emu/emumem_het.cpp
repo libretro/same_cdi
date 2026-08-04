@@ -72,30 +72,8 @@ template<int Width, int AddrShift> handler_entry_write_tap<Width, AddrShift> *ha
 
 
 
-template class handler_entry_read_tap<0,  1>;
 template class handler_entry_read_tap<0,  0>;
-template class handler_entry_read_tap<1,  3>;
 template class handler_entry_read_tap<1,  0>;
-template class handler_entry_read_tap<1, -1>;
-template class handler_entry_read_tap<2,  3>;
-template class handler_entry_read_tap<2,  0>;
-template class handler_entry_read_tap<2, -1>;
-template class handler_entry_read_tap<2, -2>;
-template class handler_entry_read_tap<3,  0>;
-template class handler_entry_read_tap<3, -1>;
-template class handler_entry_read_tap<3, -2>;
-template class handler_entry_read_tap<3, -3>;
 
-template class handler_entry_write_tap<0,  1>;
 template class handler_entry_write_tap<0,  0>;
-template class handler_entry_write_tap<1,  3>;
 template class handler_entry_write_tap<1,  0>;
-template class handler_entry_write_tap<1, -1>;
-template class handler_entry_write_tap<2,  3>;
-template class handler_entry_write_tap<2,  0>;
-template class handler_entry_write_tap<2, -1>;
-template class handler_entry_write_tap<2, -2>;
-template class handler_entry_write_tap<3,  0>;
-template class handler_entry_write_tap<3, -1>;
-template class handler_entry_write_tap<3, -2>;
-template class handler_entry_write_tap<3, -3>;

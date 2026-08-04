@@ -452,19 +452,10 @@ namespace {
 
 	memory_view::memory_view_entry *mve_make(int Level, int Width, int AddrShift, const address_space_config &config, memory_manager &manager, memory_view &view, int id) {
 		switch (Width | (AddrShift + 4)) {
-		case  8|(4+1): return mve_make_2<0,  1>(Level, config, manager, view, id);
+		// Trimmed to the (width, shift) set the CD-i build supports; see
+		// memory_manager::allocate in emumem_aspace.cpp.
 		case  8|(4-0): return mve_make_2<0,  0>(Level, config, manager, view, id);
-		case 16|(4+3): return mve_make_2<1,  3>(Level, config, manager, view, id);
 		case 16|(4-0): return mve_make_2<1,  0>(Level, config, manager, view, id);
-		case 16|(4-1): return mve_make_2<1, -1>(Level, config, manager, view, id);
-		case 32|(4+3): return mve_make_2<2,  3>(Level, config, manager, view, id);
-		case 32|(4-0): return mve_make_2<2,  0>(Level, config, manager, view, id);
-		case 32|(4-1): return mve_make_2<2, -1>(Level, config, manager, view, id);
-		case 32|(4-2): return mve_make_2<2, -2>(Level, config, manager, view, id);
-		case 64|(4-0): return mve_make_2<3,  0>(Level, config, manager, view, id);
-		case 64|(4-1): return mve_make_2<3, -1>(Level, config, manager, view, id);
-		case 64|(4-2): return mve_make_2<3, -2>(Level, config, manager, view, id);
-		case 64|(4-3): return mve_make_2<3, -3>(Level, config, manager, view, id);
 		default: abort();
 		}
 	}
@@ -736,19 +727,10 @@ namespace {
 
 	void h_make(int HighBits, int Width, int AddrShift, address_space &space, memory_view &view, handler_entry *&r, handler_entry *&w) {
 		switch (Width | (AddrShift + 4)) {
-		case  8|(4+1): h_make_1<0,  1>(HighBits, space, view, r, w); break;
+		// Trimmed to the (width, shift) set the CD-i build supports; see
+		// memory_manager::allocate in emumem_aspace.cpp.
 		case  8|(4-0): h_make_1<0,  0>(HighBits, space, view, r, w); break;
-		case 16|(4+3): h_make_1<1,  3>(HighBits, space, view, r, w); break;
 		case 16|(4-0): h_make_1<1,  0>(HighBits, space, view, r, w); break;
-		case 16|(4-1): h_make_1<1, -1>(HighBits, space, view, r, w); break;
-		case 32|(4+3): h_make_1<2,  3>(HighBits, space, view, r, w); break;
-		case 32|(4-0): h_make_1<2,  0>(HighBits, space, view, r, w); break;
-		case 32|(4-1): h_make_1<2, -1>(HighBits, space, view, r, w); break;
-		case 32|(4-2): h_make_1<2, -2>(HighBits, space, view, r, w); break;
-		case 64|(4-0): h_make_1<3,  0>(HighBits, space, view, r, w); break;
-		case 64|(4-1): h_make_1<3, -1>(HighBits, space, view, r, w); break;
-		case 64|(4-2): h_make_1<3, -2>(HighBits, space, view, r, w); break;
-		case 64|(4-3): h_make_1<3, -3>(HighBits, space, view, r, w); break;
 		default: abort();
 		}
 	}
