@@ -36,7 +36,6 @@ INCFLAGS := \
 	-I$(CORE_DIR)/3rdparty/zlib \
 	-I$(CORE_DIR)/3rdparty/libflac/include \
 	-I$(CORE_DIR)/3rdparty/libjpeg \
-	-I$(CORE_DIR)/3rdparty/pugixml/src \
 	-I$(CORE_DIR)/3rdparty/utf8proc
 
 ifeq ($(platform_is_windows), 1)
@@ -44,7 +43,7 @@ INCFLAGS += -I$(CORE_DIR)/src/osd/windows -I$(CORE_DIR)/3rdparty/compat/mingw -I
 endif
 
 # Defines common to every translation unit
-COREDEFINES := -D__LIBRETRO__ -DNDEBUG -DFLAC__NO_DLL -DPUGIXML_HEADER_ONLY
+COREDEFINES := -D__LIBRETRO__ -DNDEBUG -DFLAC__NO_DLL
 
 ifeq ($(platform_is_windows), 1)
 COREDEFINES += -DCRLF=3 -DUNICODE -D_UNICODE -Dmain=utf8_main -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0501
