@@ -13,7 +13,7 @@
 #include "ioprocs.h"
 #include "ioprocsfill.h"
 
-#include <zlib.h>
+#include <encodings/deflate.h>
 
 #include <algorithm>
 #include <cassert>
@@ -29,208 +29,152 @@ namespace util {
 
 namespace {
 
-// helper class for holding zlib data
+// helper class for decompressing deflated data
 
-class zlib_data
+class inflate_data
 {
 protected:
-	zlib_data(std::size_t buffer_size) noexcept :
-		m_buffer_size(std::min<std::common_type_t<uInt, std::size_t> >(std::numeric_limits<uInt>::max(), buffer_size))
+	inflate_data(std::size_t buffer_size) noexcept :
+		m_buffer_size(buffer_size)
 	{
 		assert(buffer_size);
 	}
 
-	z_stream &get_z_stream() noexcept { return m_z_stream; }
-	z_stream const &get_z_stream() const noexcept { return m_z_stream; }
-	Bytef *get_buffer() noexcept { return m_buffer.get(); }
-	Bytef const *get_buffer() const noexcept { return m_buffer.get(); }
-	std::size_t get_buffer_size() const noexcept { return m_buffer_size; }
-
-	bool input_empty() const noexcept { return !m_z_stream.avail_in; }
-	bool output_available() const noexcept { return bool(m_z_stream.avail_out); }
-
-	void initialize_z_stream() noexcept
-	{
-		m_z_stream.zalloc = Z_NULL;
-		m_z_stream.zfree = Z_NULL;
-		m_z_stream.opaque = Z_NULL;
-	}
-
-	std::error_condition allocate_buffer() noexcept
-	{
-		if (!m_buffer)
-			m_buffer.reset(new (std::nothrow) Bytef [m_buffer_size]);
-		return m_buffer ? std::error_condition() : std::errc::not_enough_memory;
-	}
-
-	void release_buffer() noexcept
-	{
-		m_buffer.reset();
-	}
-
-	static std::error_condition convert_z_error(int err) noexcept
-	{
-		switch (err)
-		{
-		case Z_OK:
-		case Z_STREAM_END:
-			return std::error_condition();
-		case Z_NEED_DICT:
-			return std::errc::invalid_argument;
-		case Z_ERRNO:
-			return std::error_condition(errno, std::generic_category());
-		case Z_STREAM_ERROR:
-			return std::errc::invalid_argument;
-		case Z_DATA_ERROR:
-			return std::errc::invalid_argument; // TODO: revisit this error code
-		case Z_MEM_ERROR:
-			return std::errc::not_enough_memory;
-		case Z_BUF_ERROR:
-			return std::errc::operation_would_block; // TODO: revisit this error code (should be handled internally)
-		case Z_VERSION_ERROR:
-			return std::errc::invalid_argument; // TODO: revisit this error code (library ABI mismatch)
-		default:
-			return std::errc::io_error; // TODO: better default error code
-		}
-	}
-
-private:
-	z_stream m_z_stream;
-	std::unique_ptr<Bytef []> m_buffer;
-	std::size_t const m_buffer_size;
-};
-
-
-// helper class for decompressing deflated data
-
-class inflate_data : private zlib_data
-{
-protected:
-	inflate_data(std::size_t buffer_size) noexcept : zlib_data(buffer_size)
-	{
-	}
-
 	~inflate_data()
 	{
-		if (m_inflate_initialized)
-			inflateEnd(&get_z_stream());
+		if (m_stream)
+			rinflate_free(m_stream);
 	}
-
-	using zlib_data::input_empty;
 
 	bool stream_initialized() const noexcept
 	{
-		return m_inflate_initialized;
+		return m_stream != nullptr;
+	}
+
+	bool input_empty() const noexcept
+	{
+		return m_in_pos == m_in_len;
 	}
 
 	std::error_condition initialize_z_stream() noexcept
 	{
-		if (m_inflate_initialized)
+		if (m_stream)
 			return std::errc::invalid_argument;
-		std::error_condition err = allocate_buffer();
-		if (err)
-			return err;
-		zlib_data::initialize_z_stream();
-		int const zerr = inflateInit(&get_z_stream());
-		if (Z_OK == zerr)
-			m_inflate_initialized = true;
-		return convert_z_error(zerr);
+		if (!m_buffer)
+		{
+			m_buffer.reset(new (std::nothrow) std::uint8_t [m_buffer_size]);
+			if (!m_buffer)
+				return std::errc::not_enough_memory;
+		}
+		reset_input();
+		m_stream = rinflate_new(15); // zlib-wrapped, as inflateInit() was
+		return m_stream ? std::error_condition() : std::errc::not_enough_memory;
 	}
 
 	std::error_condition close_z_stream() noexcept
 	{
-		if (!m_inflate_initialized)
+		if (!m_stream)
 			return std::errc::invalid_argument;
-		int const zerr = inflateEnd(&get_z_stream());
-		m_inflate_initialized = false;
-		return convert_z_error(zerr);
+		rinflate_free(m_stream);
+		m_stream = nullptr;
+		return std::error_condition();
 	}
 
 	std::error_condition decompress_some(bool &stream_end) noexcept
 	{
-		assert(m_inflate_initialized);
-		int const zerr = inflate(&get_z_stream(), Z_SYNC_FLUSH);
-		if (!get_z_stream().avail_in)
+		assert(m_stream);
+		rinflate_set_in(m_stream, &m_buffer[m_in_pos], m_in_len - m_in_pos);
+		rinflate_set_out(m_stream, m_out_base + m_out_produced, m_out_max - m_out_produced);
+		std::size_t consumed = 0, wrote = 0;
+		int const result = rinflate_process(m_stream, &consumed, &wrote);
+		m_in_pos += consumed;
+		m_out_produced += wrote;
+		if (input_empty())
 			reset_input();
-		stream_end = Z_STREAM_END == zerr;
-		return convert_z_error(zerr);
+		stream_end = RDEFLATE_PROCESS_END == result;
+		return (RDEFLATE_PROCESS_ERROR == result)
+				? std::error_condition(std::errc::invalid_argument)
+				: std::error_condition();
 	}
 
 	std::size_t input_available() const noexcept
 	{
-		return std::size_t(get_z_stream().avail_in);
+		return m_in_len - m_in_pos;
 	}
 
 	void reset_input() noexcept
 	{
-		get_z_stream().next_in = get_buffer();
-		get_z_stream().avail_in = 0U;
+		m_in_pos = m_in_len = 0U;
 	}
 
 	std::pair<void *, std::size_t> get_unfilled_input() noexcept
 	{
-		assert(get_buffer());
-		Bytef *const base = get_z_stream().next_in + get_z_stream().avail_in;
-		return std::make_pair(base, get_buffer() + get_buffer_size() - base);
+		assert(m_buffer);
+		return std::make_pair(&m_buffer[m_in_len], m_buffer_size - m_in_len);
 	}
 
 	void add_input(std::size_t length) noexcept
 	{
-		assert(get_buffer());
-		get_z_stream().avail_in += length;
-		assert((get_buffer() + get_buffer_size()) >= (get_z_stream().next_in + get_z_stream().avail_in));
+		assert(m_buffer);
+		m_in_len += length;
+		assert(m_in_len <= m_buffer_size);
 	}
 
 	std::size_t output_produced() const noexcept
 	{
-		return m_output_max - get_z_stream().avail_out;
+		return m_out_produced;
 	}
 
 	void set_output(void *buffer, std::size_t length) noexcept
 	{
-		m_output_max = std::min<std::common_type_t<uInt, std::size_t> >(std::numeric_limits<uInt>::max(), length);
-		get_z_stream().next_out = reinterpret_cast<Bytef *>(buffer);
-		get_z_stream().avail_out = uInt(m_output_max);
+		m_out_base = reinterpret_cast<std::uint8_t *>(buffer);
+		m_out_max = length;
+		m_out_produced = 0U;
 	}
 
 private:
-	std::error_condition allocate_buffer() noexcept
-	{
-		std::error_condition err;
-		if (!get_buffer())
-		{
-			err = zlib_data::allocate_buffer();
-			reset_input();
-		}
-		return err;
-	}
-
-	bool m_inflate_initialized = false;
-	std::size_t m_output_max = 0U;
+	void *m_stream = nullptr;
+	std::unique_ptr<std::uint8_t []> m_buffer;
+	std::size_t const m_buffer_size;
+	std::size_t m_in_pos = 0U;
+	std::size_t m_in_len = 0U;
+	std::uint8_t *m_out_base = nullptr;
+	std::size_t m_out_max = 0U;
+	std::size_t m_out_produced = 0U;
 };
 
 
 // helper class for deflating data
 
-class deflate_data : private zlib_data
+class deflate_data
 {
 protected:
-	deflate_data(int level, std::size_t buffer_size) noexcept : zlib_data(buffer_size), m_level(level)
+	deflate_data(int level, std::size_t buffer_size) noexcept :
+		m_buffer_size(buffer_size),
+		m_level(level)
 	{
+		assert(buffer_size);
 	}
 
 	~deflate_data()
 	{
-		if (m_deflate_initialized)
-			deflateEnd(&get_z_stream());
+		if (m_stream)
+			rdeflate_free(m_stream);
 	}
-
-	using zlib_data::input_empty;
-	using zlib_data::output_available;
 
 	bool stream_initialized() const noexcept
 	{
-		return m_deflate_initialized;
+		return m_stream != nullptr;
+	}
+
+	bool input_empty() const noexcept
+	{
+		return m_in_pos == m_in_len;
+	}
+
+	bool output_available() const noexcept
+	{
+		return m_out_fill < m_buffer_size;
 	}
 
 	bool compression_finished() const noexcept
@@ -240,94 +184,111 @@ protected:
 
 	std::error_condition initialize_z_stream() noexcept
 	{
-		if (m_deflate_initialized)
+		if (m_stream)
 			return std::errc::invalid_argument;
-		std::error_condition err = allocate_buffer();
-		if (err)
-			return err;
-		zlib_data::initialize_z_stream();
-		int const zerr = deflateInit(&get_z_stream(), m_level);
-		reset_output();
-		if (Z_OK == zerr)
-			m_deflate_initialized = true;
-		return convert_z_error(zerr);
+		if (!m_buffer)
+		{
+			m_buffer.reset(new (std::nothrow) std::uint8_t [m_buffer_size]);
+			if (!m_buffer)
+				return std::errc::not_enough_memory;
+		}
+		m_out_fill = m_out_used = 0U;
+		m_in_pos = m_in_len = 0U;
+		m_in_base = nullptr;
+		m_finish_signalled = m_compression_finished = false;
+		m_stream = rdeflate_new(m_level, 15); // zlib-wrapped, as deflateInit() was
+		return m_stream ? std::error_condition() : std::errc::not_enough_memory;
 	}
 
 	std::error_condition close_z_stream() noexcept
 	{
-		if (!m_deflate_initialized)
+		if (!m_stream)
 			return std::errc::invalid_argument;
-		m_deflate_initialized = m_compression_finished = false;
-		return convert_z_error(deflateEnd(&get_z_stream()));
+		rdeflate_free(m_stream);
+		m_stream = nullptr;
+		m_compression_finished = false;
+		return std::error_condition();
 	}
 
 	std::error_condition reset_z_stream() noexcept
 	{
-		if (!m_deflate_initialized)
-			return std::errc::invalid_argument;
-		assert(get_buffer());
-		reset_output();
-		m_compression_finished = false;
-		return convert_z_error(deflateReset(&get_z_stream()));
+		// rdeflate has no reset; a fresh stream is equivalent
+		std::error_condition err = close_z_stream();
+		if (!err)
+			err = initialize_z_stream();
+		return err;
 	}
 
 	std::error_condition compress_some() noexcept
 	{
-		assert(m_deflate_initialized);
-		return convert_z_error(deflate(&get_z_stream(), Z_NO_FLUSH));
+		return process();
 	}
 
 	std::error_condition finish_compression() noexcept
 	{
-		assert(m_deflate_initialized);
-		int const zerr = deflate(&get_z_stream(), Z_FINISH);
-		if (Z_STREAM_END == zerr)
-			m_compression_finished = true;
-		return convert_z_error(zerr);
+		assert(m_stream);
+		if (!m_finish_signalled)
+		{
+			rdeflate_finish(m_stream);
+			m_finish_signalled = true;
+		}
+		return process();
 	}
 
 	std::size_t input_used() const noexcept
 	{
-		return m_input_max - get_z_stream().avail_in;
+		return m_in_pos;
 	}
 
 	void set_input(void const *data, std::size_t length) noexcept
 	{
-		m_input_max = std::min<std::common_type_t<uInt, std::size_t> >(std::numeric_limits<uInt>::max(), length);
-		get_z_stream().next_in = const_cast<Bytef z_const *>(reinterpret_cast<Bytef const *>(data));
-		get_z_stream().avail_in = uInt(m_input_max);
+		m_in_base = reinterpret_cast<std::uint8_t const *>(data);
+		m_in_len = length;
+		m_in_pos = 0U;
 	}
 
 	std::pair<void const *, std::size_t> get_output() const noexcept
 	{
-		assert(get_buffer());
-		return std::make_pair(
-				&get_buffer()[m_output_used],
-				get_buffer_size() - get_z_stream().avail_out - m_output_used);
+		assert(m_buffer);
+		return std::make_pair(&m_buffer[m_out_used], m_out_fill - m_out_used);
 	}
 
 	void consume_output(std::size_t length) noexcept
 	{
-		m_output_used += length;
-		assert(m_output_used <= (get_buffer_size() - get_z_stream().avail_out));
-		if (m_output_used == (get_buffer_size() - get_z_stream().avail_out))
-			reset_output();
+		m_out_used += length;
+		assert(m_out_used <= m_out_fill);
+		if (m_out_used == m_out_fill)
+			m_out_fill = m_out_used = 0U;
 	}
 
 private:
-	void reset_output() noexcept
+	std::error_condition process() noexcept
 	{
-		assert(get_buffer());
-		m_output_used = 0U;
-		get_z_stream().next_out = get_buffer();
-		get_z_stream().avail_out = uInt(get_buffer_size());
+		assert(m_stream);
+		rdeflate_set_in(m_stream, m_in_base + m_in_pos, m_in_len - m_in_pos);
+		rdeflate_set_out(m_stream, &m_buffer[m_out_fill], m_buffer_size - m_out_fill);
+		std::size_t consumed = 0, wrote = 0;
+		int const result = rdeflate_process(m_stream, &consumed, &wrote);
+		m_in_pos += consumed;
+		m_out_fill += wrote;
+		if (RDEFLATE_PROCESS_END == result)
+			m_compression_finished = true;
+		return (RDEFLATE_PROCESS_ERROR == result)
+				? std::error_condition(std::errc::invalid_argument)
+				: std::error_condition();
 	}
 
+	void *m_stream = nullptr;
+	std::unique_ptr<std::uint8_t []> m_buffer;
+	std::size_t const m_buffer_size;
 	int const m_level;
-	bool m_deflate_initialized = false;
+	bool m_finish_signalled = false;
 	bool m_compression_finished = false;
-	std::size_t m_output_used = 0U;
-	std::size_t m_input_max = 0U;
+	std::uint8_t const *m_in_base = nullptr;
+	std::size_t m_in_pos = 0U;
+	std::size_t m_in_len = 0U;
+	std::size_t m_out_fill = 0U;
+	std::size_t m_out_used = 0U;
 };
 
 

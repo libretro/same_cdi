@@ -15,7 +15,8 @@
 
 #include "osdcomm.h"
 
-#include <zlib.h>
+#include <encodings/crc32.h>
+#include <encodings/deflate.h>
 
 #include <algorithm>
 #include <cassert>
@@ -212,43 +213,42 @@ private:
 		if (0 != pnginfo.compression_method)
 			return png_error::DECOMPRESS_ERROR;
 
-		// allocate zlib stream
-		z_stream stream;
-		int zerr;
-		std::memset(&stream, 0, sizeof(stream));
-		stream.zalloc = Z_NULL;
-		stream.zfree = Z_NULL;
-		stream.opaque = Z_NULL;
-		stream.avail_in = 0;
-		stream.next_in = Z_NULL;
-		zerr = inflateInit(&stream);
-		if (Z_ERRNO == zerr)
-			return std::error_condition(errno, std::generic_category());
-		else if (Z_MEM_ERROR == zerr)
+		// allocate a zlib-wrapped inflate stream
+		void *const stream = rinflate_new(15);
+		if (!stream)
 			return std::errc::not_enough_memory;
-		else if (Z_OK != zerr)
-			return png_error::DECOMPRESS_ERROR;
 
 		// decompress IDAT blocks
-		stream.next_out = pnginfo.image.get();
-		stream.avail_out = expected;
-		stream.avail_in = 0;
+		std::size_t produced = 0;
+		bool stream_end = false;
+		bool stream_error = false;
 		auto it = idata.begin();
-		while ((idata.end() != it) && ((Z_OK == zerr) || (Z_BUF_ERROR == zerr)) && !stream.avail_in)
+		while ((idata.end() != it) && !stream_end && !stream_error)
 		{
-			stream.avail_in = it->length;
-			stream.next_in = it->data.get();
+			rinflate_set_in(stream, it->data.get(), it->length);
+			std::size_t chunk_consumed = 0;
 			do
 			{
-				zerr = inflate(&stream, Z_NO_FLUSH);
+				rinflate_set_out(stream, pnginfo.image.get() + produced, expected - produced);
+				std::size_t consumed = 0, wrote = 0;
+				int const result = rinflate_process(stream, &consumed, &wrote);
+				chunk_consumed += consumed;
+				produced += wrote;
+				if (RDEFLATE_PROCESS_END == result)
+					stream_end = true;
+				else if (RDEFLATE_PROCESS_NEXT != result)
+					stream_error = true;
+				else if (!consumed && !wrote)
+					break; // no forward progress without more input
 			}
-			while (stream.avail_in && (Z_OK == zerr));
-			if (!stream.avail_in)
+			while (!stream_end && !stream_error && (chunk_consumed < it->length));
+			if (chunk_consumed >= it->length)
 				++it;
 		}
+		rinflate_free(stream);
 
-		// it's all good if we got end-of-stream or we have with no data remaining
-		if ((Z_OK == inflateEnd(&stream)) && ((Z_STREAM_END == zerr) || ((Z_OK == zerr) && (idata.end() == it) && !stream.avail_in)))
+		// it's all good if we got end-of-stream or we ran out of data cleanly
+		if (!stream_error && (stream_end || (idata.end() == it)))
 			return std::error_condition();
 		else
 			return png_error::DECOMPRESS_ERROR; // TODO: refactor this function for more fine-grained error reporting?
@@ -472,7 +472,7 @@ private:
 			return std::error_condition();
 
 		/* start the CRC with the chunk type (but not the length) */
-		std::uint32_t crc = crc32(0, tempbuff, 4);
+		std::uint32_t crc = encoding_crc32(0, tempbuff, 4);
 
 		/* read the chunk itself into an allocated memory buffer */
 		if (length)
@@ -496,7 +496,7 @@ private:
 			}
 
 			/* update the CRC */
-			crc = crc32(crc, data.get(), length);
+			crc = encoding_crc32(crc, data.get(), length);
 		}
 
 		/* read the CRC */
@@ -944,7 +944,7 @@ static std::error_condition write_chunk(write_stream &fp, const uint8_t *data, u
 	/* stuff the length/type into the buffer */
 	put_32bit(tempbuff + 0, length);
 	put_32bit(tempbuff + 4, type);
-	crc = crc32(0, tempbuff + 4, 4);
+	crc = encoding_crc32(0, tempbuff + 4, 4);
 
 	/* write that data */
 	err = fp.write(tempbuff, 8, written);
@@ -961,7 +961,7 @@ static std::error_condition write_chunk(write_stream &fp, const uint8_t *data, u
 			return err;
 		else if (length != written)
 			return std::errc::io_error;
-		crc = crc32(crc, data, length);
+		crc = encoding_crc32(crc, data, length);
 	}
 
 	/* write the CRC */
@@ -992,14 +992,12 @@ static std::error_condition write_deflated_chunk(random_write &fp, uint8_t *data
 	std::size_t written;
 	std::uint8_t tempbuff[8192];
 	std::uint32_t zlength = 0;
-	z_stream stream;
 	std::uint32_t crc;
-	int zerr;
 
 	/* stuff the length/type into the buffer */
 	put_32bit(tempbuff + 0, length);
 	put_32bit(tempbuff + 4, type);
-	crc = crc32(0, tempbuff + 4, 4);
+	crc = encoding_crc32(0, tempbuff + 4, 4);
 
 	/* write that data */
 	err = fp.write(tempbuff, 8, written);
@@ -1008,70 +1006,53 @@ static std::error_condition write_deflated_chunk(random_write &fp, uint8_t *data
 	else if (8 != written)
 		return std::errc::io_error;
 
-	/* initialize the stream */
-	memset(&stream, 0, sizeof(stream));
-	stream.next_in = data;
-	stream.avail_in = length;
-	zerr = deflateInit(&stream, Z_DEFAULT_COMPRESSION);
-	if (Z_ERRNO == zerr)
-		return std::error_condition(errno, std::generic_category());
-	else if (Z_MEM_ERROR == zerr)
+	/* initialize the stream: zlib wrapper, default compression level */
+	void *const stream = rdeflate_new(6, 15);
+	if (!stream)
 		return std::errc::not_enough_memory;
-	else if (Z_OK != zerr)
-		return png_error::COMPRESS_ERROR;
+	rdeflate_set_in(stream, data, length);
+	rdeflate_finish(stream);
 
 	/* now loop until we run out of data */
 	for ( ; ; )
 	{
 		/* compress this chunk */
-		stream.next_out = tempbuff;
-		stream.avail_out = sizeof(tempbuff);
-		zerr = deflate(&stream, Z_FINISH);
+		rdeflate_set_out(stream, tempbuff, sizeof(tempbuff));
+		std::size_t consumed = 0, wrote = 0;
+		int const result = rdeflate_process(stream, &consumed, &wrote);
 
 		/* if there's data to write, do it */
-		if (stream.avail_out < sizeof(tempbuff))
+		if (wrote)
 		{
-			int bytes = sizeof(tempbuff) - stream.avail_out;
-			err = fp.write(tempbuff, bytes, written);
+			err = fp.write(tempbuff, wrote, written);
 			if (err)
 			{
-				deflateEnd(&stream);
+				rdeflate_free(stream);
 				return err;
 			}
-			else if (bytes != written)
+			else if (wrote != written)
 			{
-				deflateEnd(&stream);
+				rdeflate_free(stream);
 				return std::errc::io_error;
 			}
-			crc = crc32(crc, tempbuff, bytes);
-			zlength += bytes;
+			crc = encoding_crc32(crc, tempbuff, wrote);
+			zlength += wrote;
 		}
 
 		/* stop at the end of the stream */
-		if (zerr == Z_STREAM_END)
+		if (RDEFLATE_PROCESS_END == result)
 			break;
 
 		/* other errors are fatal */
-		if (zerr != Z_OK)
+		if (RDEFLATE_PROCESS_NEXT != result)
 		{
-			deflateEnd(&stream);
-			if (Z_ERRNO == zerr)
-				return std::error_condition(errno, std::generic_category());
-			else if (Z_MEM_ERROR == zerr)
-				return std::errc::not_enough_memory;
-			else
-				return png_error::COMPRESS_ERROR;
+			rdeflate_free(stream);
+			return png_error::COMPRESS_ERROR;
 		}
 	}
 
 	/* clean up deflater(maus) */
-	zerr = deflateEnd(&stream);
-	if (Z_ERRNO == zerr)
-		return std::error_condition(errno, std::generic_category());
-	else if (Z_MEM_ERROR == zerr)
-		return std::errc::not_enough_memory;
-	else if (Z_OK != zerr)
-		return png_error::COMPRESS_ERROR;
+	rdeflate_free(stream);
 
 	/* write the CRC */
 	put_32bit(tempbuff, crc);

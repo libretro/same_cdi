@@ -4,7 +4,7 @@
 
 #include "ioprocs.h"
 
-#include <zlib.h>
+#include <encodings/deflate.h>
 
 #include <cstring>
 
@@ -151,8 +151,15 @@ bool mfi_format::load(util::random_read &io, uint32_t form_factor, const std::ve
 			std::vector<uint32_t> &trackbuf = image->get_buffer(cyl >> 2, head, cyl & 3);;
 			trackbuf.resize(cell_count);
 
-			uLongf size = ent->uncompressed_size;
-			if(uncompress((Bytef *)&trackbuf[0], &size, &compressed[0], ent->compressed_size) != Z_OK) {
+			void *const stream = rinflate_new(15);
+			if(!stream)
+				return false;
+			rinflate_set_in(stream, &compressed[0], ent->compressed_size);
+			rinflate_set_out(stream, (uint8_t *)&trackbuf[0], ent->uncompressed_size);
+			size_t consumed = 0, size = 0;
+			int const zres = rinflate_process(stream, &consumed, &size);
+			rinflate_free(stream);
+			if(zres != RDEFLATE_PROCESS_END || size != ent->uncompressed_size) {
 				fprintf(stderr, "fail1\n");
 				return false;
 			}
@@ -223,8 +230,16 @@ bool mfi_format::save(util::random_read_write &io, const std::vector<uint32_t> &
 			precomp[tsize-1] = (precomp[tsize-1] & floppy_image::MG_MASK) |
 				(200000000 - (precomp[tsize-1] & floppy_image::TIME_MASK));
 
-			uLongf csize = max_track_size*4 + 1000;
-			if(compress(postcomp.get(), &csize, (const Bytef *)precomp.get(), tsize*4) != Z_OK)
+			void *const stream = rdeflate_new(6, 15); // zlib wrapper, as compress() was
+			if(!stream)
+				return false;
+			rdeflate_set_in(stream, (const uint8_t *)precomp.get(), tsize*4);
+			rdeflate_set_out(stream, postcomp.get(), max_track_size*4 + 1000);
+			rdeflate_finish(stream);
+			size_t consumed = 0, csize = 0;
+			int const zres = rdeflate_process(stream, &consumed, &csize);
+			rdeflate_free(stream);
+			if(zres != RDEFLATE_PROCESS_END)
 				return false;
 
 			entries[epos].offset = pos;

@@ -10,7 +10,7 @@
 
 #include "coreutil.h"
 #include <cassert>
-#include <zlib.h>
+#include <encodings/crc32.h>
 
 
 /***************************************************************************
@@ -64,5 +64,5 @@ uint32_t bcd_2_dec(uint32_t a)
 
 uint32_t core_crc32(uint32_t crc, const uint8_t *buf, uint32_t len)
 {
-	return crc32(crc, buf, len);
+	return encoding_crc32(crc, buf, len);
 }

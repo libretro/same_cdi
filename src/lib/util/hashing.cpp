@@ -11,7 +11,7 @@
 #include "hashing.h"
 #include "strformat.h"
 
-#include <zlib.h>
+#include <encodings/crc32.h>
 
 #include <iomanip>
 #include <sstream>
@@ -329,7 +329,7 @@ std::string crc32_t::as_string() const
 
 void crc32_creator::append(const void *data, uint32_t length)
 {
-	m_accum.m_raw = crc32(m_accum, reinterpret_cast<const Bytef *>(data), length);
+	m_accum.m_raw = encoding_crc32(m_accum, reinterpret_cast<const uint8_t *>(data), length);
 }
 
 

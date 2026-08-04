@@ -33,7 +33,6 @@ INCFLAGS := \
 	-I$(GEN_DIR)/emu/layout \
 	-I$(GEN_DIR)/mame/layout \
 	-I$(CORE_DIR)/3rdparty \
-	-I$(CORE_DIR)/3rdparty/zlib \
 	-I$(CORE_DIR)/3rdparty/libjpeg \
 	-I$(CORE_DIR)/3rdparty/utf8proc
 
@@ -454,25 +453,6 @@ $(OCORE_RETRO_OBJS): GRPFLAGS := $(OSDDEFS)
 OBJECTS += $(OCORE_RETRO_OBJS)
 
 ##############################################################################
-# zlib
-##############################################################################
-ZLIB_SRC_C := \
-	$(CORE_DIR)/3rdparty/zlib/adler32.c \
-	$(CORE_DIR)/3rdparty/zlib/compress.c \
-	$(CORE_DIR)/3rdparty/zlib/crc32.c \
-	$(CORE_DIR)/3rdparty/zlib/deflate.c \
-	$(CORE_DIR)/3rdparty/zlib/inffast.c \
-	$(CORE_DIR)/3rdparty/zlib/inflate.c \
-	$(CORE_DIR)/3rdparty/zlib/inftrees.c \
-	$(CORE_DIR)/3rdparty/zlib/trees.c \
-	$(CORE_DIR)/3rdparty/zlib/uncompr.c \
-	$(CORE_DIR)/3rdparty/zlib/zutil.c
-
-ZLIB_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(ZLIB_SRC_C:.c=.o))
-$(ZLIB_OBJS): GRPFLAGS := -DZLIB_CONST
-OBJECTS += $(ZLIB_OBJS)
-
-##############################################################################
 # jpeg
 ##############################################################################
 JPEG_SRC_C := \
@@ -540,7 +520,6 @@ CORE_ARCHIVES := \
 	$(CORE_OBJ_DIR)/libutils.a \
 	$(CORE_OBJ_DIR)/libosd_retro.a \
 	$(CORE_OBJ_DIR)/libocore_retro.a \
-	$(CORE_OBJ_DIR)/libzlib.a \
 	$(CORE_OBJ_DIR)/libjpeg.a \
 	$(CORE_OBJ_DIR)/libutf8proc.a
 
@@ -553,7 +532,6 @@ $(CORE_OBJ_DIR)/libformats.a: $(FORMATS_OBJS)
 $(CORE_OBJ_DIR)/libutils.a: $(UTILS_OBJS)
 $(CORE_OBJ_DIR)/libosd_retro.a: $(OSD_RETRO_OBJS)
 $(CORE_OBJ_DIR)/libocore_retro.a: $(OCORE_RETRO_OBJS) $(LRC_VFS_OBJS)
-$(CORE_OBJ_DIR)/libzlib.a: $(ZLIB_OBJS)
 $(CORE_OBJ_DIR)/libjpeg.a: $(JPEG_OBJS)
 $(CORE_OBJ_DIR)/libutf8proc.a: $(UTF8PROC_OBJS)
 
