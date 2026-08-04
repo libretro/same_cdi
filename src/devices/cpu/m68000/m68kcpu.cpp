@@ -274,40 +274,6 @@ void m68000_base_device::m68k_cause_bus_error()
 	m_run_mode = RUN_MODE_BERR_AERR_RESET;
 }
 
-bool m68000_base_device::memory_translate(int space, int intention, offs_t &address)
-{
-	/* only applies to the program address space and only does something if the MMU's enabled */
-	{
-		/* 68040 needs to call the MMU even when disabled so transparent translation works */
-		if ((space == AS_PROGRAM) && ((m_pmmu_enabled) || (CPU_TYPE_IS_040_PLUS())))
-		{
-			// FIXME: m_mmu_tmp_sr will be overwritten in pmmu_translate_addr_with_fc
-			u16 temp_mmu_tmp_sr = m_mmu_tmp_sr;
-			int mode = m_s_flag ? FUNCTION_CODE_SUPERVISOR_PROGRAM : FUNCTION_CODE_USER_PROGRAM;
-//          u32 va=address;
-
-			if (CPU_TYPE_IS_040_PLUS())
-				address = pmmu_translate_addr_with_fc_040(address, mode, 1);
-			else
-				address = pmmu_translate_addr_with_fc<false, false>(address, mode, 1);
-
-			if ((m_mmu_tmp_sr & M68K_MMU_SR_INVALID) != 0)
-				address = 0;
-
-			m_mmu_tmp_sr = temp_mmu_tmp_sr;
-		}
-	}
-	return true;
-}
-
-
-
-
-
-
-
-
-
 void m68000_base_device::execute_run()
 {
 	m_initial_cycles = m_icount;
@@ -374,83 +340,12 @@ void m68000_base_device::execute_run()
 
 			try
 			{
-			if (!m_pmmu_enabled)
-			{
-				m_run_mode = RUN_MODE_NORMAL;
-				/* Read an instruction and call its handler */
-				m_ir = m68ki_read_imm_16();
-				u16 state = m_state_table[m_ir];
-				(this->*m68k_handler_table[state])();
-				m_icount -= m_cyc_instruction[m_ir];
-			}
-			else
-			{
-				m_run_mode = RUN_MODE_NORMAL;
-				// save CPU address registers values at start of instruction
-				int i;
-				u32 tmp_dar[16];
-
-				for (i = 15; i >= 0; i--)
-				{
-					tmp_dar[i] = REG_DA()[i];
-				}
-
-				m_mmu_tmp_buserror_occurred = 0;
-
-				/* Read an instruction and call its handler */
-				m_ir = m68ki_read_imm_16();
-
-				if (!m_mmu_tmp_buserror_occurred)
-				{
-					u16 state = m_state_table[m_ir];
-					(this->*m68k_handler_table[state])();
-					m_icount -= m_cyc_instruction[m_ir];
-				}
-
-				if (m_mmu_tmp_buserror_occurred)
-				{
-					u32 sr;
-
-					m_mmu_tmp_buserror_occurred = 0;
-
-					// restore cpu address registers to value at start of instruction
-					for (i = 15; i >= 0; i--)
-					{
-						if (REG_DA()[i] != tmp_dar[i])
-							REG_DA()[i] = tmp_dar[i];
-					}
-
-					sr = m68ki_init_exception(EXCEPTION_BUS_ERROR);
-
-					m_run_mode = RUN_MODE_BERR_AERR_RESET;
-
-					if (!CPU_TYPE_IS_020_PLUS())
-					{
-						/* Note: This is implemented for 68000 only! */
-						m68ki_stack_frame_buserr(sr);
-					}
-					else if(!CPU_TYPE_IS_040_PLUS()) {
-						if (m_mmu_tmp_buserror_address == m_ppc)
-						{
-							m68ki_stack_frame_1010(sr, EXCEPTION_BUS_ERROR, m_ppc, m_mmu_tmp_buserror_address);
-						}
-						else
-						{
-							m68ki_stack_frame_1011(sr, EXCEPTION_BUS_ERROR, m_ppc, m_mmu_tmp_buserror_address);
-						}
-					}
-					else
-					{
-						m68ki_stack_frame_0111(sr, EXCEPTION_BUS_ERROR, m_ppc, m_mmu_tmp_buserror_address, true);
-					}
-
-					m68ki_jump_vector(EXCEPTION_BUS_ERROR);
-
-					// TODO:
-					/* Use up some clock cycles and undo the instruction's cycles */
-					// m_icount -= m_cyc_exception[EXCEPTION_BUS_ERROR] - m_cyc_instruction[m_ir];
-				}
-			}
+			m_run_mode = RUN_MODE_NORMAL;
+			/* Read an instruction and call its handler */
+			m_ir = m68ki_read_imm_16();
+			u16 state = m_state_table[m_ir];
+			(this->*m68k_handler_table[state])();
+			m_icount -= m_cyc_instruction[m_ir];
 			}
 			catch (int error)
 			{
@@ -486,12 +381,6 @@ void m68000_base_device::init_cpu_common(void)
 	m_oprogram = has_space(AS_OPCODES) ? &space(AS_OPCODES) : m_program;
 	m_cpu_space = &space(m_cpu_space_id);
 
-	/* disable all MMUs */
-	m_has_pmmu         = 0;
-	m_has_hmmu         = 0;
-	m_pmmu_enabled     = 0;
-	m_hmmu_enabled     = 0;
-
 	/* The first call to this function initializes the opcode handler jump table */
 	if(!emulation_initialized)
 	{
@@ -520,35 +409,6 @@ void m68000_base_device::init_cpu_common(void)
 	save_item(NAME(m_reset_cycles));
 	save_item(NAME(m_virq_state));
 	save_item(NAME(m_nmi_pending));
-	save_item(NAME(m_has_pmmu));
-	save_item(NAME(m_has_hmmu));
-	save_item(NAME(m_pmmu_enabled));
-	save_item(NAME(m_hmmu_enabled));
-
-	save_item(NAME(m_mmu_crp_aptr));
-	save_item(NAME(m_mmu_crp_limit));
-	save_item(NAME(m_mmu_srp_aptr));
-	save_item(NAME(m_mmu_srp_limit));
-	save_item(NAME(m_mmu_urp_aptr));
-	save_item(NAME(m_mmu_tc));
-	save_item(NAME(m_mmu_sr));
-	save_item(NAME(m_mmu_sr_040));
-	save_item(NAME(m_mmu_atc_rr));
-	save_item(NAME(m_mmu_tt0));
-	save_item(NAME(m_mmu_tt1));
-	save_item(NAME(m_mmu_itt0));
-	save_item(NAME(m_mmu_itt1));
-	save_item(NAME(m_mmu_dtt0));
-	save_item(NAME(m_mmu_dtt1));
-	save_item(NAME(m_mmu_acr0));
-	save_item(NAME(m_mmu_acr1));
-	save_item(NAME(m_mmu_acr2));
-	save_item(NAME(m_mmu_acr3));
-	save_item(NAME(m_mmu_last_page_entry));
-	save_item(NAME(m_mmu_last_page_entry_addr));
-
-	save_item(NAME(m_mmu_atc_tag));
-	save_item(NAME(m_mmu_atc_data));
 
 	set_icountptr(m_icount);
 	m_icount = 0;
@@ -557,14 +417,6 @@ void m68000_base_device::init_cpu_common(void)
 
 void m68000_base_device::device_reset()
 {
-	/* Disable the PMMU/HMMU on reset, if any */
-	m_pmmu_enabled = 0;
-	m_hmmu_enabled = 0;
-
-	m_mmu_tc = 0;
-	m_mmu_tt0 = 0;
-	m_mmu_tt1 = 0;
-
 	/* Clear all stop levels and eat up all remaining cycles */
 	m_stopped = 0;
 	if (m_icount > 0)
@@ -592,7 +444,6 @@ void m68000_base_device::device_reset()
 	m_reset_cycles = m_cyc_exception[EXCEPTION_RESET];
 
 	/* flush the MMU's cache */
-	pmmu_atc_flush();
 
 	if(CPU_TYPE_IS_EC020_PLUS())
 	{
@@ -674,16 +525,6 @@ void m68000_base_device::state_export(const device_state_entry &entry)
 			m_iotemp = (m_s_flag && m_m_flag) ? REG_SP() : REG_MSP();
 			break;
 
-		case M68K_FP0:
-		case M68K_FP1:
-		case M68K_FP2:
-		case M68K_FP3:
-		case M68K_FP4:
-		case M68K_FP5:
-		case M68K_FP6:
-		case M68K_FP7:
-			break;
-
 		default:
 			fatalerror("CPU_EXPORT_STATE(this) called for unexpected value\n");
 	}
@@ -695,38 +536,6 @@ void m68000_base_device::state_string_export(const device_state_entry &entry, st
 
 	switch (entry.index())
 	{
-		case M68K_FP0:
-			str = "removed";  // no FPU in this core
-			break;
-
-		case M68K_FP1:
-			str = "removed";  // no FPU in this core
-			break;
-
-		case M68K_FP2:
-			str = "removed";  // no FPU in this core
-			break;
-
-		case M68K_FP3:
-			str = "removed";  // no FPU in this core
-			break;
-
-		case M68K_FP4:
-			str = "removed";  // no FPU in this core
-			break;
-
-		case M68K_FP5:
-			str = "removed";  // no FPU in this core
-			break;
-
-		case M68K_FP6:
-			str = "removed";  // no FPU in this core
-			break;
-
-		case M68K_FP7:
-			str = "removed";  // no FPU in this core
-			break;
-
 		case STATE_GENFLAGS:
 			sr = m68ki_get_sr();
 			str = string_format("%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c",
@@ -753,16 +562,6 @@ void m68000_base_device::state_string_export(const device_state_entry &entry, st
 
 
 /* global access */
-
-void m68000_base_device::set_hmmu_enable(int enable)
-{
-	m_hmmu_enabled = enable;
-}
-
-void m68000_base_device::set_fpu_enable(int enable)
-{
-	m_has_fpu = enable;
-}
 
 /****************************************************************************
  * 8-bit data memory interface
@@ -871,259 +670,6 @@ void m68000_base_device::init32(address_space &space, address_space &ospace)
 	};
 }
 
-/* interface for 32-bit data bus with PMMU */
-void m68000_base_device::init32mmu(address_space &space, address_space &ospace)
-{
-	m_space = &space;
-	m_ospace = &ospace;
-	ospace.cache(m_oprogram32);
-	space.specific(m_program32);
-
-	m_readimm16 = [this](offs_t address) -> u16 {
-		if (m_pmmu_enabled) {
-			address = pmmu_translate_addr(address, 1);
-			if (m_mmu_tmp_buserror_occurred)
-			return ~0;
-		}
-
-		return m_oprogram32.read_word(address);
-	};
-
-	m_read8   = [this](offs_t address) -> u8     {
-		if (m_pmmu_enabled) {
-				address = pmmu_translate_addr(address, 1);
-				if (m_mmu_tmp_buserror_occurred)
-					return ~0;
-		}
-		return m_program32.read_byte(address);
-	};
-
-	m_read16  = [this](offs_t address) -> u16    {
-		if (m_pmmu_enabled) {
-			u32 address0 = pmmu_translate_addr(address, 1);
-			if (m_mmu_tmp_buserror_occurred)
-				return ~0;
-			if (WORD_ALIGNED(address))
-				return m_program32.read_word(address0);
-			u32 address1 = pmmu_translate_addr(address + 1, 1);
-			if (m_mmu_tmp_buserror_occurred)
-				return ~0;
-			u16 result = m_program32.read_byte(address0) << 8;
-			return result | m_program32.read_byte(address1);
-		}
-		return m_program32.read_word_unaligned(address);
-	};
-
-	m_read32  = [this](offs_t address) -> u32    {
-		if (m_pmmu_enabled) {
-			u32 address0 = pmmu_translate_addr(address, 1);
-			if (m_mmu_tmp_buserror_occurred)
-				return ~0;
-			if ((address +3) & 0xfc)
-				// not at page boundary; use default code
-				address = address0;
-			else if (DWORD_ALIGNED(address)) // 0
-				return m_program32.read_dword(address0);
-			else {
-				u32 address2 = pmmu_translate_addr(address+2, 1);
-				if (m_mmu_tmp_buserror_occurred)
-					return ~0;
-				if (WORD_ALIGNED(address)) { // 2
-					u32 result = m_program32.read_word(address0) << 16;
-					return result | m_program32.read_word(address2);
-				}
-				u32 address1 = pmmu_translate_addr(address+1, 1);
-				u32 address3 = pmmu_translate_addr(address+3, 1);
-				if (m_mmu_tmp_buserror_occurred)
-					return ~0;
-				u32 result = m_program32.read_byte(address0) << 24;
-				result |= m_program32.read_word(address1) << 8;
-				return result | m_program32.read_byte(address3);
-			}
-		}
-		return m_program32.read_dword_unaligned(address);
-	};
-
-	m_write8  = [this](offs_t address, u8  data) {
-		if (m_pmmu_enabled) {
-			address = pmmu_translate_addr(address, 0);
-			if (m_mmu_tmp_buserror_occurred)
-				return;
-		}
-		m_program32.write_dword(address & 0xfffffffcU, dword_from_byte(data), 0xff000000U >> 8 * (address & 3));
-	};
-
-	m_write16 = [this](offs_t address, u16 data) {
-		u32 address0 = address;
-		if (m_pmmu_enabled) {
-			address0 = pmmu_translate_addr(address0, 0);
-			if (m_mmu_tmp_buserror_occurred)
-				return;
-		}
-		switch (address & 3) {
-		case 0:
-			m_program32.write_dword(address0, dword_from_word(data), 0xffff0000U);
-			break;
-
-		case 1:
-			m_program32.write_dword(address0 - 1, dword_from_unaligned_word(data), 0x00ffff00);
-			break;
-
-		case 2:
-			m_program32.write_dword(address0 - 2, dword_from_word(data), 0x0000ffff);
-			break;
-
-		case 3:
-		{
-			u32 address1 = address + 1;
-			if (m_pmmu_enabled) {
-				address1 = pmmu_translate_addr(address1, 0);
-				if (m_mmu_tmp_buserror_occurred)
-					return;
-			}
-			m_program32.write_dword(address0 - 3, dword_from_unaligned_word(data), 0x000000ff);
-			m_program32.write_dword(address1, dword_from_byte(data & 0x00ff), 0xff000000U);
-			break;
-		}
-		}
-	};
-
-	m_write32 = [this](offs_t address, u32 data) {
-		u32 address0 = address;
-		if (m_pmmu_enabled) {
-			address0 = pmmu_translate_addr(address0, 0);
-			if (m_mmu_tmp_buserror_occurred)
-				return;
-		}
-		switch (address & 3) {
-		case 0:
-			m_program32.write_dword(address0, data, 0xffffffffU);
-			break;
-
-		case 1:
-		{
-			u32 address3 = address + 3;
-			if (m_pmmu_enabled) {
-				address3 = pmmu_translate_addr(address3, 0);
-				if (m_mmu_tmp_buserror_occurred)
-					return;
-			}
-			m_program32.write_dword(address0 - 1, (data & 0xff000000U) | (data & 0xffffff00U) >> 8, 0x00ffffff);
-			m_program32.write_dword(address3, dword_from_byte(data & 0x000000ff), 0xff000000U);
-			break;
-		}
-
-		case 2:
-		{
-			u32 address2 = address + 2;
-			if (m_pmmu_enabled) {
-				address2 = pmmu_translate_addr(address2, 0);
-				if (m_mmu_tmp_buserror_occurred)
-					return;
-			}
-			m_program32.write_dword(address0 - 2, dword_from_word((data & 0xffff0000U) >> 16), 0x0000ffff);
-			m_program32.write_dword(address2, dword_from_word(data & 0x0000ffff), 0xffff0000U);
-			break;
-		}
-
-		case 3:
-		{
-			u32 address1 = address + 1;
-			if (m_pmmu_enabled) {
-				address1 = pmmu_translate_addr(address1, 0);
-				if (m_mmu_tmp_buserror_occurred)
-					return;
-			}
-			m_program32.write_dword(address0 - 3, dword_from_unaligned_word((data & 0xffff0000U) >> 16), 0x000000ff);
-			m_program32.write_dword(address1, (data & 0x00ffffff) << 8 | (data & 0xff000000U) >> 24, 0xffffff00U);
-			break;
-		}
-		}
-	};
-}
-
-void m68000_base_device::init32hmmu(address_space &space, address_space &ospace)
-{
-	m_space = &space;
-	m_ospace = &ospace;
-	ospace.cache(m_oprogram32);
-	space.specific(m_program32);
-
-	m_readimm16 = [this](offs_t address) -> u16 {
-		if (m_hmmu_enabled)
-			address = hmmu_translate_addr(address);
-		return m_oprogram32.read_word(address);
-	};
-
-	m_read8   = [this](offs_t address) -> u8     {
-		if (m_hmmu_enabled)
-			address = hmmu_translate_addr(address);
-		return m_program32.read_byte(address);
-	};
-
-	m_read16  = [this](offs_t address) -> u16    {
-		if (m_hmmu_enabled)
-			address = hmmu_translate_addr(address);
-		if (WORD_ALIGNED(address))
-			return m_program32.read_word(address);
-		u16 result = m_program32.read_byte(address) << 8;
-		return result | m_program32.read_byte(address + 1);
-	};
-
-	m_read32  = [this](offs_t address) -> u32    {
-		if (m_hmmu_enabled)
-			address = hmmu_translate_addr(address);
-
-		if (DWORD_ALIGNED(address))
-			return m_program32.read_dword(address);
-		if (WORD_ALIGNED(address)) {
-			u32 result = m_program32.read_word(address) << 16;
-			return result | m_program32.read_word(address + 2);
-		}
-		u32 result = m_program32.read_byte(address) << 24;
-		result |= m_program32.read_word(address + 1) << 8;
-		return result | m_program32.read_byte(address + 3);
-	};
-
-	m_write8  = [this](offs_t address, u8 data)  {
-		if (m_hmmu_enabled)
-			address = hmmu_translate_addr(address);
-		m_program32.write_byte(address, data);
-	};
-
-	m_write16 = [this](offs_t address, u16 data)  {
-		if (m_hmmu_enabled)
-			address = hmmu_translate_addr(address);
-		if (WORD_ALIGNED(address)) {
-			m_program32.write_word(address, data);
-			return;
-		}
-		m_program32.write_byte(address, data >> 8);
-		m_program32.write_byte(address + 1, data);
-	};
-
-	m_write32 = [this](offs_t address, u32 data)  {
-		if (m_hmmu_enabled)
-			address = hmmu_translate_addr(address);
-
-		if (DWORD_ALIGNED(address)) {
-			m_program32.write_dword(address, data);
-			return;
-		}
-		if (WORD_ALIGNED(address)) {
-			m_program32.write_word(address, data >> 16);
-			m_program32.write_word(address + 2, data);
-			return;
-		}
-		m_program32.write_byte(address, data >> 24);
-		m_program32.write_word(address + 1, data >> 8);
-		m_program32.write_byte(address + 3, data);
-	};
-}
-
-// fault_addr = address to indicate fault at
-// rw = 1 for read, 0 for write
-// fc = 3-bit function code of access (usually you'd just put what m68k_get_fc() returns here)
 void m68000_base_device::set_buserror_details(u32 fault_addr, u8 rw, u8 fc)
 {
 	m_aerr_address = fault_addr;
@@ -1183,48 +729,6 @@ void m68000_base_device::define_state(void)
 		state_add(M68K_CAAR,   "CAAR",      m_caar);
 	}
 
-	if (m_cpu_type & MASK_030_OR_LATER)
-	{
-		for (int regnum = 0; regnum < 8; regnum++) {
-			state_add(M68K_FP0 + regnum, string_format("FP%d", regnum).c_str(), m_iotemp).callimport().callexport().formatstr("%10s");
-		}
-		state_add(M68K_FPSR, "FPSR", m_fpsr);
-		state_add(M68K_FPCR, "FPCR", m_fpcr);
-	}
-
-	if (m_has_pmmu)
-	{
-		state_add(M68K_MMU_TC, "TC", m_mmu_tc);
-		state_add(M68K_MMU_SR, "PSR", m_mmu_sr);
-
-		if (m_cpu_type & (CPU_TYPE_010|CPU_TYPE_020)) // 68010/68020 + 68851 PMMU
-		{
-			state_add(M68K_CRP_LIMIT, "CRP_LIMIT", m_mmu_crp_limit);
-			state_add(M68K_CRP_APTR, "CRP_APTR", m_mmu_crp_aptr);
-			state_add(M68K_SRP_LIMIT, "SRP_LIMIT", m_mmu_srp_limit);
-			state_add(M68K_SRP_APTR, "SRP_APTR", m_mmu_srp_aptr);
-		}
-
-		if (m_cpu_type & CPU_TYPE_030)
-		{
-			state_add(M68K_TT0, "TT0", m_mmu_tt0);
-			state_add(M68K_TT1, "TT1", m_mmu_tt1);
-			state_add(M68K_CRP_LIMIT, "CRP_LIMIT", m_mmu_crp_limit);
-			state_add(M68K_CRP_APTR, "CRP_APTR", m_mmu_crp_aptr);
-			state_add(M68K_SRP_LIMIT, "SRP_LIMIT", m_mmu_srp_limit);
-			state_add(M68K_SRP_APTR, "SRP_APTR", m_mmu_srp_aptr);
-		}
-
-		if (m_cpu_type & CPU_TYPE_040)
-		{
-			state_add(M68K_ITT0, "ITT0", m_mmu_itt0);
-			state_add(M68K_ITT1, "ITT1", m_mmu_itt1);
-			state_add(M68K_DTT0, "DTT0", m_mmu_dtt0);
-			state_add(M68K_DTT1, "DTT1", m_mmu_dtt1);
-			state_add(M68K_URP_APTR, "URP", m_mmu_urp_aptr);
-			state_add(M68K_SRP_APTR, "SRP", m_mmu_srp_aptr);
-		}
-	}
 }
 
 
@@ -1253,8 +757,6 @@ void m68000_base_device::init_cpu_scc68070(void)
 	m_cyc_movem_l      = 11;
 	m_cyc_shift        = 3;
 	m_cyc_reset        = 154;
-	m_has_pmmu         = 0;
-	m_has_fpu          = 0;
 
 	define_state();
 }
@@ -1392,9 +894,6 @@ void m68000_base_device::clear_all()
 	m_ir= 0;
 //  for (int i=0;i<8;i++)
 //      m_fpr[i]= 0;
-	m_fpiar= 0;
-	m_fpsr= 0;
-	m_fpcr= 0;
 	m_t1_flag= 0;
 	m_t0_flag= 0;
 	m_s_flag= 0;
@@ -1412,12 +911,6 @@ void m68000_base_device::clear_all()
 	m_sr_mask= 0;
 	m_instr_mode= 0;
 	m_run_mode= 0;
-	m_has_pmmu= 0;
-	m_has_hmmu= 0;
-	m_pmmu_enabled= 0;
-	m_hmmu_enabled= 0;
-	m_has_fpu= 0;
-	m_fpu_just_reset= 0;
 
 	m_cyc_bcc_notake_b = 0;
 	m_cyc_bcc_notake_w = 0;
@@ -1458,21 +951,6 @@ void m68000_base_device::clear_all()
 	m_save_halted = 0;
 
 
-	m_mmu_crp_aptr = m_mmu_crp_limit = 0;
-	m_mmu_srp_aptr = m_mmu_srp_limit = 0;
-	m_mmu_urp_aptr = 0;
-	m_mmu_tc = 0;
-	m_mmu_sr = 0;
-	m_mmu_sr_040 = 0;
-
-	for (int i=0; i<MMU_ATC_ENTRIES;i++)
-		m_mmu_atc_tag[i] = m_mmu_atc_data[i] = 0;
-
-	m_mmu_atc_rr = 0;
-	m_mmu_tt0 = m_mmu_tt1 = 0;
-	m_mmu_itt0 = m_mmu_itt1 = m_mmu_dtt0 = m_mmu_dtt1 = 0;
-	m_mmu_acr0 = m_mmu_acr1 = m_mmu_acr2 = m_mmu_acr3 = 0;
-	m_mmu_tmp_sr = 0;
 	m_mmu_tmp_fc = 0;
 	m_mmu_tmp_rw = 0;
 	m_mmu_tmp_buserror_address = 0;

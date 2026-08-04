@@ -270,7 +270,6 @@ OBJECTS += $(EMU_OBJS)
 ##############################################################################
 OPTIONAL_SRC_CXX := \
 	$(CORE_DIR)/src/devices/cpu/m68000/m68kcpu.cpp \
-	$(CORE_DIR)/src/devices/cpu/m68000/m68kfpu.cpp \
 	$(CORE_DIR)/src/devices/cpu/m68000/m68kops.cpp \
 	$(CORE_DIR)/src/devices/cpu/m6805/m6805.cpp \
 	$(CORE_DIR)/src/devices/cpu/m6805/m68hc05.cpp \

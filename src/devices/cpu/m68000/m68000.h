@@ -8,7 +8,6 @@
 
 
 /* MMU constants */
-constexpr int MMU_ATC_ENTRIES = (22);    // 68851 has 64, 030 has 22
 
 /* instruction cache constants */
 constexpr int M68K_IC_SIZE = 128;
@@ -68,22 +67,13 @@ enum
 	M68K_FC_INTERRUPT = 7
 };
 
-/* HMMU enable types for use with m68k_set_hmmu_enable() */
-constexpr int M68K_HMMU_DISABLE   = 0;   /* no translation */
-constexpr int M68K_HMMU_ENABLE_II = 1;   /* Mac II style fixed translation */
-constexpr int M68K_HMMU_ENABLE_LC = 2;   /* Mac LC style fixed translation */
-
 enum
 {
 	/* NOTE: M68K_SP fetches the current SP, be it USP, ISP, or MSP */
 	M68K_PC = STATE_GENPC, M68K_SP = 1, M68K_ISP, M68K_USP, M68K_MSP, M68K_SR, M68K_VBR,
 	M68K_SFC, M68K_DFC, M68K_CACR, M68K_CAAR, M68K_IR, M68K_PREF_ADDR, M68K_PREF_DATA,
 	M68K_D0, M68K_D1, M68K_D2, M68K_D3, M68K_D4, M68K_D5, M68K_D6, M68K_D7,
-	M68K_A0, M68K_A1, M68K_A2, M68K_A3, M68K_A4, M68K_A5, M68K_A6, M68K_A7,
-	M68K_FP0, M68K_FP1, M68K_FP2, M68K_FP3, M68K_FP4, M68K_FP5, M68K_FP6, M68K_FP7,
-	M68K_FPSR, M68K_FPCR, M68K_CRP_LIMIT, M68K_CRP_APTR, M68K_SRP_LIMIT, M68K_SRP_APTR,
-	M68K_MMU_TC, M68K_TT0, M68K_TT1, M68K_MMU_SR, M68K_ITT0, M68K_ITT1,
-	M68K_DTT0, M68K_DTT1, M68K_URP_APTR
+	M68K_A0, M68K_A1, M68K_A2, M68K_A3, M68K_A4, M68K_A5, M68K_A6, M68K_A7
 };
 
 class m68000_base_device : public cpu_device
@@ -157,9 +147,6 @@ public:
 	template <typename... T> void set_rte_callback(T &&... args) { m_rte_instr_callback.set(std::forward<T>(args)...); }
 	template <typename... T> void set_tas_write_callback(T &&... args) { m_tas_write_callback.set(std::forward<T>(args)...); }
 	u16 get_fc();
-	void set_hmmu_enable(int enable);
-	int get_pmmu_enable() const {return m_pmmu_enabled;};
-	void set_fpu_enable(int enable);
 	void set_buserror_details(u32 fault_addr, u8 rw, u8 fc);
 	void disable_interrupt_mixer() { m_interrupt_mixer = false; }
 	void set_cpu_space(int space_id) { m_cpu_space_id = space_id; }
@@ -171,7 +158,6 @@ protected:
 	m68000_base_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock,
 						const device_type type, u32 prg_data_width, u32 prg_address_bits, address_map_constructor internal_map);
 
-	int    m_has_fpu;      /* Indicates if a FPU is available (yes on 030, 040, may be on 020) */
 
 	bool   m_interrupt_mixer; /* Indicates whether to put a virtual 8->3 priority mixer on the input lines (default true) */
 	int    m_cpu_space_id;    /* CPU space address space id (default AS_CPU_SPACE) */
@@ -188,9 +174,6 @@ protected:
 	u32 m_cacr;         /* Cache Control Register (m68020, unemulated) */
 	u32 m_caar;         /* Cache Address Register (m68020, unemulated) */
 	u32 m_ir;           /* Instruction Register */
-	u32 m_fpiar;        /* FPU Instruction Address Register (m68040) */
-	u32 m_fpsr;         /* FPU Status Register (m68040) */
-	u32 m_fpcr;         /* FPU Control Register (m68040) */
 	u32 m_t1_flag;      /* Trace 1 */
 	u32 m_t0_flag;      /* Trace 0 */
 	u32 m_s_flag;       /* Supervisor */
@@ -208,11 +191,6 @@ protected:
 	u32 m_sr_mask;      /* Implemented status register bits */
 	u32 m_instr_mode;   /* Stores whether we are in instruction mode or group 0/1 exception mode */
 	u32 m_run_mode;     /* Stores whether we are processing a reset, bus error, address error, or something else */
-	int    m_has_pmmu;     /* Indicates if a PMMU available (yes on 030, 040, no on EC030) */
-	int    m_has_hmmu;     /* Indicates if an Apple HMMU is available in place of the 68851 (020 only) */
-	int    m_pmmu_enabled; /* Indicates if the PMMU is enabled */
-	int    m_hmmu_enabled; /* Indicates if the HMMU is enabled */
-	int    m_fpu_just_reset; /* Indicates the FPU was just reset */
 
 	/* Clocks required for instructions / exceptions */
 	u32 m_cyc_bcc_notake_b;
@@ -266,8 +244,6 @@ protected:
 	void init8(address_space &space, address_space &ospace);
 	void init16(address_space &space, address_space &ospace);
 	void init32(address_space &space, address_space &ospace);
-	void init32mmu(address_space &space, address_space &ospace);
-	void init32hmmu(address_space &space, address_space &ospace);
 
 	std::function<u16 (offs_t)> m_readimm16;      // Immediate read 16 bit
 	std::function<u8  (offs_t)> m_read8;
@@ -287,20 +263,6 @@ protected:
 	u8 m_save_halted;
 
 	/* PMMU registers */
-	u32 m_mmu_crp_aptr, m_mmu_crp_limit;
-	u32 m_mmu_srp_aptr, m_mmu_srp_limit;
-	u32 m_mmu_urp_aptr;    /* 040 only */
-	u32 m_mmu_tc;
-	u16 m_mmu_sr;
-	u32 m_mmu_sr_040;
-	u32 m_mmu_atc_tag[MMU_ATC_ENTRIES], m_mmu_atc_data[MMU_ATC_ENTRIES];
-	u32 m_mmu_atc_rr;
-	u32 m_mmu_tt0, m_mmu_tt1;
-	u32 m_mmu_itt0, m_mmu_itt1, m_mmu_dtt0, m_mmu_dtt1;
-	u32 m_mmu_acr0, m_mmu_acr1, m_mmu_acr2, m_mmu_acr3;
-	u32 m_mmu_last_page_entry, m_mmu_last_page_entry_addr;
-
-	u16 m_mmu_tmp_sr;      /* temporary hack: status code for ptest and to handle write protection */
 	u16 m_mmu_tmp_fc;      /* temporary hack: function code for the mmu (moves) */
 	u16 m_mmu_tmp_rw;      /* temporary hack: read/write (1/0) for the mmu */
 	u8 m_mmu_tmp_sz;       /* temporary hack: size for mmu */
@@ -311,8 +273,6 @@ protected:
 	u16 m_mmu_tmp_buserror_rw;   /* temporary hack: (first) bus error rw */
 	u16 m_mmu_tmp_buserror_sz;   /* temporary hack: (first) bus error size` */
 
-	bool m_mmu_tablewalk;             /* set when MMU walks page tables */
-	u32 m_mmu_last_logical_addr;
 	u32 m_ic_address[M68K_IC_SIZE];   /* instruction cache address data */
 	u32 m_ic_data[M68K_IC_SIZE];      /* instruction cache content data */
 	bool   m_ic_valid[M68K_IC_SIZE];     /* instruction cache valid flags */
@@ -348,27 +308,14 @@ protected:
 	virtual void state_string_export(const device_state_entry &entry, std::string &str) const override;
 
 	// device_memory_interface overrides
-	virtual bool memory_translate(int space, int intention, offs_t &address) override;
 
 #include "m68kcpu.h"
 #include "m68kops.h"
-#include "m68kmmu.h"
 
 	virtual void m68k_reset_peripherals() { }
 
 
 	// EA helpers defined in m68kfpu.cpp (stub: F-line traps only)
-	u8 READ_EA_8(int ea);
-	u16 READ_EA_16(int ea);
-	u32 READ_EA_32(int ea);
-	u64 READ_EA_64(int ea);
-	void WRITE_EA_8(int ea, u8 data);
-	void WRITE_EA_16(int ea, u16 data);
-	void WRITE_EA_32(int ea, u32 data);
-	void WRITE_EA_64(int ea, u64 data);
-	void m68040_fpu_op0();
-	void m68040_fpu_op1();
-	void m68881_ftrap();
 };
 
 
