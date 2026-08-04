@@ -485,7 +485,7 @@ FLAC_SRC_C := \
 
 FLAC_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(FLAC_SRC_C:.c=.o))
 $(FLAC_OBJS): GRPINCS := -I$(CORE_DIR)/3rdparty/libflac/src/libFLAC/include -I$(CORE_DIR)/3rdparty/libflac/include
-$(FLAC_OBJS): GRPFLAGS := -DWORDS_BIGENDIAN=0 -DFLAC__NO_ASM -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -DFLAC__HAS_OGG=0 -DHAVE_CONFIG_H=1
+$(FLAC_OBJS): GRPFLAGS := -DWORDS_BIGENDIAN=0 -DFLAC__NO_ASM -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -DFLAC__HAS_OGG=0 -DHAVE_CONFIG_H=1 -DFLAC__NO_STDIO
 OBJECTS += $(FLAC_OBJS)
 
 ##############################################################################
@@ -512,7 +512,7 @@ JPEG_SRC_C := \
 	$(CORE_DIR)/3rdparty/libjpeg/jidctflt.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jidctfst.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jidctint.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jmemansi.c \
+	$(CORE_DIR)/3rdparty/libjpeg/jmemnobs.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jmemmgr.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jquant1.c \
 	$(CORE_DIR)/3rdparty/libjpeg/jquant2.c \

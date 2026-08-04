@@ -39,7 +39,7 @@
 #include <vector>
 
 #if defined(_WIN32)
-#include <cstdio> // _fullpath
+#include <direct.h> // _getcwd
 constexpr char PATHSEPCH = '\\';
 constexpr char INVPATHSEPCH = '/';
 #else
@@ -296,38 +296,74 @@ std::unique_ptr<osd::directory::entry> osd_stat(const std::string &path)
 
 std::error_condition osd_get_full_path(std::string &dst, std::string const &path) noexcept
 {
-	// Path canonicalisation, not file I/O: the VFS has no equivalent,
-	// so the platform facility is kept.
+	// Purely lexical resolution: an absolute path is normalised in
+	// place, a relative one is joined to the current directory first.
+	// The platform canonicalisers (realpath/_fullpath) walked the
+	// filesystem to resolve symlinks, which is file I/O outside the
+	// VFS; MAME only needs a stable absolute form for path joins and
+	// display, which this provides without touching the filesystem.
 	try
 	{
-#if defined(_WIN32)
-		std::vector<char> path_buffer(260);
-		if (::_fullpath(&path_buffer[0], path.c_str(), path_buffer.size()))
-		{
-			dst = &path_buffer[0];
-			return std::error_condition();
-		}
-		return std::errc::io_error;
-#else
-		std::unique_ptr<char, void (*)(void *)> canonical(::realpath(path.c_str(), nullptr), &std::free);
-		if (canonical)
-		{
-			dst = canonical.get();
-			return std::error_condition();
-		}
+		std::string joined;
 		if (path_is_absolute(path.c_str()))
 		{
-			dst = path;
-			return std::error_condition();
+			joined = path;
 		}
-		std::vector<char> cwd(PATH_MAX);
-		if (!::getcwd(&cwd[0], cwd.size()))
-			return std::error_condition(errno, std::generic_category());
-		dst = &cwd[0];
-		dst += PATHSEPCH;
-		dst += path;
-		return std::error_condition();
+		else
+		{
+#if defined(_WIN32)
+			std::vector<char> cwd(260);
+			if (!::_getcwd(&cwd[0], int(cwd.size())))
+				return std::error_condition(errno, std::generic_category());
+#else
+			std::vector<char> cwd(PATH_MAX);
+			if (!::getcwd(&cwd[0], cwd.size()))
+				return std::error_condition(errno, std::generic_category());
 #endif
+			joined = &cwd[0];
+			joined += PATHSEPCH;
+			joined += path;
+		}
+#if defined(_WIN32)
+		for (auto &ch : joined)
+			if (ch == INVPATHSEPCH)
+				ch = PATHSEPCH;
+#endif
+		// collapse repeated separators and "." / ".." components
+		std::vector<std::string> parts;
+		std::string prefix;
+		std::size_t pos = 0;
+#if defined(_WIN32)
+		if ((joined.length() >= 2) && (joined[1] == ':'))
+		{
+			prefix = joined.substr(0, 2);
+			pos = 2;
+		}
+#endif
+		while (pos < joined.length())
+		{
+			std::size_t const next = joined.find(PATHSEPCH, pos);
+			std::string const comp = joined.substr(pos, (next == std::string::npos) ? std::string::npos : (next - pos));
+			pos = (next == std::string::npos) ? joined.length() : (next + 1);
+			if (comp.empty() || (comp == "."))
+				continue;
+			else if (comp == "..")
+			{
+				if (!parts.empty())
+					parts.pop_back();
+			}
+			else
+				parts.push_back(comp);
+		}
+		dst = prefix;
+		for (auto const &comp : parts)
+		{
+			dst += PATHSEPCH;
+			dst += comp;
+		}
+		if (dst.empty() || (dst == prefix))
+			dst = prefix + PATHSEPCH;
+		return std::error_condition();
 	}
 	catch (...)
 	{

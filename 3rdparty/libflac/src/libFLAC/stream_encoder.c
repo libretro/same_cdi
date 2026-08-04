@@ -318,10 +318,12 @@ static FLAC__StreamDecoderWriteStatus verify_write_callback_(const FLAC__StreamD
 static void verify_metadata_callback_(const FLAC__StreamDecoder *decoder, const FLAC__StreamMetadata *metadata, void *client_data);
 static void verify_error_callback_(const FLAC__StreamDecoder *decoder, FLAC__StreamDecoderErrorStatus status, void *client_data);
 
+#ifndef FLAC__NO_STDIO
 static FLAC__StreamEncoderReadStatus file_read_callback_(const FLAC__StreamEncoder *encoder, FLAC__byte buffer[], size_t *bytes, void *client_data);
 static FLAC__StreamEncoderSeekStatus file_seek_callback_(const FLAC__StreamEncoder *encoder, FLAC__uint64 absolute_byte_offset, void *client_data);
 static FLAC__StreamEncoderTellStatus file_tell_callback_(const FLAC__StreamEncoder *encoder, FLAC__uint64 *absolute_byte_offset, void *client_data);
 static FLAC__StreamEncoderWriteStatus file_write_callback_(const FLAC__StreamEncoder *encoder, const FLAC__byte buffer[], size_t bytes, unsigned samples, unsigned current_frame, void *client_data);
+#endif
 static FILE *get_binary_stdout_(void);
 
 
@@ -1183,6 +1185,7 @@ FLAC_API FLAC__StreamEncoderInitStatus FLAC__stream_encoder_init_ogg_stream(
 	);
 }
  
+#ifndef FLAC__NO_STDIO /* stdio file API */
 static FLAC__StreamEncoderInitStatus init_FILE_internal_(
 	FLAC__StreamEncoder *encoder,
 	FILE *file,
@@ -1244,7 +1247,9 @@ static FLAC__StreamEncoderInitStatus init_FILE_internal_(
 
 	return init_status;
 }
+#endif /* FLAC__NO_STDIO */
  
+#ifndef FLAC__NO_STDIO /* stdio file API */
 FLAC_API FLAC__StreamEncoderInitStatus FLAC__stream_encoder_init_FILE(
 	FLAC__StreamEncoder *encoder,
 	FILE *file,
@@ -1254,7 +1259,9 @@ FLAC_API FLAC__StreamEncoderInitStatus FLAC__stream_encoder_init_FILE(
 {
 	return init_FILE_internal_(encoder, file, progress_callback, client_data, /*is_ogg=*/false);
 }
+#endif /* FLAC__NO_STDIO */
  
+#ifndef FLAC__NO_STDIO /* stdio file API */
 FLAC_API FLAC__StreamEncoderInitStatus FLAC__stream_encoder_init_ogg_FILE(
 	FLAC__StreamEncoder *encoder,
 	FILE *file,
@@ -1264,7 +1271,9 @@ FLAC_API FLAC__StreamEncoderInitStatus FLAC__stream_encoder_init_ogg_FILE(
 {
 	return init_FILE_internal_(encoder, file, progress_callback, client_data, /*is_ogg=*/true);
 }
+#endif /* FLAC__NO_STDIO */
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 static FLAC__StreamEncoderInitStatus init_file_internal_(
 	FLAC__StreamEncoder *encoder,
 	const char *filename,
@@ -1294,7 +1303,9 @@ static FLAC__StreamEncoderInitStatus init_file_internal_(
 
 	return init_FILE_internal_(encoder, file, progress_callback, client_data, is_ogg);
 }
+#endif /* FLAC__NO_STDIO */
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 FLAC_API FLAC__StreamEncoderInitStatus FLAC__stream_encoder_init_file(
 	FLAC__StreamEncoder *encoder,
 	const char *filename,
@@ -1304,7 +1315,9 @@ FLAC_API FLAC__StreamEncoderInitStatus FLAC__stream_encoder_init_file(
 {
 	return init_file_internal_(encoder, filename, progress_callback, client_data, /*is_ogg=*/false);
 }
+#endif /* FLAC__NO_STDIO */
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 FLAC_API FLAC__StreamEncoderInitStatus FLAC__stream_encoder_init_ogg_file(
 	FLAC__StreamEncoder *encoder,
 	const char *filename,
@@ -1314,6 +1327,7 @@ FLAC_API FLAC__StreamEncoderInitStatus FLAC__stream_encoder_init_ogg_file(
 {
 	return init_file_internal_(encoder, filename, progress_callback, client_data, /*is_ogg=*/true);
 }
+#endif /* FLAC__NO_STDIO */
 
 FLAC_API FLAC__bool FLAC__stream_encoder_finish(FLAC__StreamEncoder *encoder)
 {
@@ -1363,11 +1377,13 @@ FLAC_API FLAC__bool FLAC__stream_encoder_finish(FLAC__StreamEncoder *encoder)
 		}
 	}
 
+#ifndef FLAC__NO_STDIO
 	if(0 != encoder->private_->file) {
 		if(encoder->private_->file != stdout)
 			fclose(encoder->private_->file);
 		encoder->private_->file = 0;
 	}
+#endif
 
 #if FLAC__HAS_OGG
 	if(encoder->private_->is_ogg)
@@ -4255,6 +4271,7 @@ void verify_error_callback_(const FLAC__StreamDecoder *decoder, FLAC__StreamDeco
 	encoder->protected_->state = FLAC__STREAM_ENCODER_VERIFY_DECODER_ERROR;
 }
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 FLAC__StreamEncoderReadStatus file_read_callback_(const FLAC__StreamEncoder *encoder, FLAC__byte buffer[], size_t *bytes, void *client_data)
 {
 	(void)client_data;
@@ -4268,7 +4285,9 @@ FLAC__StreamEncoderReadStatus file_read_callback_(const FLAC__StreamEncoder *enc
 	}
 	return FLAC__STREAM_ENCODER_READ_STATUS_CONTINUE;
 }
+#endif /* FLAC__NO_STDIO */
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 FLAC__StreamEncoderSeekStatus file_seek_callback_(const FLAC__StreamEncoder *encoder, FLAC__uint64 absolute_byte_offset, void *client_data)
 {
 	(void)client_data;
@@ -4278,7 +4297,9 @@ FLAC__StreamEncoderSeekStatus file_seek_callback_(const FLAC__StreamEncoder *enc
 	else
 		return FLAC__STREAM_ENCODER_SEEK_STATUS_OK;
 }
+#endif /* FLAC__NO_STDIO */
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 FLAC__StreamEncoderTellStatus file_tell_callback_(const FLAC__StreamEncoder *encoder, FLAC__uint64 *absolute_byte_offset, void *client_data)
 {
 	off_t offset;
@@ -4295,6 +4316,7 @@ FLAC__StreamEncoderTellStatus file_tell_callback_(const FLAC__StreamEncoder *enc
 		return FLAC__STREAM_ENCODER_TELL_STATUS_OK;
 	}
 }
+#endif /* FLAC__NO_STDIO */
 
 #ifdef FLAC__VALGRIND_TESTING
 static size_t local__fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
@@ -4308,6 +4330,7 @@ static size_t local__fwrite(const void *ptr, size_t size, size_t nmemb, FILE *st
 #define local__fwrite fwrite
 #endif
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 FLAC__StreamEncoderWriteStatus file_write_callback_(const FLAC__StreamEncoder *encoder, const FLAC__byte buffer[], size_t bytes, unsigned samples, unsigned current_frame, void *client_data)
 {
 	(void)client_data, (void)current_frame;
@@ -4338,6 +4361,7 @@ FLAC__StreamEncoderWriteStatus file_write_callback_(const FLAC__StreamEncoder *e
 	else
 		return FLAC__STREAM_ENCODER_WRITE_STATUS_FATAL_ERROR;
 }
+#endif /* FLAC__NO_STDIO */
 
 /*
  * This will forcibly set stdout to binary mode (for OSes that require it)

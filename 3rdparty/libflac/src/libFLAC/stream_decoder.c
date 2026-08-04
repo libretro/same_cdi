@@ -137,11 +137,13 @@ static FLAC__bool seek_to_absolute_sample_(FLAC__StreamDecoder *decoder, FLAC__u
 #if FLAC__HAS_OGG
 static FLAC__bool seek_to_absolute_sample_ogg_(FLAC__StreamDecoder *decoder, FLAC__uint64 stream_length, FLAC__uint64 target_sample);
 #endif
+#ifndef FLAC__NO_STDIO
 static FLAC__StreamDecoderReadStatus file_read_callback_(const FLAC__StreamDecoder *decoder, FLAC__byte buffer[], size_t *bytes, void *client_data);
 static FLAC__StreamDecoderSeekStatus file_seek_callback_(const FLAC__StreamDecoder *decoder, FLAC__uint64 absolute_byte_offset, void *client_data);
 static FLAC__StreamDecoderTellStatus file_tell_callback_(const FLAC__StreamDecoder *decoder, FLAC__uint64 *absolute_byte_offset, void *client_data);
 static FLAC__StreamDecoderLengthStatus file_length_callback_(const FLAC__StreamDecoder *decoder, FLAC__uint64 *stream_length, void *client_data);
 static FLAC__bool file_eof_callback_(const FLAC__StreamDecoder *decoder, void *client_data);
+#endif
 
 /***********************************************************************
  *
@@ -537,6 +539,7 @@ FLAC_API FLAC__StreamDecoderInitStatus FLAC__stream_decoder_init_ogg_stream(
 	);
 }
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 static FLAC__StreamDecoderInitStatus init_FILE_internal_(
 	FLAC__StreamDecoder *decoder,
 	FILE *file,
@@ -580,7 +583,9 @@ static FLAC__StreamDecoderInitStatus init_FILE_internal_(
 		is_ogg
 	);
 }
+#endif /* FLAC__NO_STDIO */
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 FLAC_API FLAC__StreamDecoderInitStatus FLAC__stream_decoder_init_FILE(
 	FLAC__StreamDecoder *decoder,
 	FILE *file,
@@ -592,7 +597,9 @@ FLAC_API FLAC__StreamDecoderInitStatus FLAC__stream_decoder_init_FILE(
 {
 	return init_FILE_internal_(decoder, file, write_callback, metadata_callback, error_callback, client_data, /*is_ogg=*/false);
 }
+#endif /* FLAC__NO_STDIO */
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 FLAC_API FLAC__StreamDecoderInitStatus FLAC__stream_decoder_init_ogg_FILE(
 	FLAC__StreamDecoder *decoder,
 	FILE *file,
@@ -604,7 +611,9 @@ FLAC_API FLAC__StreamDecoderInitStatus FLAC__stream_decoder_init_ogg_FILE(
 {
 	return init_FILE_internal_(decoder, file, write_callback, metadata_callback, error_callback, client_data, /*is_ogg=*/true);
 }
+#endif /* FLAC__NO_STDIO */
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 static FLAC__StreamDecoderInitStatus init_file_internal_(
 	FLAC__StreamDecoder *decoder,
 	const char *filename,
@@ -637,7 +646,9 @@ static FLAC__StreamDecoderInitStatus init_file_internal_(
 
 	return init_FILE_internal_(decoder, file, write_callback, metadata_callback, error_callback, client_data, is_ogg);
 }
+#endif /* FLAC__NO_STDIO */
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 FLAC_API FLAC__StreamDecoderInitStatus FLAC__stream_decoder_init_file(
 	FLAC__StreamDecoder *decoder,
 	const char *filename,
@@ -649,7 +660,9 @@ FLAC_API FLAC__StreamDecoderInitStatus FLAC__stream_decoder_init_file(
 {
 	return init_file_internal_(decoder, filename, write_callback, metadata_callback, error_callback, client_data, /*is_ogg=*/false);
 }
+#endif /* FLAC__NO_STDIO */
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 FLAC_API FLAC__StreamDecoderInitStatus FLAC__stream_decoder_init_ogg_file(
 	FLAC__StreamDecoder *decoder,
 	const char *filename,
@@ -661,6 +674,7 @@ FLAC_API FLAC__StreamDecoderInitStatus FLAC__stream_decoder_init_ogg_file(
 {
 	return init_file_internal_(decoder, filename, write_callback, metadata_callback, error_callback, client_data, /*is_ogg=*/true);
 }
+#endif /* FLAC__NO_STDIO */
 
 FLAC_API FLAC__bool FLAC__stream_decoder_finish(FLAC__StreamDecoder *decoder)
 {
@@ -709,11 +723,13 @@ FLAC_API FLAC__bool FLAC__stream_decoder_finish(FLAC__StreamDecoder *decoder)
 		FLAC__ogg_decoder_aspect_finish(&decoder->protected_->ogg_decoder_aspect);
 #endif
 
+#ifndef FLAC__NO_STDIO
 	if(0 != decoder->private_->file) {
 		if(decoder->private_->file != stdin)
 			fclose(decoder->private_->file);
 		decoder->private_->file = 0;
 	}
+#endif
 
 	if(decoder->private_->do_md5_checking) {
 		if(memcmp(decoder->private_->stream_info.data.stream_info.md5sum, decoder->private_->computed_md5sum, 16))
@@ -3323,6 +3339,7 @@ FLAC__bool seek_to_absolute_sample_ogg_(FLAC__StreamDecoder *decoder, FLAC__uint
 }
 #endif
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 FLAC__StreamDecoderReadStatus file_read_callback_(const FLAC__StreamDecoder *decoder, FLAC__byte buffer[], size_t *bytes, void *client_data)
 {
 	(void)client_data;
@@ -3339,7 +3356,9 @@ FLAC__StreamDecoderReadStatus file_read_callback_(const FLAC__StreamDecoder *dec
 	else
 		return FLAC__STREAM_DECODER_READ_STATUS_ABORT; /* abort to avoid a deadlock */
 }
+#endif /* FLAC__NO_STDIO */
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 FLAC__StreamDecoderSeekStatus file_seek_callback_(const FLAC__StreamDecoder *decoder, FLAC__uint64 absolute_byte_offset, void *client_data)
 {
 	(void)client_data;
@@ -3351,7 +3370,9 @@ FLAC__StreamDecoderSeekStatus file_seek_callback_(const FLAC__StreamDecoder *dec
 	else
 		return FLAC__STREAM_DECODER_SEEK_STATUS_OK;
 }
+#endif /* FLAC__NO_STDIO */
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 FLAC__StreamDecoderTellStatus file_tell_callback_(const FLAC__StreamDecoder *decoder, FLAC__uint64 *absolute_byte_offset, void *client_data)
 {
 	off_t pos;
@@ -3366,7 +3387,9 @@ FLAC__StreamDecoderTellStatus file_tell_callback_(const FLAC__StreamDecoder *dec
 		return FLAC__STREAM_DECODER_TELL_STATUS_OK;
 	}
 }
+#endif /* FLAC__NO_STDIO */
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 FLAC__StreamDecoderLengthStatus file_length_callback_(const FLAC__StreamDecoder *decoder, FLAC__uint64 *stream_length, void *client_data)
 {
 	struct stat filestats;
@@ -3381,10 +3404,13 @@ FLAC__StreamDecoderLengthStatus file_length_callback_(const FLAC__StreamDecoder 
 		return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
 	}
 }
+#endif /* FLAC__NO_STDIO */
 
+#ifndef FLAC__NO_STDIO /* stdio file API */
 FLAC__bool file_eof_callback_(const FLAC__StreamDecoder *decoder, void *client_data)
 {
 	(void)client_data;
 
 	return feof(decoder->private_->file)? true : false;
 }
+#endif /* FLAC__NO_STDIO */
