@@ -15,7 +15,6 @@
 #include "ui/filemngr.h"
 
 #include "ui/filesel.h"
-#include "ui/floppycntrl.h"
 #include "ui/imgcntrl.h"
 #include "ui/miscmenu.h"
 #include "ui/ui.h"
@@ -174,11 +173,7 @@ void menu_file_manager::handle(event const *ev)
 			selected_device = (device_image_interface *) ev->itemref;
 			if (selected_device)
 			{
-				floppy_image_device *floppy_device = dynamic_cast<floppy_image_device *>(selected_device);
-				if (floppy_device)
-					menu::stack_push<menu_control_floppy_image>(ui(), container(), *floppy_device);
-				else
-					menu::stack_push<menu_control_device_image>(ui(), container(), *selected_device);
+				menu::stack_push<menu_control_device_image>(ui(), container(), *selected_device);
 
 				// reset the existing menu
 				reset(reset_options::REMEMBER_POSITION);
