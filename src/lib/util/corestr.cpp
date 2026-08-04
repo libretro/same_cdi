@@ -11,6 +11,7 @@
 #include "corestr.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <iterator>
 #include <memory>
 
