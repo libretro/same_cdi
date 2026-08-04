@@ -12,9 +12,6 @@
 #include "pluginopts.h"
 #include "options.h"
 
-#include <rapidjson/document.h>
-#include <rapidjson/error/en.h>
-#include <rapidjson/istreamwrapper.h>
 
 #include <fstream>
 
@@ -33,79 +30,29 @@ plugin_options::plugin_options()
 
 
 //-------------------------------------------------
-//  scan_directory
+//  scan_directory - plugin manifest discovery,
+//  stubbed: the Lua plugin engine is removed from
+//  this core, so plugin.json manifests (the only
+//  rapidjson consumer in the tree) have nothing to
+//  describe.  The class and its INI plumbing stay
+//  so the option handling in mame.cpp and clifront
+//  is untouched.
 //-------------------------------------------------
 
 void plugin_options::scan_directory(const std::string &path, bool recursive)
 {
-	// first try to open as a directory
-	osd::directory::ptr directory = osd::directory::open(path);
-	if (directory)
-	{
-		// iterate over all files in the directory
-		for (const osd::directory::entry *entry = directory->read(); entry != nullptr; entry = directory->read())
-		{
-			if (entry->type == osd::directory::entry::entry_type::FILE && !strcmp(entry->name, "plugin.json"))
-			{
-				std::string curfile = std::string(path).append(PATH_SEPARATOR).append(entry->name);
-				load_plugin(curfile);
-			}
-			else if (entry->type == osd::directory::entry::entry_type::DIR)
-			{
-				if (recursive && strcmp(entry->name, ".") && strcmp(entry->name, ".."))
-					scan_directory(path + PATH_SEPARATOR + entry->name, recursive);
-			}
-		}
-	}
 }
 
 
 //-------------------------------------------------
-//  load_plugin
+//  load_plugin - stubbed with scan_directory
 //-------------------------------------------------
 
 bool plugin_options::load_plugin(const std::string &path)
 {
-	std::ifstream ifs(path);
-	rapidjson::IStreamWrapper isw(ifs);
-	rapidjson::Document document;
-	document.ParseStream<0>(isw);
-
-	if (document.HasParseError())
-	{
-		const std::string error(GetParseError_En(document.GetParseError()));
-		osd_printf_error("Unable to parse plugin definition file %s. Errors returned:\n%s", path, error);
-		return false;
-	}
-
-	if (!document["plugin"].IsObject())
-	{
-		osd_printf_error("Bad plugin definition file %s:\n", path);
-		return false;
-	}
-
-	size_t last_path_sep = path.find_last_of(PATH_SEPARATOR[0]);
-	std::string dir = last_path_sep != std::string::npos
-		? path.substr(0, last_path_sep)
-		: ".";
-
-	plugin p;
-	p.m_name        = document["plugin"]["name"].GetString();
-	p.m_description = document["plugin"]["description"].GetString();
-	p.m_type        = document["plugin"]["type"].GetString();
-	p.m_directory   = std::move(dir);
-	p.m_start       = false;
-	if (document["plugin"].HasMember("start") && (std::string(document["plugin"]["start"].GetString()) == "true"))
-		p.m_start = true;
-
-	m_plugins.push_back(std::move(p));
-	return true;
+	return false;
 }
 
-
-//-------------------------------------------------
-//  find
-//-------------------------------------------------
 
 plugin_options::plugin *plugin_options::find(const std::string &name)
 {
