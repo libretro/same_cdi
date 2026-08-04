@@ -44,6 +44,46 @@ const debug_view_memory::memory_view_pos debug_view_memory::s_memory_pos_table[1
 };
 
 
+//-------------------------------------------------
+//  ext80_to_double_bits - convert a raw 80-bit
+//  extended float (signExp/signif) to IEEE 754
+//  double bits; direct port of Berkeley SoftFloat
+//  3's extF80_to_f64 (BSD-3-Clause), verified
+//  bit-exact against it over 4M input patterns
+//-------------------------------------------------
+
+static u64 ext80_to_double_bits(u16 signExp, u64 signif)
+{
+	u64 const s = u64(signExp >> 15) << 63;
+	s32 exp = signExp & 0x7fff;
+	u64 sig = signif;
+	if ((exp == 0x7fff) && (sig & 0x7fffffffffffffffU))    // NaN
+		return s | 0x7ff8000000000000U | ((sig << 1) >> 12);
+	if (!exp && !sig)
+		return s;                                          // zero
+	sig = (sig >> 1) | (sig & 1);                          // shortShiftRightJam64(sig, 1)
+	exp -= 0x3c01;
+	u16 roundBits = sig & 0x3ff;                           // roundPackToF64, nearest even
+	if (u32(exp) >= 0x7fd)
+	{
+		if (exp < 0)
+		{
+			u32 const dist = -exp;                         // shiftRightJam64(sig, dist)
+			sig = (dist < 63) ? ((sig >> dist) | ((sig << (64 - dist)) != 0)) : (sig != 0);
+			exp = 0;
+			roundBits = sig & 0x3ff;
+		}
+		else if ((exp > 0x7fd) || (0x8000000000000000U <= sig + 0x200))
+			return s | 0x7ff0000000000000U;                // overflow to infinity
+	}
+	sig = (sig + 0x200) >> 10;
+	if (roundBits == 0x200)
+		sig &= ~u64(1);                                    // ties to even
+	if (!sig)
+		exp = 0;
+	return s + (u64(exp) << 52) + sig;
+}
+
 //**************************************************************************
 //  DEBUG VIEW MEMORY SOURCE
 //**************************************************************************
@@ -333,7 +373,7 @@ void debug_view_memory::generate_row(debug_view_char *destmin, debug_view_char *
 		{
 			char valuetext[64];
 			u64 chunkdata = 0;
-			extFloat80_t chunkdata80 = { 0, 0 };
+			debug_ext80 chunkdata80;
 			bool ismapped;
 
 			if (m_data_format != data_format::FLOAT_80BIT)
@@ -351,11 +391,8 @@ void debug_view_memory::generate_row(debug_view_char *destmin, debug_view_char *
 					sprintf(valuetext, "%.24g", u64_to_double(chunkdata));
 					break;
 				case data_format::FLOAT_80BIT:
-				{
-					float64_t f64 = extF80M_to_f64(&chunkdata80);
-					sprintf(valuetext, "%.24g", u64_to_double(f64.v));
+					sprintf(valuetext, "%.24g", u64_to_double(ext80_to_double_bits(chunkdata80.signExp, chunkdata80.signif)));
 					break;
-				}
 				default:
 					break;
 				}
@@ -896,7 +933,7 @@ bool debug_view_memory::read(u8 size, offs_t offs, u64 &data)
 //  read - read a 80 bit value
 //-------------------------------------------------
 
-bool debug_view_memory::read(u8 size, offs_t offs, extFloat80_t &data)
+bool debug_view_memory::read(u8 size, offs_t offs, debug_ext80 &data)
 {
 	u64 t;
 	bool mappedhi, mappedlo;

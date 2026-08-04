@@ -15,7 +15,9 @@
 
 #include "debugvw.h"
 
-#include "softfloat3/source/include/softfloat.h"
+// 80-bit extended float raw representation for the FLOAT_80BIT view
+// (replaces the softfloat3 dependency; conversion lives in dvmemory.cpp)
+struct debug_ext80 { u64 signif = 0; u16 signExp = 0; };
 
 
 //**************************************************************************
@@ -127,7 +129,7 @@ private:
 	// memory access
 	bool read(u8 size, offs_t offs, u64 &data);
 	void write(u8 size, offs_t offs, u64 data);
-	bool read(u8 size, offs_t offs, extFloat80_t &data);
+	bool read(u8 size, offs_t offs, debug_ext80 &data);
 	bool read_chunk(offs_t address, int chunknum, u64 &chunkdata);
 	void generate_row(debug_view_char *destmin, debug_view_char *destmax, debug_view_char *destrow, offs_t address);
 
