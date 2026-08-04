@@ -10,7 +10,6 @@
 /* MMU constants */
 
 /* instruction cache constants */
-constexpr int M68K_IC_SIZE = 128;
 
 /* There are 7 levels of interrupt to the 68K.
  * A transition from < 7 to 7 will cause a non-maskable interrupt (NMI).
@@ -273,9 +272,6 @@ protected:
 	u16 m_mmu_tmp_buserror_rw;   /* temporary hack: (first) bus error rw */
 	u16 m_mmu_tmp_buserror_sz;   /* temporary hack: (first) bus error size` */
 
-	u32 m_ic_address[M68K_IC_SIZE];   /* instruction cache address data */
-	u32 m_ic_data[M68K_IC_SIZE];      /* instruction cache content data */
-	bool   m_ic_valid[M68K_IC_SIZE];     /* instruction cache valid flags */
 
 
 

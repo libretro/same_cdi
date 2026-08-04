@@ -246,29 +246,8 @@ void m68000_base_device::m68k_cause_bus_error()
 
 	m_run_mode = RUN_MODE_BERR_AERR_RESET_WSF;
 
-	if (CPU_TYPE_IS_000())
-	{
-		/* Note: This is implemented for 68000 only! */
-		m68ki_stack_frame_buserr(sr);
-	}
-	else if (CPU_TYPE_IS_010())
-	{
-		/* only the 68010 throws this unique type-1000 frame */
-		m68ki_stack_frame_1000(m_ppc, sr, EXCEPTION_BUS_ERROR);
-	}
-	else if (CPU_TYPE_IS_070())
-	{
-		/* only the 68070 throws this unique type-1111 frame */
-		m68ki_stack_frame_1111(m_ppc, sr, EXCEPTION_BUS_ERROR);
-	}
-	else if (m_mmu_tmp_buserror_address == m_ppc)
-	{
-		m68ki_stack_frame_1010(sr, EXCEPTION_BUS_ERROR, m_ppc, m_mmu_tmp_buserror_address);
-	}
-	else
-	{
-		m68ki_stack_frame_1011(sr, EXCEPTION_BUS_ERROR, m_ppc, m_mmu_tmp_buserror_address);
-	}
+	/* the 68070 throws its unique type-1111 frame */
+	m68ki_stack_frame_1111(m_ppc, sr, EXCEPTION_BUS_ERROR);
 
 	m68ki_jump_vector(EXCEPTION_BUS_ERROR);
 	m_run_mode = RUN_MODE_BERR_AERR_RESET;
@@ -443,13 +422,6 @@ void m68000_base_device::device_reset()
 
 	m_reset_cycles = m_cyc_exception[EXCEPTION_RESET];
 
-	/* flush the MMU's cache */
-
-	if(CPU_TYPE_IS_EC020_PLUS())
-	{
-		// clear instruction cache
-		m68ki_ic_clear();
-	}
 }
 
 
@@ -778,11 +750,6 @@ void m68000_base_device::m68ki_exception_interrupt(u32 int_level)
 	u32 sr;
 	u32 new_pc;
 
-	if(CPU_TYPE_IS_000())
-	{
-		m_instr_mode = INSTRUCTION_NO;
-	}
-
 	/* Turn off the m_stopped state */
 	m_stopped &= ~STOP_LEVEL_STOP;
 
@@ -802,12 +769,8 @@ void m68000_base_device::m68ki_exception_interrupt(u32 int_level)
 	/* We require the handlers for autovector to return the correct
 	   vector, including for spurious interrupts. */
 
-	// 68000 and 68010 assert UDS as well as LDS for IACK cycles but disregard D8-D15
-	// 68008 definitely reads only one byte from CPU space, and the 68020 byte-sizes the request
-	if(CPU_TYPE_IS_EC020_PLUS() || m_cpu_type == CPU_TYPE_008)
-		vector = m_cpu_space->read_byte(0xfffffff1 | (int_level << 1));
-	else
-		vector = m_cpu_space->read_word(0xfffffff0 | (int_level << 1)) & 0xff;
+	// the 68070 asserts UDS as well as LDS for IACK cycles but disregards D8-D15
+	vector = m_cpu_space->read_word(0xfffffff0 | (int_level << 1)) & 0xff;
 
 	/* Start exception processing */
 	sr = m68ki_init_exception(vector);
@@ -824,13 +787,6 @@ void m68000_base_device::m68ki_exception_interrupt(u32 int_level)
 
 	/* Generate a stack frame */
 	m68ki_stack_frame_0000(m_pc, sr, vector);
-	if(m_m_flag && CPU_TYPE_IS_EC020_PLUS())
-	{
-		/* Create throwaway frame */
-		m68ki_set_sm_flag(m_s_flag);  /* clear M */
-		sr |= 0x2000; /* Same as SR in master stack frame except S is forced high */
-		m68ki_stack_frame_0001(m_pc, sr, vector);
-	}
 
 	m68ki_jump(new_pc);
 
@@ -957,13 +913,6 @@ void m68000_base_device::clear_all()
 	m_mmu_tmp_buserror_occurred = 0;
 	m_mmu_tmp_buserror_fc = 0;
 	m_mmu_tmp_buserror_rw = 0;
-
-	for (int i=0;i<M68K_IC_SIZE;i++)
-	{
-		m_ic_address[i] = 0;
-		m_ic_data[i] = 0;
-		m_ic_valid[i] = false;
-	}
 
 	m_internal = nullptr;
 }
