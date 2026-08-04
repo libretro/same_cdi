@@ -133,7 +133,6 @@ FRONTEND_SRC_CXX := \
 	$(CORE_DIR)/src/frontend/mame/ui/filecreate.cpp \
 	$(CORE_DIR)/src/frontend/mame/ui/filemngr.cpp \
 	$(CORE_DIR)/src/frontend/mame/ui/filesel.cpp \
-	$(CORE_DIR)/src/frontend/mame/ui/floppycntrl.cpp \
 	$(CORE_DIR)/src/frontend/mame/ui/icorender.cpp \
 	$(CORE_DIR)/src/frontend/mame/ui/imgcntrl.cpp \
 	$(CORE_DIR)/src/frontend/mame/ui/info.cpp \
@@ -160,7 +159,6 @@ FRONTEND_SRC_CXX := \
 	$(CORE_DIR)/src/frontend/mame/ui/submenu.cpp \
 	$(CORE_DIR)/src/frontend/mame/ui/swlist.cpp \
 	$(CORE_DIR)/src/frontend/mame/ui/systemlist.cpp \
-	$(CORE_DIR)/src/frontend/mame/ui/tapectrl.cpp \
 	$(CORE_DIR)/src/frontend/mame/ui/text.cpp \
 	$(CORE_DIR)/src/frontend/mame/ui/textbox.cpp \
 	$(CORE_DIR)/src/frontend/mame/ui/ui.cpp \

@@ -17,7 +17,6 @@
 #include "ui/ui.h"
 #include "ui/utils.h"
 
-#include "imagedev/floppy.h"
 
 #include "corestr.h"
 #include "zippath.h"

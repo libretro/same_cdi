@@ -29,14 +29,12 @@
 #include "ui/simpleselgame.h"
 #include "ui/sliders.h"
 #include "ui/slotopt.h"
-#include "ui/tapectrl.h"
 #include "ui/videoopt.h"
 
 #include "mame.h"
 #include "luaengine.h"
 
 #include "machine/bcreader.h"
-#include "imagedev/cassette.h"
 
 #include "crsshair.h"
 #include "dipty.h"
@@ -147,9 +145,6 @@ void menu_main::populate(float &customtop, float &custombottom)
 			break;
 		}
 	}
-
-	if (cassette_device_enumerator(machine().root_device()).first() != nullptr)
-		item_append(_("Tape Control"), 0, (void *)TAPE_CONTROL);
 
 	if (pty_interface_enumerator(machine().root_device()).first() != nullptr)
 		item_append(_("Pseudo Terminals"), 0, (void *)PTY_INFO);
@@ -264,10 +259,6 @@ void menu_main::handle(event const *ev)
 
 		case IMAGE_MENU_FILE_MANAGER:
 			menu::stack_push<menu_file_manager>(ui(), container(), nullptr);
-			break;
-
-		case TAPE_CONTROL:
-			menu::stack_push<menu_tape_control>(ui(), container(), nullptr);
 			break;
 
 		case PTY_INFO:

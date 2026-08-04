@@ -25,9 +25,6 @@
 #include "ui/systemlist.h"
 #include "ui/viewgfx.h"
 
-#include "imagedev/cassette.h"
-#include "machine/laserdsc.h"
-#include "video/vector.h"
 
 #include "config.h"
 #include "emuopts.h"
@@ -1289,24 +1286,6 @@ uint32_t mame_ui_manager::handler_ingame(render_container &container)
 		return is_paused ? 1 : 0;
 	}
 
-	// handle a tape control key
-	if (machine().ui_input().pressed(IPT_UI_TAPE_START))
-	{
-		for (cassette_image_device &cass : cassette_device_enumerator(machine().root_device()))
-		{
-			cass.change_state(CASSETTE_PLAY, CASSETTE_MASK_UISTATE);
-			return 0;
-		}
-	}
-	if (machine().ui_input().pressed(IPT_UI_TAPE_STOP))
-	{
-		for (cassette_image_device &cass : cassette_device_enumerator(machine().root_device()))
-		{
-			cass.change_state(CASSETTE_STOPPED, CASSETTE_MASK_UISTATE);
-			return 0;
-		}
-	}
-
 	// handle a save state request
 	if (machine().ui_input().pressed(IPT_UI_SAVE_STATE))
 	{
@@ -1516,44 +1495,6 @@ std::vector<ui::menu_item> mame_ui_manager::slider_init(running_machine &machine
 		slider_alloc(std::move(str), -500, defyoffset, 500, 2, std::bind(&mame_ui_manager::slider_yoffset, this, std::ref(screen), _1, _2));
 	}
 
-	for (laserdisc_device &laserdisc : laserdisc_device_enumerator(machine.root_device()))
-	{
-		if (laserdisc.overlay_configured())
-		{
-			laserdisc_overlay_config config;
-			laserdisc.get_overlay_config(config);
-			int defxscale = floor(config.m_overscalex * 1000.0f + 0.5f);
-			int defyscale = floor(config.m_overscaley * 1000.0f + 0.5f);
-			int defxoffset = floor(config.m_overposx * 1000.0f + 0.5f);
-			int defyoffset = floor(config.m_overposy * 1000.0f + 0.5f);
-
-			// add scale and offset controls per-overlay
-			std::string str = string_format(_("Laserdisc '%1$s' Horiz Stretch"), laserdisc.tag());
-			slider_alloc(std::move(str), 500, (defxscale == 0) ? 1000 : defxscale, 1500, 2,
-						std::bind(&mame_ui_manager::slider_overxscale, this, std::ref(laserdisc), _1, _2));
-			str = string_format(_("Laserdisc '%1$s' Horiz Position"), laserdisc.tag());
-			slider_alloc(std::move(str), -500, defxoffset, 500, 2, std::bind(&mame_ui_manager::slider_overxoffset, this, std::ref(laserdisc), _1, _2));
-			str = string_format(_("Laserdisc '%1$s' Vert Stretch"), laserdisc.tag());
-			slider_alloc(std::move(str), 500, (defyscale == 0) ? 1000 : defyscale, 1500, 2,
-						std::bind(&mame_ui_manager::slider_overyscale, this, std::ref(laserdisc), _1, _2));
-			str = string_format(_("Laserdisc '%1$s' Vert Position"), laserdisc.tag());
-			slider_alloc(std::move(str), -500, defyoffset, 500, 2, std::bind(&mame_ui_manager::slider_overyoffset, this, std::ref(laserdisc), _1, _2));
-		}
-	}
-
-	for (screen_device &screen : scriter)
-	{
-		if (screen.screen_type() == SCREEN_TYPE_VECTOR)
-		{
-			// add vector control (FIXME: these should all be per-screen rather than global)
-			slider_alloc(_("Vector Flicker"), 0, 0, 1000, 10, std::bind(&mame_ui_manager::slider_flicker, this, std::ref(screen), _1, _2));
-			slider_alloc(_("Beam Width Minimum"), 100, 100, 1000, 1, std::bind(&mame_ui_manager::slider_beam_width_min, this, std::ref(screen), _1, _2));
-			slider_alloc(_("Beam Width Maximum"), 100, 100, 1000, 1, std::bind(&mame_ui_manager::slider_beam_width_max, this, std::ref(screen), _1, _2));
-			slider_alloc(_("Beam Dot Size"), 100, 100, 1000, 1,  std::bind(&mame_ui_manager::slider_beam_dot_size, this, std::ref(screen), _1, _2));
-			slider_alloc(_("Beam Intensity Weight"), -1000, 0, 1000, 10, std::bind(&mame_ui_manager::slider_beam_intensity_weight, this, std::ref(screen), _1, _2));
-			break;
-		}
-	}
 
 #ifdef MAME_DEBUG
 	// add crosshair adjusters
@@ -1809,165 +1750,6 @@ int32_t mame_ui_manager::slider_yoffset(screen_device &screen, std::string *str,
 	if (str)
 		*str = string_format(_("%1$.3f"), settings.m_yoffset);
 	return floor(settings.m_yoffset * 1000.0f + 0.5f);
-}
-
-
-//-------------------------------------------------
-//  slider_overxscale - screen horizontal scale slider
-//  callback
-//-------------------------------------------------
-
-int32_t mame_ui_manager::slider_overxscale(laserdisc_device &laserdisc, std::string *str, int32_t newval)
-{
-	laserdisc_overlay_config settings;
-
-	laserdisc.get_overlay_config(settings);
-	if (newval != SLIDER_NOCHANGE)
-	{
-		settings.m_overscalex = (float)newval * 0.001f;
-		laserdisc.set_overlay_config(settings);
-	}
-	if (str)
-		*str = string_format(_("%1$.3f"), settings.m_overscalex);
-	return floor(settings.m_overscalex * 1000.0f + 0.5f);
-}
-
-
-//-------------------------------------------------
-//  slider_overyscale - screen vertical scale slider
-//  callback
-//-------------------------------------------------
-
-int32_t mame_ui_manager::slider_overyscale(laserdisc_device &laserdisc, std::string *str, int32_t newval)
-{
-	laserdisc_overlay_config settings;
-
-	laserdisc.get_overlay_config(settings);
-	if (newval != SLIDER_NOCHANGE)
-	{
-		settings.m_overscaley = (float)newval * 0.001f;
-		laserdisc.set_overlay_config(settings);
-	}
-	if (str)
-		*str = string_format(_("%1$.3f"), settings.m_overscaley);
-	return floor(settings.m_overscaley * 1000.0f + 0.5f);
-}
-
-
-//-------------------------------------------------
-//  slider_overxoffset - screen horizontal position
-//  slider callback
-//-------------------------------------------------
-
-int32_t mame_ui_manager::slider_overxoffset(laserdisc_device &laserdisc, std::string *str, int32_t newval)
-{
-	laserdisc_overlay_config settings;
-
-	laserdisc.get_overlay_config(settings);
-	if (newval != SLIDER_NOCHANGE)
-	{
-		settings.m_overposx = (float)newval * 0.001f;
-		laserdisc.set_overlay_config(settings);
-	}
-	if (str)
-		*str = string_format(_("%1$.3f"), settings.m_overposx);
-	return floor(settings.m_overposx * 1000.0f + 0.5f);
-}
-
-
-//-------------------------------------------------
-//  slider_overyoffset - screen vertical position
-//  slider callback
-//-------------------------------------------------
-
-int32_t mame_ui_manager::slider_overyoffset(laserdisc_device &laserdisc, std::string *str, int32_t newval)
-{
-	laserdisc_overlay_config settings;
-
-	laserdisc.get_overlay_config(settings);
-	if (newval != SLIDER_NOCHANGE)
-	{
-		settings.m_overposy = (float)newval * 0.001f;
-		laserdisc.set_overlay_config(settings);
-	}
-	if (str)
-		*str = string_format(_("%1$.3f"), settings.m_overposy);
-	return floor(settings.m_overposy * 1000.0f + 0.5f);
-}
-
-
-//-------------------------------------------------
-//  slider_flicker - vector flicker slider
-//  callback
-//-------------------------------------------------
-
-int32_t mame_ui_manager::slider_flicker([[maybe_unused]] screen_device &screen, std::string *str, int32_t newval)
-{
-	if (newval != SLIDER_NOCHANGE)
-		vector_options::s_flicker = (float)newval * 0.001f;
-	if (str)
-		*str = string_format(_("%1$1.2f"), vector_options::s_flicker);
-	return floor(vector_options::s_flicker * 1000.0f + 0.5f);
-}
-
-
-//-------------------------------------------------
-//  slider_beam_width_min - minimum vector beam width slider
-//  callback
-//-------------------------------------------------
-
-int32_t mame_ui_manager::slider_beam_width_min([[maybe_unused]] screen_device &screen, std::string *str, int32_t newval)
-{
-	if (newval != SLIDER_NOCHANGE)
-		vector_options::s_beam_width_min = std::min((float)newval * 0.01f, vector_options::s_beam_width_max);
-	if (str != nullptr)
-		*str = string_format(_("%1$1.2f"), vector_options::s_beam_width_min);
-	return floor(vector_options::s_beam_width_min * 100.0f + 0.5f);
-}
-
-
-//-------------------------------------------------
-//  slider_beam_width_max - maximum vector beam width slider
-//  callback
-//-------------------------------------------------
-
-int32_t mame_ui_manager::slider_beam_width_max([[maybe_unused]] screen_device &screen, std::string *str, int32_t newval)
-{
-	if (newval != SLIDER_NOCHANGE)
-		vector_options::s_beam_width_max = std::max((float)newval * 0.01f, vector_options::s_beam_width_min);
-	if (str != nullptr)
-		*str = string_format(_("%1$1.2f"), vector_options::s_beam_width_max);
-	return floor(vector_options::s_beam_width_max * 100.0f + 0.5f);
-}
-
-
-//-------------------------------------------------
-//  slider_beam_dot_size - beam dot size slider
-//  callback
-//-------------------------------------------------
-
-int32_t mame_ui_manager::slider_beam_dot_size([[maybe_unused]] screen_device &screen, std::string *str, int32_t newval)
-{
-	if (newval != SLIDER_NOCHANGE)
-		vector_options::s_beam_dot_size = std::max((float)newval * 0.01f, 0.1f);
-	if (str != nullptr)
-		*str = string_format(_("%1$1.2f"), vector_options::s_beam_dot_size);
-	return floor(vector_options::s_beam_dot_size * 100.0f + 0.5f);
-}
-
-
-//-------------------------------------------------
-//  slider_beam_intensity_weight - vector beam intensity weight slider
-//  callback
-//-------------------------------------------------
-
-int32_t mame_ui_manager::slider_beam_intensity_weight([[maybe_unused]] screen_device &screen, std::string *str, int32_t newval)
-{
-	if (newval != SLIDER_NOCHANGE)
-		vector_options::s_beam_intensity_weight = (float)newval * 0.001f;
-	if (str != nullptr)
-		*str = string_format(_("%1$1.2f"), vector_options::s_beam_intensity_weight);
-	return floor(vector_options::s_beam_intensity_weight * 1000.0f + 0.5f);
 }
 
 
