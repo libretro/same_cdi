@@ -200,6 +200,14 @@ GROUP_START := -Wl,--start-group
 GROUP_END := -Wl,--end-group
 endif
 
+# The buildbot's macOS runners do incremental builds in a persistent
+# directory.  Object files produced before .d emission existed (or across
+# structural surgery like subsystem stubbing) have no dependency info and
+# survive header changes, yielding stale-symbol link failures.  Structural
+# changes always touch a makefile, so keying every object on the makefiles
+# guarantees those objects get flushed.
+$(OBJECTS): $(CORE_DIR)/Makefile $(CORE_DIR)/Makefile.common $(CORE_DIR)/Makefile.libretro
+
 $(TARGET): $(LINK_OBJS) $(CORE_ARCHIVES)
 	@echo "LD $@"
 	@$(LD) -o $@ $(LINK_OBJS) $(GROUP_START) $(CORE_ARCHIVES) $(GROUP_END) $(LDFLAGS) $(LIBS)

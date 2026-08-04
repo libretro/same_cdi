@@ -14,6 +14,10 @@
 #include <unistd.h>
 #endif
 
+#if defined(__APPLE__)
+#include <libkern/OSCacheControl.h>
+#endif
+
 // MAME headers
 #include "osdlib.h"
 #include "osdcomm.h"
@@ -267,8 +271,14 @@ bool invalidate_instruction_cache(void const *start, std::size_t size)
 {
 #if defined(_WIN32)
 	return FlushInstructionCache(GetCurrentProcess(), start, size) != 0;
+#elif defined(__APPLE__)
+	// sys_icache_invalidate is the documented API on all Apple platforms.
+	// __builtin___clear_cache lowers to a compiler-rt libcall (___clear_cache)
+	// that the iOS/tvOS link does not provide.
+	sys_icache_invalidate(const_cast<void *>(start), size);
+	return true;
 #else
-#if !defined(SDLMAME_EMSCRIPTEN) && !defined(TARGET_OS_IPHONE)
+#if !defined(SDLMAME_EMSCRIPTEN)
 	char const *const begin(reinterpret_cast<char const *>(start));
 	char const *const end(begin + size);
 	__builtin___clear_cache(const_cast<char *>(begin), const_cast<char *>(end));
