@@ -523,20 +523,6 @@ $(OCORE_RETRO_OBJS): GRPFLAGS := $(OSDDEFS)
 OBJECTS += $(OCORE_RETRO_OBJS)
 
 ##############################################################################
-# softfloat
-##############################################################################
-# NOTE: these .c files were compiled by the C++ driver under GENie; keep that.
-SOFTFLOAT_SRC_CXX_AS_C := \
-	$(CORE_DIR)/3rdparty/softfloat/fpatan.c \
-	$(CORE_DIR)/3rdparty/softfloat/fsincos.c \
-	$(CORE_DIR)/3rdparty/softfloat/fyl2x.c \
-	$(CORE_DIR)/3rdparty/softfloat/softfloat.c
-
-SOFTFLOAT_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(SOFTFLOAT_SRC_CXX_AS_C:.c=_cxx.o))
-$(SOFTFLOAT_OBJS): GRPFLAGS :=
-OBJECTS += $(SOFTFLOAT_OBJS)
-
-##############################################################################
 # expat
 ##############################################################################
 EXPAT_SRC_C := \
@@ -721,7 +707,6 @@ CORE_ARCHIVES := \
 	$(CORE_OBJ_DIR)/libutils.a \
 	$(CORE_OBJ_DIR)/libosd_retro.a \
 	$(CORE_OBJ_DIR)/libocore_retro.a \
-	$(CORE_OBJ_DIR)/libsoftfloat.a \
 	$(CORE_OBJ_DIR)/libexpat.a \
 	$(CORE_OBJ_DIR)/libzlib.a \
 	$(CORE_OBJ_DIR)/libflac.a \
@@ -738,7 +723,6 @@ $(CORE_OBJ_DIR)/libformats.a: $(FORMATS_OBJS)
 $(CORE_OBJ_DIR)/libutils.a: $(UTILS_OBJS)
 $(CORE_OBJ_DIR)/libosd_retro.a: $(OSD_RETRO_OBJS)
 $(CORE_OBJ_DIR)/libocore_retro.a: $(OCORE_RETRO_OBJS)
-$(CORE_OBJ_DIR)/libsoftfloat.a: $(SOFTFLOAT_OBJS)
 $(CORE_OBJ_DIR)/libexpat.a: $(EXPAT_OBJS)
 $(CORE_OBJ_DIR)/libzlib.a: $(ZLIB_OBJS)
 $(CORE_OBJ_DIR)/libflac.a: $(FLAC_OBJS)

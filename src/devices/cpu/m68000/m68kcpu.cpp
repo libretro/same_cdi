@@ -1207,35 +1207,35 @@ void m68000_base_device::state_string_export(const device_state_entry &entry, st
 	switch (entry.index())
 	{
 		case M68K_FP0:
-			str = string_format("%f", fx80_to_double(m_fpr[0]));
+			str = "removed";  // no FPU in this core
 			break;
 
 		case M68K_FP1:
-			str = string_format("%f", fx80_to_double(m_fpr[1]));
+			str = "removed";  // no FPU in this core
 			break;
 
 		case M68K_FP2:
-			str = string_format("%f", fx80_to_double(m_fpr[2]));
+			str = "removed";  // no FPU in this core
 			break;
 
 		case M68K_FP3:
-			str = string_format("%f", fx80_to_double(m_fpr[3]));
+			str = "removed";  // no FPU in this core
 			break;
 
 		case M68K_FP4:
-			str = string_format("%f", fx80_to_double(m_fpr[4]));
+			str = "removed";  // no FPU in this core
 			break;
 
 		case M68K_FP5:
-			str = string_format("%f", fx80_to_double(m_fpr[5]));
+			str = "removed";  // no FPU in this core
 			break;
 
 		case M68K_FP6:
-			str = string_format("%f", fx80_to_double(m_fpr[6]));
+			str = "removed";  // no FPU in this core
 			break;
 
 		case M68K_FP7:
-			str = string_format("%f", fx80_to_double(m_fpr[7]));
+			str = "removed";  // no FPU in this core
 			break;
 
 		case STATE_GENFLAGS:
