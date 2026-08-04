@@ -27,7 +27,6 @@
 #include "romload.h"
 #include "softlist_dev.h"
 #include "validity.h"
-#include "sound/samples.h"
 
 #include "chd.h"
 #include "corestr.h"
@@ -64,9 +63,7 @@
 #define CLICOMMAND_LISTBROTHERS         "listbrothers"
 #define CLICOMMAND_LISTCRC              "listcrc"
 #define CLICOMMAND_LISTROMS             "listroms"
-#define CLICOMMAND_LISTSAMPLES          "listsamples"
 #define CLICOMMAND_VERIFYROMS           "verifyroms"
-#define CLICOMMAND_VERIFYSAMPLES        "verifysamples"
 #define CLICOMMAND_ROMIDENT             "romident"
 #define CLICOMMAND_LISTDEVICES          "listdevices"
 #define CLICOMMAND_LISTSLOTS            "listslots"
@@ -109,9 +106,7 @@ const options_entry cli_option_entries[] =
 	{ CLICOMMAND_LISTBROTHERS   ";lb",      "0",       OPTION_COMMAND,    "show \"brothers\", or other drivers from same sourcefile" },
 	{ CLICOMMAND_LISTCRC,                   "0",       OPTION_COMMAND,    "CRC-32s" },
 	{ CLICOMMAND_LISTROMS       ";lr",      "0",       OPTION_COMMAND,    "list required ROMs for a driver" },
-	{ CLICOMMAND_LISTSAMPLES,               "0",       OPTION_COMMAND,    "list optional samples for a driver" },
 	{ CLICOMMAND_VERIFYROMS,                "0",       OPTION_COMMAND,    "report romsets that have problems" },
-	{ CLICOMMAND_VERIFYSAMPLES,             "0",       OPTION_COMMAND,    "report samplesets that have problems" },
 	{ CLICOMMAND_ROMIDENT,                  "0",       OPTION_COMMAND,    "compare files with known MAME ROMs" },
 	{ CLICOMMAND_LISTDEVICES    ";ld",      "0",       OPTION_COMMAND,    "list available devices" },
 	{ CLICOMMAND_LISTSLOTS      ";lslot",   "0",       OPTION_COMMAND,    "list available slots and slot devices" },
@@ -655,46 +650,6 @@ void cli_frontend::listroms(const std::vector<std::string> &args)
 
 
 //-------------------------------------------------
-//  listsamples - output the list of samples
-//  referenced by a given game or set of games
-//-------------------------------------------------
-
-void cli_frontend::listsamples(const std::vector<std::string> &args)
-{
-	const char *gamename = args.empty() ? nullptr : args[0].c_str();
-
-	// determine which drivers to output; return an error if none found
-	driver_enumerator drivlist(m_options, gamename);
-	if (drivlist.count() == 0)
-		throw emu_fatalerror(EMU_ERR_NO_SUCH_SYSTEM, "No matching systems found for '%s'", gamename);
-
-	// iterate over drivers, looking for SAMPLES devices
-	bool first = true;
-	while (drivlist.next())
-	{
-		// see if we have samples
-		samples_device_enumerator iter(drivlist.config()->root_device());
-		if (iter.count() == 0)
-			continue;
-
-		// print a header
-		if (!first)
-			osd_printf_info("\n");
-		first = false;
-		osd_printf_info("Samples required for driver \"%s\".\n", drivlist.driver().name);
-
-		// iterate over samples devices and print the samples from each one
-		for (samples_device &device : iter)
-		{
-			samples_iterator sampiter(device);
-			for (const char *samplename = sampiter.first(); samplename != nullptr; samplename = sampiter.next())
-				osd_printf_info("%s\n", samplename);
-		}
-	}
-}
-
-
-//-------------------------------------------------
 //  listdevices - output the list of devices
 //  referenced by a given game or set of games
 //-------------------------------------------------
@@ -1019,66 +974,6 @@ void cli_frontend::verifyroms(const std::vector<std::string> &args)
 	}
 }
 
-
-//-------------------------------------------------
-//  info_verifysamples - verify the sample sets of
-//  one or more games
-//-------------------------------------------------
-
-void cli_frontend::verifysamples(const std::vector<std::string> &args)
-{
-	const char *gamename = args.empty() ? "*" : args[0].c_str();
-
-	// determine which drivers to output; return an error if none found
-	driver_enumerator drivlist(m_options, gamename);
-
-	unsigned correct = 0;
-	unsigned incorrect = 0;
-	unsigned notfound = 0;
-	unsigned matched = 0;
-
-	// iterate over drivers
-	media_auditor auditor(drivlist);
-	util::ovectorstream summary_string;
-	while (drivlist.next())
-	{
-		matched++;
-
-		// audit the samples in this set
-		media_auditor::summary summary = auditor.audit_samples();
-
-		auto const clone_of = drivlist.clone();
-		print_summary(
-				auditor, summary, false,
-				"sample", drivlist.driver().name, (clone_of >= 0) ? drivlist.driver(clone_of).name : nullptr,
-				correct, incorrect, notfound,
-				summary_string);
-	}
-
-	// clear out any cached files
-	util::archive_file::cache_clear();
-
-	// return an error if none found
-	if (matched == 0)
-		throw emu_fatalerror(EMU_ERR_NO_SUCH_SYSTEM, "No matching systems found for '%s'", gamename);
-
-	// if we didn't get anything at all, display a generic end message
-	if (matched > 0 && correct == 0 && incorrect == 0)
-	{
-		if (notfound > 0)
-			throw emu_fatalerror(EMU_ERR_MISSING_FILES, "sampleset \"%s\" not found!\n", gamename);
-		else
-			throw emu_fatalerror(EMU_ERR_MISSING_FILES, "sampleset \"%s\" not required!\n", gamename);
-	}
-
-	// otherwise, print a summary
-	else
-	{
-		if (incorrect > 0)
-			throw emu_fatalerror(EMU_ERR_MISSING_FILES, "%u samplesets found, %u were OK.\n", correct + incorrect, correct);
-		osd_printf_info("%u samplesets found, %u were OK.\n", correct, correct);
-	}
-}
 
 const char cli_frontend::s_softlist_xml_dtd[] =
 				"<?xml version=\"1.0\"?>\n" \
@@ -1641,9 +1536,7 @@ const cli_frontend::info_command_struct *cli_frontend::find_command(const std::s
 		{ CLICOMMAND_LISTDEVICES,       0,  1, &cli_frontend::listdevices,      "[system name]" },
 		{ CLICOMMAND_LISTSLOTS,         0,  1, &cli_frontend::listslots,        "[system name]" },
 		{ CLICOMMAND_LISTROMS,          0, -1, &cli_frontend::listroms,         "[pattern] ..." },
-		{ CLICOMMAND_LISTSAMPLES,       0,  1, &cli_frontend::listsamples,      "[system name]" },
 		{ CLICOMMAND_VERIFYROMS,        0, -1, &cli_frontend::verifyroms,       "[pattern] ..." },
-		{ CLICOMMAND_VERIFYSAMPLES,     0,  1, &cli_frontend::verifysamples,    "[system name|*]" },
 		{ CLICOMMAND_LISTMEDIA,         0,  1, &cli_frontend::listmedia,        "[system name]" },
 		{ CLICOMMAND_LISTSOFTWARE,      0,  1, &cli_frontend::listsoftware,     "[system name]" },
 		{ CLICOMMAND_VERIFYSOFTWARE,    0,  1, &cli_frontend::verifysoftware,   "[system name|*]" },

@@ -54,14 +54,12 @@ private:
 	void listbrothers(const std::vector<std::string> &args);
 	void listcrc(const std::vector<std::string> &args);
 	void listroms(const std::vector<std::string> &args);
-	void listsamples(const std::vector<std::string> &args);
 	void listdevices(const std::vector<std::string> &args);
 	void listslots(const std::vector<std::string> &args);
 	void listmedia(const std::vector<std::string> &args);
 	void listsoftware(const std::vector<std::string> &args);
 	void verifysoftware(const std::vector<std::string> &args);
 	void verifyroms(const std::vector<std::string> &args);
-	void verifysamples(const std::vector<std::string> &args);
 	void romident(const std::vector<std::string> &args);
 	void getsoftlist(const std::vector<std::string> &args);
 	void verifysoftlist(const std::vector<std::string> &args);

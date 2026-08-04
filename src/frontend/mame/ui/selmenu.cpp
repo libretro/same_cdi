@@ -3053,24 +3053,16 @@ void menu_select_launch::general_info(ui_system_info const *system, game_driver 
 		enumerator.next();
 		media_auditor auditor(enumerator);
 		media_auditor::summary summary = auditor.audit_media(AUDIT_VALIDATE_FAST);
-		media_auditor::summary summary_samples = auditor.audit_samples();
 
 		// if everything looks good, schedule the new driver
 		if (audit_passed(summary))
 			str << _("Media Audit Result\tOK\n");
 		else
 			str << _("Media Audit Result\tBAD\n");
-
-		if (summary_samples == media_auditor::NONE_NEEDED)
-			str << _("Samples Audit Result\tNone Needed\n");
-		else if (audit_passed(summary_samples))
-			str << _("Samples Audit Result\tOK\n");
-		else
-			str << _("Samples Audit Result\tBAD\n");
 	}
 	else
 	{
-		str << _("Media Audit\tDisabled\nSamples Audit\tDisabled\n");
+		str << _("Media Audit\tDisabled\n");
 	}
 
 	buffer = std::move(str).str();

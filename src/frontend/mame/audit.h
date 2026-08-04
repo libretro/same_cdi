@@ -157,7 +157,6 @@ public:
 	summary audit_media(const char *validation = AUDIT_VALIDATE_FULL);
 	summary audit_device(device_t &device, const char *validation = AUDIT_VALIDATE_FULL);
 	summary audit_software(software_list_device &swlist, const software_info &swinfo, const char *validation = AUDIT_VALIDATE_FULL);
-	summary audit_samples();
 	summary summarize(const char *name, std::ostream *output = nullptr) const;
 
 private:

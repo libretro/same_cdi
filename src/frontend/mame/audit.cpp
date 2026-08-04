@@ -11,7 +11,6 @@
 #include "emu.h"
 #include "audit.h"
 
-#include "sound/samples.h"
 
 #include "emuopts.h"
 #include "drivenum.h"
@@ -386,71 +385,6 @@ media_auditor::summary media_auditor::audit_software(software_list_device &swlis
 }
 
 
-//-------------------------------------------------
-//  audit_samples - validate the samples for the
-//  currently-enumerated driver
-//-------------------------------------------------
-
-media_auditor::summary media_auditor::audit_samples()
-{
-	// start fresh
-	m_record_list.clear();
-
-	std::size_t required = 0;
-	std::size_t found = 0;
-
-	// iterate over sample entries
-	for (samples_device &device : samples_device_enumerator(m_enumerator.config()->root_device()))
-	{
-		// by default we just search using the driver name
-		std::string searchpath(m_enumerator.driver().name);
-
-		// add the alternate path if present
-		samples_iterator iter(device);
-		if (iter.altbasename() != nullptr)
-			searchpath.append(";").append(iter.altbasename());
-
-		// iterate over samples in this entry
-		for (const char *samplename = iter.first(); samplename; samplename = iter.next())
-		{
-			required++;
-
-			// create a new record
-			audit_record &record = *m_record_list.emplace(m_record_list.end(), samplename, media_type::SAMPLE);
-
-			// look for the files
-			emu_file file(m_enumerator.options().sample_path(), OPEN_FLAG_READ | OPEN_FLAG_NO_PRELOAD);
-			path_iterator path(searchpath);
-			std::string curpath;
-			while (path.next(curpath, samplename))
-			{
-				// attempt to access the file (.flac) or (.wav)
-				std::error_condition filerr = file.open(curpath + ".flac");
-				if (filerr)
-					filerr = file.open(curpath + ".wav");
-
-				if (!filerr)
-				{
-					record.set_status(audit_status::GOOD, audit_substatus::GOOD);
-					found++;
-				}
-				else
-				{
-					record.set_status(audit_status::NOT_FOUND, audit_substatus::NOT_FOUND);
-				}
-			}
-		}
-	}
-
-	if ((found == 0) && (required > 0))
-	{
-		m_record_list.clear();
-		return NOTFOUND;
-	}
-
-	// return a summary
-	return summarize(m_enumerator.driver().name);
-}
 
 
 //-------------------------------------------------

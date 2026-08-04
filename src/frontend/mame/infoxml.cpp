@@ -13,7 +13,6 @@
 
 #include "mameopts.h"
 
-#include "sound/samples.h"
 
 #include "config.h"
 #include "drivenum.h"
@@ -107,11 +106,9 @@ void output_header(std::ostream &out, bool dtd);
 void output_footer(std::ostream &out);
 
 void output_one(std::ostream &out, driver_enumerator &drivlist, const game_driver &driver, device_type_set *devtypes);
-void output_sampleof(std::ostream &out, device_t &device);
 void output_bios(std::ostream &out, device_t const &device);
 void output_rom(std::ostream &out, machine_config &config, driver_list const *drivlist, const game_driver *driver, device_t &device);
 void output_device_refs(std::ostream &out, device_t &root);
-void output_sample(std::ostream &out, device_t &device);
 void output_chips(std::ostream &out, device_t &device, const char *root_tag);
 void output_display(std::ostream &out, device_t &device, machine_flags::type const *flags, const char *root_tag);
 void output_sound(std::ostream &out, device_t &device);
@@ -760,7 +757,6 @@ void output_one(std::ostream &out, driver_enumerator &drivlist, const game_drive
 		util::stream_format(out, " romof=\"%s\"", normalize_string(drivlist.driver(clone_of).name));
 
 	// display sample information and close the game tag
-	output_sampleof(out, config.root_device());
 	out << ">\n";
 
 	// output game description
@@ -779,7 +775,6 @@ void output_one(std::ostream &out, driver_enumerator &drivlist, const game_drive
 	output_bios(out, config.root_device());
 	output_rom(out, config, &drivlist, &driver, config.root_device());
 	output_device_refs(out, config.root_device());
-	output_sample(out, config.root_device());
 	output_chips(out, config.root_device(), "");
 	output_display(out, config.root_device(), &driver.flags, "");
 	output_sound(out, config.root_device());
@@ -841,16 +836,12 @@ void output_one_device(std::ostream &out, machine_config &config, device_t &devi
 	auto const parent(device.type().parent_rom_device_type());
 	if (parent)
 		util::stream_format(out, " romof=\"%s\"", normalize_string(parent->shortname()));
-	output_sampleof(out, device);
 	out << ">\n";
 	util::stream_format(out, "\t\t<description>%s</description>\n", normalize_string(device.name()));
 
 	output_bios(out, device);
 	output_rom(out, config, nullptr, nullptr, device);
 	output_device_refs(out, device);
-
-	if (device.type().type() != typeid(samples_device)) // ignore samples_device itself
-		output_sample(out, device);
 
 	output_chips(out, device, devtag);
 	output_display(out, device, nullptr, devtag);
@@ -924,26 +915,6 @@ void output_device_refs(std::ostream &out, device_t &root)
 }
 
 
-//------------------------------------------------
-//  output_sampleof - print the 'sampleof'
-//  attribute, if appropriate
-//-------------------------------------------------
-
-void output_sampleof(std::ostream &out, device_t &device)
-{
-	// iterate over sample devices
-	for (samples_device &samples : samples_device_enumerator(device))
-	{
-		samples_iterator sampiter(samples);
-		if (sampiter.altbasename() != nullptr)
-		{
-			util::stream_format(out, " sampleof=\"%s\"", normalize_string(sampiter.altbasename()));
-
-			// must stop here, as there can only be one attribute of the same name
-			return;
-		}
-	}
-}
 
 
 //-------------------------------------------------
@@ -1112,29 +1083,6 @@ void output_rom(std::ostream &out, machine_config &config, driver_list const *dr
 }
 
 
-//-------------------------------------------------
-//  output_sample - print a list of all
-//  samples referenced by a game_driver
-//-------------------------------------------------
-
-void output_sample(std::ostream &out, device_t &device)
-{
-	// iterate over sample devices
-	for (samples_device &samples : samples_device_enumerator(device))
-	{
-		samples_iterator iter(samples);
-		std::unordered_set<std::string> already_printed;
-		for (const char *samplename = iter.first(); samplename != nullptr; samplename = iter.next())
-		{
-			// filter out duplicates
-			if (!already_printed.insert(samplename).second)
-				continue;
-
-			// output the sample name
-			util::stream_format(out, "\t\t<sample name=\"%s\"/>\n", normalize_string(samplename));
-		}
-	}
-}
 
 
 /*-------------------------------------------------
