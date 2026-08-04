@@ -33,7 +33,6 @@ INCFLAGS := \
 	-I$(GEN_DIR)/emu/layout \
 	-I$(GEN_DIR)/mame/layout \
 	-I$(CORE_DIR)/3rdparty \
-	-I$(CORE_DIR)/3rdparty/libjpeg \
 	-I$(CORE_DIR)/3rdparty/utf8proc
 
 ifeq ($(platform_is_windows), 1)
@@ -436,6 +435,7 @@ LRC_VFS_SRC_C := \
 	$(CORE_DIR)/src/osd/libretro/libretro-common/features/features_cpu.c \
 	$(CORE_DIR)/src/osd/libretro/libretro-common/formats/flac/rflac.c \
 	$(CORE_DIR)/src/osd/libretro/libretro-common/formats/chd/rchd.c \
+	$(CORE_DIR)/src/osd/libretro/libretro-common/formats/jpeg/rjpeg.c \
 	$(CORE_DIR)/src/osd/libretro/libretro-common/formats/7z/r7z_archive.c \
 	$(CORE_DIR)/src/osd/libretro/libretro-common/formats/7z/r7z_bcj2.c \
 	$(CORE_DIR)/src/osd/libretro/libretro-common/formats/7z/r7z_filters.c \
@@ -451,40 +451,6 @@ OBJECTS += $(LRC_VFS_OBJS)
 OCORE_RETRO_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(OCORE_RETRO_SRC_CXX:.cpp=.o))
 $(OCORE_RETRO_OBJS): GRPFLAGS := $(OSDDEFS)
 OBJECTS += $(OCORE_RETRO_OBJS)
-
-##############################################################################
-# jpeg
-##############################################################################
-JPEG_SRC_C := \
-	$(CORE_DIR)/3rdparty/libjpeg/jaricom.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jcomapi.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jdapimin.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jdapistd.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jdarith.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jdcoefct.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jdcolor.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jddctmgr.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jdhuff.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jdinput.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jdmainct.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jdmarker.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jdmaster.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jdmerge.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jdpostct.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jdsample.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jerror.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jidctflt.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jidctfst.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jidctint.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jmemnobs.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jmemmgr.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jquant1.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jquant2.c \
-	$(CORE_DIR)/3rdparty/libjpeg/jutils.c
-
-JPEG_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(JPEG_SRC_C:.c=.o))
-$(JPEG_OBJS): GRPFLAGS :=
-OBJECTS += $(JPEG_OBJS)
 
 ##############################################################################
 # utf8proc
@@ -520,7 +486,6 @@ CORE_ARCHIVES := \
 	$(CORE_OBJ_DIR)/libutils.a \
 	$(CORE_OBJ_DIR)/libosd_retro.a \
 	$(CORE_OBJ_DIR)/libocore_retro.a \
-	$(CORE_OBJ_DIR)/libjpeg.a \
 	$(CORE_OBJ_DIR)/libutf8proc.a
 
 $(CORE_OBJ_DIR)/libmame_mess.a: $(MAME_MESS_OBJS)
@@ -532,7 +497,6 @@ $(CORE_OBJ_DIR)/libformats.a: $(FORMATS_OBJS)
 $(CORE_OBJ_DIR)/libutils.a: $(UTILS_OBJS)
 $(CORE_OBJ_DIR)/libosd_retro.a: $(OSD_RETRO_OBJS)
 $(CORE_OBJ_DIR)/libocore_retro.a: $(OCORE_RETRO_OBJS) $(LRC_VFS_OBJS)
-$(CORE_OBJ_DIR)/libjpeg.a: $(JPEG_OBJS)
 $(CORE_OBJ_DIR)/libutf8proc.a: $(UTF8PROC_OBJS)
 
 $(CORE_ARCHIVES):

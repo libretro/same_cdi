@@ -14,120 +14,26 @@
 #include "msdib.h"
 #include "png.h"
 
-#include "jpeglib.h"
-#include "jerror.h"
+#include <formats/image.h>
+#include <formats/rjpeg.h>
 
-#include <csetjmp>
 #include <cstdlib>
 
 
 namespace {
 
-struct jpeg_corefile_source : public jpeg_source_mgr
+// read a whole file into a buffer for the in-memory rjpeg decoder
+bool slurp_file(util::random_read &file, std::vector<uint8_t> &data)
 {
-	static void source(j_decompress_ptr cinfo, util::random_read &file);
-
-private:
-	static constexpr unsigned INPUT_BUF_SIZE = 4096;
-
-	static void do_init(j_decompress_ptr cinfo)
-	{
-		jpeg_corefile_source &src = *static_cast<jpeg_corefile_source *>(cinfo->src);
-		src.start_of_file = true;
-	}
-
-	static boolean do_fill(j_decompress_ptr cinfo)
-	{
-		jpeg_corefile_source &src = *static_cast<jpeg_corefile_source *>(cinfo->src);
-
-		size_t nbytes;
-		src.infile->read(src.buffer, INPUT_BUF_SIZE, nbytes); // TODO: check error return
-
-		if (0 >= nbytes)
-		{
-			if (src.start_of_file)
-				ERREXIT(cinfo, JERR_INPUT_EMPTY);
-			WARNMS(cinfo, JWRN_JPEG_EOF);
-			src.buffer[0] = JOCTET(0xff);
-			src.buffer[1] = JOCTET(JPEG_EOI);
-			nbytes = 2;
-		}
-
-		src.next_input_byte = src.buffer;
-		src.bytes_in_buffer = nbytes;
-		src.start_of_file = false;
-
-		return TRUE;
-	}
-
-	static void do_skip(j_decompress_ptr cinfo, long num_bytes)
-	{
-		jpeg_corefile_source &src = *static_cast<jpeg_corefile_source *>(cinfo->src);
-
-		if (0 < num_bytes)
-		{
-			while (long(src.bytes_in_buffer) < num_bytes)
-			{
-				num_bytes -= long(src.bytes_in_buffer);
-				(void)(*src.fill_input_buffer)(cinfo);
-			}
-			src.next_input_byte += size_t(num_bytes);
-			src.bytes_in_buffer -= size_t(num_bytes);
-		}
-	}
-
-	static void do_term(j_decompress_ptr cinfo)
-	{
-	}
-
-	util::random_read *infile;
-	JOCTET *buffer;
-	bool start_of_file;
-};
-
-void jpeg_corefile_source::source(j_decompress_ptr cinfo, util::random_read &file)
-{
-	jpeg_corefile_source *src;
-	if (!cinfo->src)
-	{
-		src = reinterpret_cast<jpeg_corefile_source *>(
-				(*cinfo->mem->alloc_small)(
-					reinterpret_cast<j_common_ptr>(cinfo),
-					JPOOL_PERMANENT,
-					sizeof(jpeg_corefile_source)));
-		cinfo->src = src;
-		src->buffer = reinterpret_cast<JOCTET *>(
-				(*cinfo->mem->alloc_small)(
-					reinterpret_cast<j_common_ptr>(cinfo),
-					JPOOL_PERMANENT,
-					INPUT_BUF_SIZE * sizeof(JOCTET)));
-	}
-	else
-	{
-		src = static_cast<jpeg_corefile_source *>(cinfo->src);
-	}
-
-	src->init_source = &jpeg_corefile_source::do_init;
-	src->fill_input_buffer = &jpeg_corefile_source::do_fill;
-	src->skip_input_data = &jpeg_corefile_source::do_skip;
-	src->resync_to_restart = jpeg_resync_to_restart;
-	src->term_source = &jpeg_corefile_source::do_term;
-	src->infile = &file;
-	src->bytes_in_buffer = 0;
-	src->next_input_byte = nullptr;
+	std::uint64_t length;
+	if (file.length(length))
+		return false;
+	data.resize(std::size_t(length));
+	std::size_t actual;
+	if (file.read_at(0, data.data(), data.size(), actual) || (actual != data.size()))
+		return false;
+	return true;
 }
-
-
-struct jpeg_setjmp_error_mgr : public jpeg_error_mgr
-{
-	jpeg_setjmp_error_mgr()
-	{
-		jpeg_std_error(this);
-		error_exit = [] (j_common_ptr cinfo) { std::longjmp(static_cast<jpeg_setjmp_error_mgr *>(cinfo->err)->m_jump_buffer, 1); };
-	}
-
-	std::jmp_buf m_jump_buffer;
-};
 
 } // anonymous namespace
 
@@ -688,75 +594,44 @@ void render_load_jpeg(bitmap_argb32 &bitmap, util::random_read &file)
 	// deallocate previous bitmap
 	bitmap.reset();
 
-	// set up context for error handling
-	jpeg_decompress_struct cinfo;
-	jpeg_setjmp_error_mgr jerr;
-	cinfo.err = &jerr;
-	JSAMPARRAY buffer = nullptr;
-	int w, h, s, row_stride, j, i;
-	if (setjmp(jerr.m_jump_buffer)) // setjmp must be used in control expression
+	// rjpeg decodes from memory, so read the file in
+	std::vector<uint8_t> data;
+	if (!slurp_file(file, data))
 	{
-		char msg[1024];
-		(cinfo.err->format_message)(reinterpret_cast<j_common_ptr>(&cinfo), msg);
-		osd_printf_error("JPEG error reading data from file: %s\n", msg);
-		bitmap.reset();
-		goto cleanup; // use goto to ensure longjmp can't cross an initialisation
+		osd_printf_error("Error reading JPEG data from file.\n");
+		return;
 	}
 
-	// create a JPEG source for the file
-	jpeg_create_decompress(&cinfo);
-	cinfo.mem->max_memory_to_use = 128 * 1024 * 1024;
-	jpeg_corefile_source::source(&cinfo, file);
-
-	// read JPEG header and start decompression
-	jpeg_read_header(&cinfo, TRUE);
-	jpeg_start_decompress(&cinfo);
-
-	// allocates the destination bitmap
-	w = cinfo.output_width;
-	h = cinfo.output_height;
-	s = cinfo.output_components;
-	bitmap.allocate(w, h);
-
-	// allocates a buffer to receive the information and copy them into the bitmap
-	row_stride = cinfo.output_width * cinfo.output_components;
-	buffer = reinterpret_cast<JSAMPARRAY>(std::malloc(sizeof(JSAMPROW)));
-	buffer[0] = reinterpret_cast<JSAMPROW>(std::malloc(sizeof(JSAMPLE) * row_stride));
-
-	while (cinfo.output_scanline < cinfo.output_height)
+	// decode; the output buffer is 0xAARRGGBB with opaque alpha, which
+	// is bitmap_argb32's pixel format
+	rjpeg_t *const decoder = rjpeg_alloc();
+	if (!decoder)
+		return;
+	void *pixels = nullptr;
+	unsigned width = 0, height = 0;
+	int result = IMAGE_PROCESS_ERROR;
+	if (rjpeg_set_buf_ptr(decoder, data.data(), data.size()))
 	{
-		j = cinfo.output_scanline;
-		jpeg_read_scanlines(&cinfo, buffer, 1);
-
-		if (s == 1)
+		do
 		{
-			for (i = 0; i < w; ++i)
-				bitmap.pix(j, i) = rgb_t(0xff, buffer[0][i], buffer[0][i], buffer[0][i]);
-
+			result = rjpeg_process_image(decoder, &pixels, data.size(), &width, &height, false);
 		}
-		else if (s == 3)
-		{
-			for (i = 0; i < w; ++i)
-				bitmap.pix(j, i) = rgb_t(0xff, buffer[0][i * s], buffer[0][i * s + 1], buffer[0][i * s + 2]);
-		}
-		else
-		{
-			osd_printf_error("Cannot read JPEG data from file.\n");
-			bitmap.reset();
-			break;
-		}
+		while (IMAGE_PROCESS_NEXT == result);
+	}
+	rjpeg_free(decoder);
+	if ((IMAGE_PROCESS_END != result) || !pixels)
+	{
+		osd_printf_error("JPEG error reading data from file.\n");
+		std::free(pixels);
+		return;
 	}
 
-	// finish decompression and free the memory
-	jpeg_finish_decompress(&cinfo);
-cleanup:
-	jpeg_destroy_decompress(&cinfo);
-	if (buffer)
-	{
-		if (buffer[0])
-			std::free(buffer[0]);
-		std::free(buffer);
-	}
+	// copy into the destination bitmap
+	bitmap.allocate(width, height);
+	uint32_t const *src = reinterpret_cast<uint32_t const *>(pixels);
+	for (unsigned y = 0; y < height; y++)
+		std::copy_n(&src[std::size_t(y) * width], width, &bitmap.pix(y));
+	std::free(pixels);
 }
 
 
@@ -941,25 +816,13 @@ ru_imgformat render_detect_image(util::random_read &file)
 			return RENDUTIL_IMGFORMAT_PNG;
 	}
 
-	// JPEG: attempt to read header with libjpeg
+	// JPEG: check for a complete header (SOI through SOS)
 	{
-		jpeg_decompress_struct cinfo;
-		jpeg_setjmp_error_mgr jerr;
-		cinfo.err = &jerr;
-		if (setjmp(jerr.m_jump_buffer)) // setjmp must be used in control expression
-			goto notjpeg; // use goto to ensure longjmp can't cross an initialisation
-
-		jpeg_create_decompress(&cinfo);
-		cinfo.mem->max_memory_to_use = 128 * 1024 * 1024;
-		jpeg_corefile_source::source(&cinfo, file);
-		jpeg_read_header(&cinfo, TRUE);
-		jpeg_destroy_decompress(&cinfo);
+		std::vector<uint8_t> data;
+		bool const isjpeg = slurp_file(file, data) && rjpeg_header_ready(data.data(), data.size());
 		file.seek(0, SEEK_SET); // TODO: check error return
-		return RENDUTIL_IMGFORMAT_JPEG;
-
-	notjpeg:
-		jpeg_destroy_decompress(&cinfo);
-		file.seek(0, SEEK_SET);
+		if (isjpeg)
+			return RENDUTIL_IMGFORMAT_JPEG;
 	}
 
 	// Microsoft DIB: check for valid header
