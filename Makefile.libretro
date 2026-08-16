@@ -140,6 +140,7 @@ else ifneq ($(findstring android,$(platform)),)
 	CXX := $(ANDROID_NDK_LLVM)/bin/$(ANDROID_TRIPLE)$(ANDROID_API)-clang++
 	LD  := $(CXX)
 	LDFLAGS += $(SHARED) $(VERSION_SCRIPT) -Wl,--no-undefined
+	LDFLAGS += -static-libstdc++
 	LIBS += -ldl -lm
 
 # Windows (MSYS2/MinGW native or cross)
@@ -210,15 +211,15 @@ $(OBJECTS): $(CORE_DIR)/Makefile $(CORE_DIR)/Makefile.common $(CORE_DIR)/Makefil
 
 $(TARGET): $(LINK_OBJS) $(CORE_ARCHIVES)
 	@echo "LD $@"
-	@$(LD) -o $@ $(LINK_OBJS) $(GROUP_START) $(CORE_ARCHIVES) $(GROUP_END) $(LDFLAGS) $(LIBS)
+	$(LD) -o $@ $(LINK_OBJS) $(GROUP_START) $(CORE_ARCHIVES) $(GROUP_END) $(LDFLAGS) $(LIBS)
 
 $(CORE_OBJ_DIR)/%.o: $(CORE_DIR)/%.cpp
-	@echo "CXX $<"
+	@echo "$(CXX) $<"
 	@mkdir -p $(dir $@)
 	@$(CXX) -c -o $@ $< $(GRPINCS) $(ALL_CXXFLAGS) $(GRPFLAGS)
 
 $(CORE_OBJ_DIR)/%.o: $(CORE_DIR)/%.c
-	@echo "CC $<"
+	@echo "$(CC) $<"
 	@mkdir -p $(dir $@)
 	@$(CC) -c -o $@ $< $(GRPINCS) $(ALL_CFLAGS) $(GRPFLAGS)
 
