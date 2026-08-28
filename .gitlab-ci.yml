@@ -50,6 +50,10 @@ include:
   - project: 'libretro-infrastructure/ci-templates'
     file: '/tvos-arm64.yml'
 
+  # webOS 32-bit (LGTV)
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/webos-make.yml'
+
 # Stages for building
 stages:
   - build-prepare
@@ -182,3 +186,12 @@ libretro-build-tvos-arm64:
     <<: *global_cache
     key: "$CI_COMMIT_REF_SLUG-tvos-arm64"
 
+#################################### MISC ####################################
+# webOS 32-bit
+libretro-build-webos-armv7a:
+  extends:
+    - .libretro-webos-armv7a-make-default
+    - .core-defs
+  cache:
+    <<: *global_cache
+    key: "$CI_COMMIT_REF_SLUG-webos-armv7a"
