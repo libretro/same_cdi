@@ -266,8 +266,6 @@ static int getGameInfo(char* gameName, int* rotation, int* driverIndex,bool *Arc
 
 void Extract_AllPath(char *srcpath)
 {
-   int result_value =0;
-
    /* Split the path to directory
     * and the name without the zip extension. */
    int result = parsePath(srcpath, MgamePath, MgameName);
@@ -275,7 +273,6 @@ void Extract_AllPath(char *srcpath)
    if (result == 0)
    {
       strcpy(MgameName,srcpath);
-      result_value|=1;
       if (log_cb)
          log_cb(RETRO_LOG_ERROR, "Error parsing game path: %s\n",srcpath);
    }
@@ -286,7 +283,6 @@ void Extract_AllPath(char *srcpath)
    if (result == 0)
    {
       strcpy(MsystemName,srcpath );
-      result_value|=2;
       if (log_cb)
          log_cb(RETRO_LOG_ERROR, "Error parsing system name: %s\n",srcpath);
    }
@@ -297,7 +293,6 @@ void Extract_AllPath(char *srcpath)
    if (result == 0)
    {
       strcpy(MparentPath,srcpath );
-      result_value|=4;
       if (log_cb)
          log_cb(RETRO_LOG_ERROR, "Error parsing parent path: %s\n",srcpath);
    }
