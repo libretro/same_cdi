@@ -1023,6 +1023,16 @@ void render_target::set_bounds(s32 width, s32 height, float pixel_aspect)
 //  a target
 //-------------------------------------------------
 
+//-------------------------------------------------
+//  current_view - return the view in use
+//-------------------------------------------------
+
+layout_view &render_target::current_view() const
+{
+	return m_views[m_curview].first;
+}
+
+
 void render_target::set_view(unsigned viewindex)
 {
 	if (m_views.size() > viewindex)

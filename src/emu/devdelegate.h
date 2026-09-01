@@ -45,30 +45,29 @@ class device_delegate_helper
 public:
 	// accessors
 	char const *finder_tag() const { return m_tag; }
-	// device_t is still incomplete here (emu.h reaches device.h later), and
-	// instantiating std::pair<device_t &, ...> at this point asks a SFINAE
-	// question about an incomplete type.  Deferring to the call site, where
-	// device_t is complete, keeps the answer well defined; the default
-	// argument leaves every caller unchanged.
+	// The pair is instantiated at the call sites, which all see the
+	// complete class; naming it here would ask libstdc++ a SFINAE
+	// question about a device_t that emu.h has not defined yet.
 	template <typename T = device_t>
-	std::pair<T &, char const *> finder_target() const { return std::pair<T &, char const *>(m_base.get(), m_tag); }
+	std::pair<T &, char const *> finder_target() const { return std::pair<T &, char const *>(*m_base, m_tag); }
 
 protected:
 	// construct/assign
-	device_delegate_helper(device_t &owner, char const *tag = nullptr) : m_base(owner), m_tag(tag) { }
+	device_delegate_helper(device_t &owner, char const *tag = nullptr) : m_base(&owner), m_tag(tag) { }
 	template <class DeviceClass, bool Required> device_delegate_helper(device_finder<DeviceClass, Required> const &finder);
 	device_delegate_helper(device_delegate_helper const &) = default;
 	device_delegate_helper &operator=(device_delegate_helper const &) = default;
 
 	// internal helpers
 	delegate_late_bind &bound_object() const;
-	void set_tag(device_t &object) { m_base = object; m_tag = nullptr; }
-	void set_tag(device_t &base, char const *tag) { m_base = base; m_tag = tag; }
+	void set_tag(device_t &object) { m_base = &object; m_tag = nullptr; }
+	void set_tag(device_t &base, char const *tag) { m_base = &base; m_tag = tag; }
+	void clear_tag() { m_tag = nullptr; }
 	void set_tag(char const *tag);
 	template <class DeviceClass, bool Required> void set_tag(device_finder<DeviceClass, Required> const &finder);
 
 private:
-	std::reference_wrapper<device_t> m_base;
+	device_t *m_base;
 	char const *m_tag;
 };
 
@@ -229,11 +228,11 @@ public:
 
 	// setters that take a target object
 	template <class T, class D> std::enable_if_t<std::is_base_of<D, T>::value> set(T &object, ReturnType (D::*funcptr)(Params...), char const *name)
-	{ basetype::operator=(basetype(funcptr, name, static_cast<D *>(&object))); set_tag(finder_target().first); }
+	{ basetype::operator=(basetype(funcptr, name, static_cast<D *>(&object))); clear_tag(); }
 	template <class T, class D> std::enable_if_t<std::is_base_of<D, T>::value> set(T &object, ReturnType (D::*funcptr)(Params...) const, char const *name)
-	{ basetype::operator=(basetype(funcptr, name, static_cast<D *>(&object))); set_tag(finder_target().first); }
+	{ basetype::operator=(basetype(funcptr, name, static_cast<D *>(&object))); clear_tag(); }
 	template <class T, class D> std::enable_if_t<std::is_base_of<D, T>::value> set(T &object, ReturnType (*funcptr)(D &, Params...), char const *name)
-	{ basetype::operator=(basetype(funcptr, name, static_cast<D *>(&object))); set_tag(finder_target().first); }
+	{ basetype::operator=(basetype(funcptr, name, static_cast<D *>(&object))); clear_tag(); }
 
 	// setter that takes a functoid
 	template <typename T> std::enable_if_t<suitable_functoid<T>::value> set(T &&funcptr, char const *name)
@@ -243,7 +242,7 @@ public:
 	void set(std::nullptr_t)
 	{ reset(); }
 	void reset()
-	{ basetype::reset(); set_tag(finder_target().first); }
+	{ basetype::reset(); clear_tag(); }
 
 	// perform the binding
 	void resolve() { if (!basetype::isnull() && !basetype::has_object()) basetype::late_bind(bound_object()); }

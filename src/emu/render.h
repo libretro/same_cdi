@@ -514,7 +514,7 @@ public:
 	float max_update_rate() const { return m_max_refresh; }
 	int orientation() const { return m_orientation; }
 	render_layer_config layer_config() const { return m_layerconfig; }
-	layout_view &current_view() const { return m_views[m_curview].first; }
+	layout_view &current_view() const;
 	unsigned view() const { return m_curview; }
 	bool external_artwork() const { return m_external_artwork; }
 	bool hidden() const { return ((m_flags & RENDER_CREATE_HIDDEN) != 0); }

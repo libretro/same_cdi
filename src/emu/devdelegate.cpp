@@ -17,17 +17,17 @@ namespace emu::detail {
 delegate_late_bind &device_delegate_helper::bound_object() const
 {
 	if (!m_tag)
-		return m_base.get();
-	device_t *const device(m_base.get().subdevice(m_tag));
+		return *m_base;
+	device_t *const device(m_base->subdevice(m_tag));
 	if (!device)
-		throw emu_fatalerror("Unable to locate device '%s' relative to '%s'\n", m_tag, m_base.get().tag());
+		throw emu_fatalerror("Unable to locate device '%s' relative to '%s'\n", m_tag, m_base->tag());
 	return *device;
 }
 
 
 void device_delegate_helper::set_tag(char const *tag)
 {
-	m_base = m_base.get().mconfig().current_device();
+	m_base = &m_base->mconfig().current_device();
 	m_tag = tag;
 }
 
