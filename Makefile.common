@@ -52,10 +52,6 @@ ifneq ($(BIGENDIAN), 1)
 COREDEFINES += -DLSB_FIRST
 endif
 
-ifeq ($(PTR64), 1)
-COREDEFINES += -DPTR64=1
-endif
-
 # Every TU is compiled with the retro prefix header, as under the old system
 COREDEFINES += -include $(CORE_DIR)/src/osd/libretro/retroprefix.h
 
