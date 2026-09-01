@@ -13,7 +13,7 @@ template<> u8 mask_to_ukey<u16>(u16 mask)
 		(mask & 0x00ff ? 0x01 : 0x00);
 }
 
-template<> u8 mask_to_ukey<u32>(u32 mask)
+template<> [[maybe_unused]] u8 mask_to_ukey<u32>(u32 mask)
 {
 	return
 		(mask & 0xff000000 ? 0x08 : 0x00) |
@@ -22,7 +22,7 @@ template<> u8 mask_to_ukey<u32>(u32 mask)
 		(mask & 0x000000ff ? 0x01 : 0x00);
 }
 
-template<> u8 mask_to_ukey<u64>(u64 mask)
+template<> [[maybe_unused]] u8 mask_to_ukey<u64>(u64 mask)
 {
 	return
 		(mask & 0xff00000000000000 ? 0x80 : 0x00) |
