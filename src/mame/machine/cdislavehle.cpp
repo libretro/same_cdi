@@ -393,10 +393,10 @@ cdislave_hle_device::cdislave_hle_device(const machine_config &mconfig, const ch
 	: device_t(mconfig, CDI_SLAVE_HLE, tag, owner, clock)
 	, m_int_callback(*this)
 	, m_dmadac(*this, ":dac%u", 1U)
+	, m_atten_w(*this)
 	, m_mousex(*this, "MOUSEX")
 	, m_mousey(*this, "MOUSEY")
 	, m_mousebtn(*this, "MOUSEBTN")
-	, m_atten_w(*this)
 {
 }
 

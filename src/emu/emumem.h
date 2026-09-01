@@ -2193,9 +2193,12 @@ public:
 
 	// data access
 	u8 &as_u8(offs_t offset = 0) { return m_buffer[offset]; }
-	u16 &as_u16(offs_t offset = 0) { return reinterpret_cast<u16 *>(base())[offset]; }
-	u32 &as_u32(offs_t offset = 0) { return reinterpret_cast<u32 *>(base())[offset]; }
-	u64 &as_u64(offs_t offset = 0) { return reinterpret_cast<u64 *>(base())[offset]; }
+	// m_buffer is a std::vector<u8>, so its storage comes from operator new
+	// and is aligned for any fundamental type; route through void * so
+	// strict-alignment targets don't read these as under-aligned casts
+	u16 &as_u16(offs_t offset = 0) { return static_cast<u16 *>(static_cast<void *>(base()))[offset]; }
+	u32 &as_u32(offs_t offset = 0) { return static_cast<u32 *>(static_cast<void *>(base()))[offset]; }
+	u64 &as_u64(offs_t offset = 0) { return static_cast<u64 *>(static_cast<void *>(base()))[offset]; }
 
 private:
 	// internal data

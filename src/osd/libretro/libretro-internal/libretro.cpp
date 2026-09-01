@@ -919,13 +919,17 @@ void *retro_get_memory_data(unsigned type)
 					auto &space = memory.space(space_index);
 					for (address_map_entry &entry : space.map()->m_entrylist)
 						if ( entry.m_read.m_type == AMH_RAM )
+						{
 							if ( entry.m_write.m_type == AMH_RAM )
+							{
 								if ( entry.m_share == NULL )
 									best_match1 = find_mame_bank_base(entry.m_addrstart, space) ;
 								else
 									best_match2 = find_mame_bank_base(entry.m_addrstart, space) ;
+							}
 							else
 								best_match3 = find_mame_bank_base(entry.m_addrstart, space) ;
+						}
 				}
 	}
 	return ( best_match1 != NULL ? best_match1 : ( best_match2 != NULL ? best_match2 : best_match3 ) );
@@ -948,13 +952,17 @@ size_t retro_get_memory_size(unsigned type)
 					auto &space = memory.space(space_index);
 					for (address_map_entry &entry : space.map()->m_entrylist)
 						if ( entry.m_read.m_type == AMH_RAM )
+						{
 							if ( entry.m_write.m_type == AMH_RAM )
+							{
 								if ( entry.m_share == NULL )
 									best_match1 = entry.m_addrend - entry.m_addrstart + 1 ;
 								else
 									best_match2 = entry.m_addrend - entry.m_addrstart + 1 ;
+							}
 							else
 								best_match3 = entry.m_addrend - entry.m_addrstart + 1 ;
+						}
 				}
 	}
 
