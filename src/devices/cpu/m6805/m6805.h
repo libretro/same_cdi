@@ -140,8 +140,6 @@ protected:
 	// device_memory_interface overrides
 	virtual space_config_vector memory_space_config() const override;
 
-	// device_disasm_interface overrides
-	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
 
 	// device_state_interface overrides
 	virtual void state_string_export(const device_state_entry &entry, std::string &str) const override;
@@ -323,7 +321,6 @@ protected:
 
 	virtual uint64_t execute_clocks_to_cycles(uint64_t clocks) const noexcept override;
 	virtual uint64_t execute_cycles_to_clocks(uint64_t cycles) const noexcept override;
-	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
 };
 
 // ======================> hd63705_device

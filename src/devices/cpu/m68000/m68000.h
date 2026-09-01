@@ -113,8 +113,6 @@ protected:
 
 	void clear_all(void);
 
-	// device_disasm_interface overrides
-	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
 
 	// device_execute_interface overrides
 	virtual u32 execute_min_cycles() const noexcept override { return 4; };
@@ -319,7 +317,6 @@ protected:
 class scc68070_base_device : public m68000_base_device
 {
 protected:
-	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
 
 	virtual u32 execute_min_cycles() const noexcept override { return 4; };
 	virtual u32 execute_max_cycles() const noexcept override { return 158; };

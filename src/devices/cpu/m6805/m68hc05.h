@@ -121,7 +121,6 @@ protected:
 	virtual u64 execute_clocks_to_cycles(u64 clocks) const noexcept override;
 	virtual u64 execute_cycles_to_clocks(u64 cycles) const noexcept override;
 
-	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
 
 	virtual void interrupt() override;
 	virtual bool test_il() override;
@@ -208,7 +207,6 @@ protected:
 
 	virtual void device_start() override;
 
-	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
 };
 
 
@@ -224,7 +222,6 @@ protected:
 
 	virtual void device_start() override;
 
-	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
 };
 
 
@@ -243,7 +240,6 @@ protected:
 	virtual void device_start() override;
 	virtual void device_reset() override;
 
-	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
 
 private:
 	required_region_ptr<u8> m_rom;
@@ -267,7 +263,6 @@ protected:
 	virtual void device_start() override;
 	virtual void device_reset() override;
 
-	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
 
 private:
 	required_region_ptr<u8> m_rom;
@@ -295,7 +290,6 @@ protected:
 	virtual void device_start() override;
 	virtual void device_reset() override;
 
-	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
 };
 
 
@@ -311,7 +305,6 @@ protected:
 
 	virtual void device_start() override;
 
-	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
 };
 
 
@@ -327,7 +320,6 @@ protected:
 
 	virtual void device_start() override;
 
-	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
 };
 
 

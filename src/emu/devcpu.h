@@ -13,7 +13,6 @@
 
 #pragma once
 
-#include "didisasm.h"
 #include "diexec.h"
 
 
@@ -26,8 +25,7 @@
 class cpu_device :  public device_t,
 					public device_execute_interface,
 					public device_memory_interface,
-					public device_state_interface,
-					public device_disasm_interface
+					public device_state_interface
 {
 public:
 	virtual ~cpu_device();

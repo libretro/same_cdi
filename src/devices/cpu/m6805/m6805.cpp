@@ -35,7 +35,6 @@
 #include "emu.h"
 #include "m6805.h"
 #include "m6805defs.h"
-#include "6805dasm.h"
 
 #include "debugger.h"
 
@@ -531,12 +530,6 @@ void m6805_base_device::interrupt()
 //  helper function
 //-------------------------------------------------
 
-std::unique_ptr<util::disasm_interface> m6805_base_device::create_disassembler()
-{
-	return std::make_unique<m6805_disassembler>();
-}
-
-
 #include "6805ops.hxx"
 
 //-------------------------------------------------
@@ -679,11 +672,6 @@ u64 m68hc05eg_device::execute_clocks_to_cycles(u64 clocks) const noexcept
 u64 m68hc05eg_device::execute_cycles_to_clocks(u64 cycles) const noexcept
 {
 	return cycles * 2;
-}
-
-std::unique_ptr<util::disasm_interface> m68hc05eg_device::create_disassembler()
-{
-	return std::make_unique<m68hc05_disassembler>();
 }
 
 /****************************************************************************

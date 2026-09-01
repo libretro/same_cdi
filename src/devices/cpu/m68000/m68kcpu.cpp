@@ -17,7 +17,6 @@
 #include "emu.h"
 #include "debugger.h"
 #include "m68000.h"
-#include "m68kdasm.h"
 
 // Generated data
 
@@ -733,16 +732,6 @@ void m68000_base_device::init_cpu_scc68070(void)
 	define_state();
 }
 
-
-std::unique_ptr<util::disasm_interface> m68000_base_device::create_disassembler()
-{
-	return std::make_unique<m68k_disassembler>(m68k_disassembler::TYPE_68000);
-}
-
-std::unique_ptr<util::disasm_interface> scc68070_base_device::create_disassembler()
-{
-	return std::make_unique<m68k_disassembler>(m68k_disassembler::TYPE_68000);
-}
 
 void m68000_base_device::m68ki_exception_interrupt(u32 int_level)
 {

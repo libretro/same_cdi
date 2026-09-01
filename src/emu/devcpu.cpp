@@ -26,7 +26,6 @@ cpu_device::cpu_device(const machine_config &mconfig, device_type type, const ch
 		device_execute_interface(mconfig, *this),
 		device_memory_interface(mconfig, *this),
 		device_state_interface(mconfig, *this),
-		device_disasm_interface(mconfig, *this),
 		m_force_no_drc(false)
 {
 }

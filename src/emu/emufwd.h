@@ -113,9 +113,6 @@ template <class DeviceClass, bool Required> class device_finder;
 class device_interface;
 class device_t;
 
-// declared in didisasm.h
-class device_disasm_interface;
-
 // declared in diexec.h
 class device_execute_interface;
 

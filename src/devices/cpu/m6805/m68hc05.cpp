@@ -21,7 +21,6 @@ determines both the COP watchdog timeout and the real-time interrupt rate
 #include "emu.h"
 #include "m68hc05.h"
 #include "m6805defs.h"
-#include "6805dasm.h"
 
 
 /****************************************************************************
@@ -527,12 +526,6 @@ u64 m68hc05_device::execute_cycles_to_clocks(u64 cycles) const noexcept
 	return cycles * 2;
 }
 
-std::unique_ptr<util::disasm_interface> m68hc05_device::create_disassembler()
-{
-	return std::make_unique<m68hc05_disassembler>();
-}
-
-
 void m68hc05_device::interrupt()
 {
 	if ((m_pending_interrupts & M68HC05_INT_MASK) && !(CC & IFLAG))
@@ -768,13 +761,6 @@ void m68hc05c4_device::device_start()
 }
 
 
-std::unique_ptr<util::disasm_interface> m68hc05c4_device::create_disassembler()
-{
-	return std::make_unique<m68hc05_disassembler>(m68hc05c4_syms);
-}
-
-
-
 /****************************************************************************
  * MC68HC05C8 device
  ****************************************************************************/
@@ -832,14 +818,6 @@ void m68hc05c8_device::device_start()
 	add_port_state(std::array<bool, PORT_COUNT>{{ true, true, true, false }});
 	add_timer_state();
 }
-
-
-std::unique_ptr<util::disasm_interface> m68hc05c8_device::create_disassembler()
-{
-	// same I/O registers as MC68HC05C4
-	return std::make_unique<m68hc05_disassembler>(m68hc05c4_syms);
-}
-
 
 
 /****************************************************************************
@@ -926,14 +904,6 @@ void m68hc705c4a_device::device_reset()
 	// IRQ negative edge and level sensitive
 	m_option = 0x02;
 }
-
-
-std::unique_ptr<util::disasm_interface> m68hc705c4a_device::create_disassembler()
-{
-	return std::make_unique<m68hc05_disassembler>(m68hc705c8a_syms);
-}
-
-
 
 
 /****************************************************************************
@@ -1029,12 +999,6 @@ void m68hc705c8a_device::device_reset()
 }
 
 
-std::unique_ptr<util::disasm_interface> m68hc705c8a_device::create_disassembler()
-{
-	return std::make_unique<m68hc05_disassembler>(m68hc705c8a_syms);
-}
-
-
 u8 m68hc705c8a_device::ram0_r(offs_t offset)
 {
 	if (BIT(m_option, 7))
@@ -1124,13 +1088,6 @@ void m68hc705j1a_device::device_reset()
 }
 
 
-std::unique_ptr<util::disasm_interface> m68hc705j1a_device::create_disassembler()
-{
-	return std::make_unique<m68hc05_disassembler>(m68hc705j1a_syms);
-}
-
-
-
 /****************************************************************************
  * MC68HC05L9 device
  ****************************************************************************/
@@ -1196,13 +1153,6 @@ void m68hc05l9_device::device_start()
 	add_port_state(std::array<bool, PORT_COUNT>{{ true, true, true, false }});
 	add_timer_state();
 }
-
-
-std::unique_ptr<util::disasm_interface> m68hc05l9_device::create_disassembler()
-{
-	return std::make_unique<m68hc05_disassembler>(m68hc05l9_syms);
-}
-
 
 
 /****************************************************************************
@@ -1281,7 +1231,3 @@ void m68hc05l11_device::device_start()
 }
 
 
-std::unique_ptr<util::disasm_interface> m68hc05l11_device::create_disassembler()
-{
-	return std::make_unique<m68hc05_disassembler>(m68hc05c4_syms);
-}

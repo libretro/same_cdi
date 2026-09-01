@@ -178,7 +178,6 @@ EMU_SRC_CXX := \
 	$(CORE_DIR)/src/emu/devdelegate.cpp \
 	$(CORE_DIR)/src/emu/devfind.cpp \
 	$(CORE_DIR)/src/emu/device.cpp \
-	$(CORE_DIR)/src/emu/didisasm.cpp \
 	$(CORE_DIR)/src/emu/diexec.cpp \
 	$(CORE_DIR)/src/emu/digfx.cpp \
 	$(CORE_DIR)/src/emu/diimage.cpp \
@@ -276,17 +275,6 @@ $(OPTIONAL_OBJS): GRPFLAGS :=
 OBJECTS += $(OPTIONAL_OBJS)
 
 ##############################################################################
-# dasm
-##############################################################################
-DASM_SRC_CXX := \
-	$(CORE_DIR)/src/devices/cpu/m68000/m68kdasm.cpp \
-	$(CORE_DIR)/src/devices/cpu/m6805/6805dasm.cpp
-
-DASM_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(DASM_SRC_CXX:.cpp=.o))
-$(DASM_OBJS): GRPFLAGS :=
-OBJECTS += $(DASM_OBJS)
-
-##############################################################################
 # utils
 ##############################################################################
 UTILS_SRC_CXX := \
@@ -299,7 +287,6 @@ UTILS_SRC_CXX := \
 	$(CORE_DIR)/src/lib/util/corestr.cpp \
 	$(CORE_DIR)/src/lib/util/coreutil.cpp \
 	$(CORE_DIR)/src/lib/util/delegate.cpp \
-	$(CORE_DIR)/src/lib/util/disasmintf.cpp \
 	$(CORE_DIR)/src/lib/util/hash.cpp \
 	$(CORE_DIR)/src/lib/util/hashing.cpp \
 	$(CORE_DIR)/src/lib/util/ioprocs.cpp \
@@ -439,7 +426,6 @@ CORE_ARCHIVES := \
 	$(CORE_OBJ_DIR)/libfrontend.a \
 	$(CORE_OBJ_DIR)/libemu.a \
 	$(CORE_OBJ_DIR)/liboptional.a \
-	$(CORE_OBJ_DIR)/libdasm.a \
 	$(CORE_OBJ_DIR)/libutils.a \
 	$(CORE_OBJ_DIR)/libosd_retro.a \
 	$(CORE_OBJ_DIR)/libocore_retro.a \
@@ -449,7 +435,6 @@ $(CORE_OBJ_DIR)/libmame_mess.a: $(MAME_MESS_OBJS)
 $(CORE_OBJ_DIR)/libfrontend.a: $(FRONTEND_OBJS)
 $(CORE_OBJ_DIR)/libemu.a: $(EMU_OBJS)
 $(CORE_OBJ_DIR)/liboptional.a: $(OPTIONAL_OBJS)
-$(CORE_OBJ_DIR)/libdasm.a: $(DASM_OBJS)
 $(CORE_OBJ_DIR)/libutils.a: $(UTILS_OBJS)
 $(CORE_OBJ_DIR)/libosd_retro.a: $(OSD_RETRO_OBJS)
 $(CORE_OBJ_DIR)/libocore_retro.a: $(OCORE_RETRO_OBJS) $(LRC_VFS_OBJS)
