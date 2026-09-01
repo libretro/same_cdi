@@ -534,7 +534,7 @@ public:
 	// layer config getters
 	bool screen_overlay_enabled() const { return m_layerconfig.screen_overlay_enabled(); }
 	bool zoom_to_screen() const { return m_layerconfig.zoom_to_screen(); }
-	u32 visibility_mask() const { return m_views[m_curview].second; }
+	u32 visibility_mask() const;
 
 	// layer config setters
 	void set_visibility_toggle(unsigned index, bool enable);

@@ -1033,6 +1033,17 @@ layout_view &render_target::current_view() const
 }
 
 
+//-------------------------------------------------
+//  visibility_mask - return the visibility mask
+//  for the view in use
+//-------------------------------------------------
+
+u32 render_target::visibility_mask() const
+{
+	return m_views[m_curview].second;
+}
+
+
 void render_target::set_view(unsigned viewindex)
 {
 	if (m_views.size() > viewindex)
