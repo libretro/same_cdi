@@ -45,7 +45,13 @@ class device_delegate_helper
 public:
 	// accessors
 	char const *finder_tag() const { return m_tag; }
-	std::pair<device_t &, char const *> finder_target() const { return std::make_pair(m_base, m_tag); }
+	// device_t is still incomplete here (emu.h reaches device.h later), and
+	// instantiating std::pair<device_t &, ...> at this point asks a SFINAE
+	// question about an incomplete type.  Deferring to the call site, where
+	// device_t is complete, keeps the answer well defined; the default
+	// argument leaves every caller unchanged.
+	template <typename T = device_t>
+	std::pair<T &, char const *> finder_target() const { return std::pair<T &, char const *>(m_base.get(), m_tag); }
 
 protected:
 	// construct/assign
