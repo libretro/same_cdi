@@ -78,7 +78,7 @@ libretro-build-windows-x64:
     - .core-defs
   cache:
     <<: *global_cache
-    key: "$CI_COMMIT_REF_SLUG-windows-x64"
+    key: "$CI_COMMIT_REF_SLUG-windows-x64-v2"
 
 # Windows 32-bit
 libretro-build-windows-i686:
@@ -87,7 +87,7 @@ libretro-build-windows-i686:
     - .core-defs
   cache:
     <<: *global_cache
-    key: "$CI_COMMIT_REF_SLUG-windows-i686"
+    key: "$CI_COMMIT_REF_SLUG-windows-i686-v2"
 
 # Linux 64-bit
 libretro-build-linux-x64:
@@ -96,7 +96,7 @@ libretro-build-linux-x64:
     - .core-defs
   cache:
     <<: *global_cache
-    key: "$CI_COMMIT_REF_SLUG-linux-x64"
+    key: "$CI_COMMIT_REF_SLUG-linux-x64-v2"
 
 # Linux 32-bit
 libretro-build-linux-i686:
@@ -105,7 +105,7 @@ libretro-build-linux-i686:
     - .core-defs
   cache:
     <<: *global_cache
-    key: "$CI_COMMIT_REF_SLUG-linux-i686"
+    key: "$CI_COMMIT_REF_SLUG-linux-i686-v2"
 
 # Linux 64-bit (ARM)
 libretro-build-linux-aarch64:
@@ -114,7 +114,7 @@ libretro-build-linux-aarch64:
     - .core-defs
   cache:
     <<: *global_cache
-    key: "$CI_COMMIT_REF_SLUG-linux-aarch64"
+    key: "$CI_COMMIT_REF_SLUG-linux-aarch64-v2"
 
 # MacOS 64-bit
 libretro-build-osx-x64:
@@ -127,7 +127,7 @@ libretro-build-osx-x64:
     MACOSX_DEPLOYMENT_TARGET: "10.14"
   cache:
     <<: *global_cache
-    key: "$CI_COMMIT_REF_SLUG-osx-x64"
+    key: "$CI_COMMIT_REF_SLUG-osx-x64-v2"
     
 # MacOS arm 64-bit
 libretro-build-osx-arm64:
@@ -138,7 +138,7 @@ libretro-build-osx-arm64:
     MACOSX_DEPLOYMENT_TARGET: "10.14"
   cache:
     <<: *global_cache
-    key: "$CI_COMMIT_REF_SLUG-osx-arm64"
+    key: "$CI_COMMIT_REF_SLUG-osx-arm64-v2"
 
 ################################### CELLULAR #################################
 # Android ARMv7a
@@ -148,7 +148,7 @@ android-armeabi-v7a:
     - .core-defs
   cache:
     <<: *global_cache
-    key: "$CI_COMMIT_REF_SLUG-android-armeabi-v7a"
+    key: "$CI_COMMIT_REF_SLUG-android-armeabi-v7a-v2"
 
 # Android ARMv8a
 android-arm64-v8a:
@@ -157,7 +157,7 @@ android-arm64-v8a:
     - .core-defs
   cache:
     <<: *global_cache
-    key: "$CI_COMMIT_REF_SLUG-android-arm64-v8a"
+    key: "$CI_COMMIT_REF_SLUG-android-arm64-v8a-v2"
 
 # Android 64-bit x86
 android-x86_64:
@@ -166,7 +166,7 @@ android-x86_64:
     - .core-defs
   cache:
     <<: *global_cache
-    key: "$CI_COMMIT_REF_SLUG-android-x86_64"
+    key: "$CI_COMMIT_REF_SLUG-android-x86_64-v2"
 
 # iOS
 libretro-build-ios-arm64:
@@ -175,7 +175,7 @@ libretro-build-ios-arm64:
     - .core-defs
   cache:
     <<: *global_cache
-    key: "$CI_COMMIT_REF_SLUG-ios-arm64"
+    key: "$CI_COMMIT_REF_SLUG-ios-arm64-v2"
 
 # tvOS
 libretro-build-tvos-arm64:
@@ -184,7 +184,7 @@ libretro-build-tvos-arm64:
     - .core-defs
   cache:
     <<: *global_cache
-    key: "$CI_COMMIT_REF_SLUG-tvos-arm64"
+    key: "$CI_COMMIT_REF_SLUG-tvos-arm64-v2"
 
 #################################### MISC ####################################
 # webOS 32-bit
@@ -194,4 +194,4 @@ libretro-build-webos-armv7a:
     - .core-defs
   cache:
     <<: *global_cache
-    key: "$CI_COMMIT_REF_SLUG-webos-armv7a"
+    key: "$CI_COMMIT_REF_SLUG-webos-armv7a-v2"
