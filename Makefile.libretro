@@ -43,7 +43,13 @@ platform_is_linux :=
 platform_is_macosx :=
 platform_is_android :=
 
-CORE_DIR := $(abspath .)
+# Relative on purpose.  -MMD writes the prerequisite paths it is given into the
+# .d files, and those files are cached by CI and restored into whatever build
+# directory the runner hands out next.  Absolute paths from the directory that
+# produced them then name sources that no longer exist, and make stops with
+# "No rule to make target .../drivlist.cpp".  Every rule here runs from the
+# repository root, so a relative root resolves wherever the tree lands.
+CORE_DIR := .
 
 # Unix (Linux and other ELF platforms)
 ifneq ($(findstring unix,$(platform)),)
