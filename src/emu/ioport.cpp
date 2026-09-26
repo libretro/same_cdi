@@ -2060,6 +2060,87 @@ void ioport_manager::frame_update_callback()
 //  per-frame input port updating
 //-------------------------------------------------
 
+// Input edge history is emulated state too. In particular, leaving a button's
+// dynamic_field::m_oldval in the future can suppress its callback after a
+// preemptive rollback, even though the restored SLAVE never received it.
+size_t ioport_manager::transfer_state(void *data, bool load, bool validate_only)
+{
+	u8 *ptr = static_cast<u8 *>(data);
+	size_t offset = 0;
+	auto scalar = [&](auto &value)
+	{
+		using type = std::remove_reference_t<decltype(value)>;
+		u64 bits = u64(value);
+		for (unsigned i = 0; i < sizeof(value); ++i)
+		{
+			if (ptr && load)
+			{
+				bits &= ~(u64(0xff) << (8 * i));
+				bits |= u64(ptr[offset]) << (8 * i);
+			}
+			else if (ptr)
+				ptr[offset] = u8(bits >> (8 * i));
+			++offset;
+		}
+		if (ptr && load && !validate_only)
+			value = type(bits);
+	};
+	u32 magic = 0x54504e49, version = 1;
+	// Header is checked by read_state before any input is changed.
+	scalar(magic);
+	scalar(version);
+	scalar(m_last_frame_time.m_seconds);
+	scalar(m_last_frame_time.m_attoseconds);
+	scalar(m_last_delta_nsec);
+	for (auto &port : m_portlist)
+	{
+		auto &live = port.second->live();
+		scalar(live.digital);
+		scalar(live.outputvalue);
+		for (auto &field : port.second->fields())
+		{
+			scalar(field.live().value);
+			scalar(field.live().impulse);
+			scalar(field.live().last);
+		}
+		for (auto &field : live.writelist)
+			scalar(field.m_oldval);
+		for (auto &field : live.readlist)
+			scalar(field.m_oldval);
+		for (auto &analog : live.analoglist)
+		{
+			scalar(analog.m_accum);
+			scalar(analog.m_previous);
+			scalar(analog.m_previousanalog);
+			scalar(analog.m_prog_analog_value);
+			scalar(analog.m_lastdigital);
+			scalar(analog.m_was_written);
+		}
+	}
+	return offset;
+}
+
+size_t ioport_manager::state_size()
+{
+	return transfer_state(nullptr, false, true);
+}
+
+bool ioport_manager::write_state(void *data, size_t size)
+{
+	if (size != state_size())
+		return false;
+	transfer_state(data, false, false);
+	return true;
+}
+
+bool ioport_manager::read_state(const void *data, size_t size, bool validate_only)
+{
+	if (size != state_size() || memcmp(data, "INPT\x01\x00\x00\x00", 8))
+		return false;
+	transfer_state(const_cast<void *>(data), true, validate_only);
+	return true;
+}
+
 void ioport_manager::frame_update()
 {
 	// record/playback information about the current frame
@@ -3376,7 +3457,17 @@ analog_field::analog_field(ioport_field &field)
 		case IPT_MOUSE_Y:
 			m_absolute = false;
 			m_wraps = true;
-			m_interpolate = !field.analog_reset();
+			// Interpolation is deliberately off here. It only does anything for
+			// a port read part-way through a frame; the CD-i pointer is read
+			// solely from frame_update(), where no time has passed since the
+			// last update and read() therefore hands back m_previous -- the
+			// accumulator as it stood a frame ago. That buys no smoothing at
+			// all, only a frame of input lag, and it puts a frame of history
+			// into the input path that no save state covers. Run-ahead loads a
+			// state whenever the input changes, so that one stale frame lands
+			// on the wrong side of every direction change and the pointer comes
+			// out a step short or a step long each time.
+			m_interpolate = false;
 			break;
 
 		default:

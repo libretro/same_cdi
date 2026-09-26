@@ -707,9 +707,28 @@ void sound_stream::sample_rate_changed()
 
 void sound_stream::postload()
 {
-	// set the end time of all of our streams to now
+	// Resume from where the sound manager will next ask for samples, which is
+	// not necessarily now.
+	//
+	// A save state is written at the end of an emulated video frame, and that
+	// lands a hair *before* the periodic sound update covering the frame, so
+	// sound_manager::m_last_update is a whole update period behind
+	// machine().time() in essentially every state. Setting the buffer end to
+	// now claims that period has already been generated, and the next
+	// sound_manager::update() then mixes it out of whatever the buffer still
+	// happens to hold rather than asking the streams to produce it.
+	//
+	// That is one update's worth of stale audio per load. A state loaded by
+	// hand costs a single 20ms glitch, but rewind and run-ahead load one every
+	// frame, so *every* sample reaching the frontend is stale - and since the
+	// buffer is a one-second ring indexed by time, rewinding walks back over
+	// the same ring positions and replays the second before the rewind began,
+	// over and over.
+	attotime resume = m_device.machine().sound().last_update();
+	if (resume > m_device.machine().time())
+		resume = m_device.machine().time();
 	for (auto &output : m_output)
-		output.set_end_time(m_device.machine().time());
+		output.set_end_time_rounded_up(resume);
 
 	// recompute the sample rate information
 	sample_rate_changed();
@@ -901,6 +920,141 @@ void default_resampler_stream::resampler_sound_update(sound_stream &stream, std:
 //**************************************************************************
 //  SOUND MANAGER
 //**************************************************************************
+
+// The CD-i streams run at up to 48 kHz. Keep 4096 samples per output: more
+// than four mixer periods, including the resampler's look-behind. Fixed slots
+// keep retro_serialize_size stable when CDDA/XA/MPEG change sample rates.
+// Unlike resetting all outputs to m_last_update, this preserves samples that
+// a DMA flush generated ahead of the mixer and the exact device read cursor.
+namespace {
+constexpr u32 AUDIO_STATE_SAMPLES = 4096;
+constexpr u32 AUDIO_STATE_MAX_RATE = 48000;
+}
+
+std::vector<sound_stream *> sound_manager::state_streams() const
+{
+	std::vector<sound_stream *> result;
+	std::function<void (sound_stream *)> add = [&](sound_stream *stream)
+	{
+		result.push_back(stream);
+		for (auto &resampler : stream->m_resampler_list)
+			add(resampler.get());
+	};
+	for (auto &stream : m_stream_list)
+		add(stream.get());
+	return result;
+}
+
+size_t sound_manager::state_size() const
+{
+	size_t size = 32;
+	for (auto *stream : state_streams())
+		size += 24 + stream->m_output.size() * (16 + AUDIO_STATE_SAMPLES * sizeof(float));
+	return size;
+}
+
+bool sound_manager::write_state(void *data, size_t size)
+{
+	return transfer_state(data, size, false, false);
+}
+
+bool sound_manager::read_state(const void *data, size_t size, bool validate_only)
+{
+	return transfer_state(const_cast<void *>(data), size, true, validate_only);
+}
+
+bool sound_manager::transfer_state(void *data, size_t size, bool load, bool validate_only)
+{
+	if (size != state_size())
+		return false;
+	u8 *ptr = static_cast<u8 *>(data);
+	// All trailer words (including float bit patterns) are little endian.
+	auto word = [&](u32 value)
+	{
+		u32 result;
+		if (load)
+		{
+			memcpy(&result, ptr, 4);
+			result = little_endianize_int32(result);
+		}
+		else
+		{
+			result = little_endianize_int32(value);
+			memcpy(ptr, &result, 4);
+			result = value;
+		}
+		ptr += 4;
+		return result;
+	};
+	auto scalar = [&](auto &value)
+	{
+		static_assert(sizeof(value) == 4, "audio state word");
+		u32 bits;
+		memcpy(&bits, &value, 4);
+		bits = word(bits);
+		if (load && !validate_only)
+			memcpy(&value, &bits, 4);
+	};
+	auto streams = state_streams();
+	if (word(0x53445541) != 0x53445541 || word(1) != 1 || word(streams.size()) != streams.size())
+		return false;
+	scalar(m_update_number);
+	scalar(m_finalmix_leftover);
+	scalar(m_compressor_scale);
+	scalar(m_compressor_counter);
+	word(0);
+	for (auto *stream : streams)
+	{
+		u32 rate = word(stream->m_sample_rate);
+		u32 pending = word(stream->m_pending_sample_rate);
+		if (rate < SAMPLE_RATE_MINIMUM - 1 || rate > AUDIO_STATE_MAX_RATE ||
+			(pending != SAMPLE_RATE_INVALID && pending > AUDIO_STATE_MAX_RATE))
+			return false;
+		if (load && !validate_only)
+		{
+			stream->m_sample_rate = rate;
+			stream->m_pending_sample_rate = pending;
+		}
+		scalar(stream->m_last_sample_rate_update);
+		if (word(stream->m_output.size()) != stream->m_output.size())
+			return false;
+		auto *resampler = dynamic_cast<default_resampler_stream *>(stream);
+		u64 latency = resampler ? u64(resampler->m_max_latency) : 0;
+		u32 low = word(u32(latency)), high = word(u32(latency >> 32));
+		if (high || low > AUDIO_STATE_SAMPLES / 2)
+			return false;
+		if (load && !validate_only && resampler)
+			resampler->m_max_latency = low;
+		for (auto &output : stream->m_output)
+		{
+			auto &buffer = output.m_buffer;
+			u32 buffer_rate = word(buffer.m_sample_rate);
+			u32 second = word(u32(buffer.m_end_second));
+			u32 end = word(buffer.m_end_sample);
+			word(0);
+			if (buffer_rate != rate || end >= buffer_rate)
+				return false;
+			if (load && !validate_only)
+			{
+				buffer.set_sample_rate(buffer_rate, false);
+				buffer.m_end_second = s32(second);
+				buffer.m_end_sample = end;
+				output.m_resampler_list.clear();
+			}
+			// Store newest first; unused slots are zero, never stale ring data.
+			u32 index = end;
+			for (u32 i = 0; i < AUDIO_STATE_SAMPLES; ++i)
+			{
+				index = index ? index - 1 : buffer_rate - 1;
+				float sample = (!load && i < buffer_rate) ? buffer.get(index) : 0;
+				scalar(sample);
+				if (load && !validate_only && i < buffer_rate)
+					buffer.put(index, sample);
+			}
+		}
+	}
+	return true;
+}
 
 //-------------------------------------------------
 //  sound_manager - constructor

@@ -98,6 +98,7 @@ class stream_buffer
 	friend class write_stream_view;
 	friend class sound_stream;
 	friend class sound_stream_output;
+	friend class sound_manager;
 
 public:
 	// the one public bit is the sample type
@@ -130,6 +131,30 @@ private:
 	{
 		m_end_second = time.seconds();
 		m_end_sample = u32(time.attoseconds() / m_sample_attos);
+	}
+
+	// as above, but landing on the sample the buffer would be holding had it
+	// been filled up to this time in the ordinary way
+	//
+	// Generating samples advances the end with time_to_buffer_index(), which
+	// rounds *up*; set_end_time() truncates. The two disagree by a sample
+	// whenever the time is not an exact multiple of the sample period, which it
+	// generally is not: the sound manager steps in units of
+	// HZ_TO_ATTOSECONDS(machine sample rate), rounded down, while each stream's
+	// period is rounded up from its own rate. Resuming a stream on the truncated
+	// sample makes it generate one sample more than it should, and a caller that
+	// resyncs every frame - which is what rewind and run-ahead amount to - drifts
+	// by that sample per frame.
+	void set_end_time_rounded_up(attotime time)
+	{
+		u32 sample = u32((time.attoseconds() + m_sample_attos - 1) / m_sample_attos);
+		m_end_second = time.seconds();
+		if (sample >= size())
+		{
+			sample -= size();
+			m_end_second++;
+		}
+		m_end_sample = sample;
 	}
 
 	// return the effective buffer size; currently it is a full second of audio
@@ -443,6 +468,7 @@ private:
 
 class sound_stream_output
 {
+	friend class sound_manager;
 public:
 	// construction/destruction
 	sound_stream_output();
@@ -475,6 +501,7 @@ public:
 
 	// resync the buffer to the given end time
 	void set_end_time(attotime end) { m_buffer.set_end_time(end); }
+	void set_end_time_rounded_up(attotime end) { m_buffer.set_end_time_rounded_up(end); }
 
 	// attempt to optimize resamplers by reusing them where possible
 	sound_stream_output &optimize_resampler(sound_stream_output *input_resampler);
@@ -671,6 +698,7 @@ private:
 
 class default_resampler_stream : public sound_stream
 {
+	friend class sound_manager;
 public:
 	// construction/destruction
 	default_resampler_stream(device_t &device);
@@ -723,6 +751,11 @@ public:
 	int unique_id() { return m_unique_id++; }
 	stream_buffer::sample_t compressor_scale() const { return m_compressor_scale; }
 
+	// Libretro trailer: preserve audio history without changing legacy MAME states.
+	size_t state_size() const;
+	bool write_state(void *data, size_t size);
+	bool read_state(const void *data, size_t size, bool validate_only = false);
+
 	// allocate a new stream with a new-style callback
 	sound_stream *stream_alloc(device_t &device, u32 inputs, u32 outputs, u32 sample_rate, stream_update_delegate callback, sound_stream_flags flags);
 
@@ -751,6 +784,9 @@ public:
 	void samples(s16 *buffer);
 
 private:
+	bool transfer_state(void *data, size_t size, bool load, bool validate_only);
+	std::vector<sound_stream *> state_streams() const;
+
 	// set/reset the mute state for the given reason
 	void mute(bool mute, u8 reason);
 

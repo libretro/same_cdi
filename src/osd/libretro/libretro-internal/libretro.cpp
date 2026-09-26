@@ -933,21 +933,68 @@ size_t retro_serialize_size(void)
 {
 	if ( mame_machine_manager::instance() != NULL && mame_machine_manager::instance()->machine() != NULL &&
 			ram_state::get_size(mame_machine_manager::instance()->machine()->save()) > 0)
-		return ram_state::get_size(mame_machine_manager::instance()->machine()->save());
+		return ram_state::get_size(mame_machine_manager::instance()->machine()->save()) +
+			mame_machine_manager::instance()->machine()->sound().state_size() +
+			mame_machine_manager::instance()->machine()->ioport().state_size();
 	return 0;
 }
 bool retro_serialize(void *data, size_t size)
 {
 	if ( mame_machine_manager::instance() != NULL && mame_machine_manager::instance()->machine() != NULL &&
 			ram_state::get_size(mame_machine_manager::instance()->machine()->save()) > 0)
-		return (mame_machine_manager::instance()->machine()->save().write_buffer((u8*)data, size) == STATERR_NONE);
+	{
+		auto &machine = *mame_machine_manager::instance()->machine();
+		size_t base = ram_state::get_size(machine.save());
+		size_t audio_size = machine.sound().state_size();
+		size_t input_size = machine.ioport().state_size();
+		if (!data || size < base + audio_size + input_size)
+			return false;
+		// Frontends may provide a larger buffer; initialise its padding too.
+		memset(data, 0, size);
+		return machine.save().write_buffer(data, base) == STATERR_NONE &&
+			machine.sound().write_state(static_cast<u8 *>(data) + base, audio_size) &&
+			machine.ioport().write_state(static_cast<u8 *>(data) + base + audio_size, input_size);
+	}
 	return false;
 }
 bool retro_unserialize(const void *data, size_t size)
 {
 	if ( mame_machine_manager::instance() != NULL && mame_machine_manager::instance()->machine() != NULL &&
 			ram_state::get_size(mame_machine_manager::instance()->machine()->save()) > 0)
-		return (mame_machine_manager::instance()->machine()->save().read_buffer((u8*)data, size) == STATERR_NONE);
+	{
+		auto &machine = *mame_machine_manager::instance()->machine();
+		size_t base = ram_state::get_size(machine.save());
+		size_t audio_size = machine.sound().state_size();
+		size_t input_size = machine.ioport().state_size();
+		if (!data || size < base)
+			return false;
+		// A state holding only the MAME save layout comes from an older
+		// build and loads as before. Anything longer carries the audio and
+		// input trailers, which are validated before anything is changed.
+		bool has_audio = size >= base + audio_size + input_size;
+		const u8 *audio = static_cast<const u8 *>(data) + base;
+		if ((size != base && !has_audio) ||
+			(has_audio && (!machine.sound().read_state(audio, audio_size, true) ||
+			 !machine.ioport().read_state(audio + audio_size, input_size, true))))
+			return false;
+		// Restore input before device postload re-baselines the SLAVE pointer.
+		std::vector<u8> previous_input;
+		if (has_audio)
+		{
+			previous_input.resize(input_size);
+			machine.ioport().write_state(previous_input.data(), input_size);
+			machine.ioport().read_state(audio + audio_size, input_size);
+		}
+		if (machine.save().read_buffer(data, base) != STATERR_NONE)
+		{
+			if (has_audio)
+				machine.ioport().read_state(previous_input.data(), input_size);
+			return false;
+		}
+		// Legacy states use the stream postload fallback. New states replace
+		// that approximation with their captured history after device postload.
+		return !has_audio || machine.sound().read_state(audio, audio_size);
+	}
 	return false;
 }
 
