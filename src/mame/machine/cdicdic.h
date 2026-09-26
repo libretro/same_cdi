@@ -58,6 +58,7 @@ public:
 	void ram_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
 
 	uint8_t intack_r();
+	bool intreq() const;
 	void atten_w(uint32_t state);
 
 protected:

@@ -478,8 +478,12 @@ TIMER_CALLBACK_MEMBER( cdicdic_device::audio_tick )
 
 void cdicdic_device::process_audio_map()
 {
-	if (m_decode_addr == 0xffff)
+	// Finish the current buffer before applying a stop. Keep the queued
+	// address until then: a driver can disable and re-enable AUDCTL while
+	// that buffer is playing, and must resume at the same double-buffer phase.
+	if (m_decode_addr == 0xffff || !(m_z_buffer & 0x2000))
 	{
+		m_decode_addr = 0xffff;
 		m_audio_sector_counter = 0;
 		m_audio_format_sectors = 0;
 		m_decoding_audio_map = false;
@@ -519,10 +523,25 @@ void cdicdic_device::process_audio_map()
 	}
 }
 
+bool cdicdic_device::intreq() const
+{
+	// Both interrupt sources are gated by an enable bit, not just by their own
+	// status bit: the sector interrupt by DBUF bit 14 and the audio-buffer
+	// interrupt by AUDCTL bit 13 - the same bit that arms the audio map in the
+	// first place.  The CDi_MiSTer CDIC (rtl/cdic.sv) gates its request line
+	// the same way.
+	//
+	// Asserting on the status bits alone leaves the line up after the driver has
+	// switched a source off, so the interrupt is still delivered - late, and at
+	// a point the driver is not expecting one.
+	const bool x_active = BIT(m_x_buffer, 15) && BIT(m_data_buffer, 14);
+	const bool audio_active = BIT(m_audio_buffer, 15) && BIT(m_z_buffer, 13);
+	return x_active || audio_active;
+}
+
 void cdicdic_device::update_interrupt_state()
 {
-	const bool interrupt_active = (bool)BIT(m_x_buffer | m_audio_buffer, 15);
-	m_intreq_callback(interrupt_active ? ASSERT_LINE : CLEAR_LINE);
+	m_intreq_callback(intreq() ? ASSERT_LINE : CLEAR_LINE);
 }
 
 void cdicdic_device::descramble_sector(uint8_t *buffer)
@@ -1026,11 +1045,13 @@ void cdicdic_device::regs_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 		case 0x3ff4/2:
 			LOGMASKED(LOG_WRITES, "%s: cdic_w: Audio Buffer Register = %04x & %04x\n", machine().describe_context(), data, mem_mask);
 			COMBINE_DATA(&m_audio_buffer);
+			update_interrupt_state();
 			break;
 
 		case 0x3ff6/2:
 			LOGMASKED(LOG_WRITES, "%s: cdic_w: X Buffer Register = %04x & %04x\n", machine().describe_context(), data, mem_mask);
 			COMBINE_DATA(&m_x_buffer);
+			update_interrupt_state();
 			break;
 
 		case 0x3ff8/2:
@@ -1056,18 +1077,24 @@ void cdicdic_device::regs_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 
 		case 0x3ffa/2:
 			COMBINE_DATA(&m_z_buffer);
-			if (!(m_z_buffer & 0x2000))
-			{
-				m_decode_addr = 0xffff;
-			}
-			else if (!m_decoding_audio_map)
+			if ((m_z_buffer & 0x2000) && !m_decoding_audio_map)
 			{
 				m_decode_addr = m_z_buffer & 0x3a00;
 				m_audio_format_sectors = 0;
 				m_audio_sector_counter = 1;
 				m_decoding_audio_map = true;
 				std::fill_n(m_xa_last, 4, 0);
+
+				// Playback runs from the moment the driver arms it. Leaving the
+				// tick free-running since power-up instead quantises the start
+				// of every sound to an arbitrary grid, so how long the driver
+				// waits for its buffer-played interrupt depends on when the
+				// machine was switched on rather than on when it asked.
+				m_audio_timer->adjust(attotime::from_hz(75), 0, attotime::from_hz(75));
 			}
+			// Bit 13 gates the audio-buffer interrupt, so clearing it drops the
+			// request even with a played-buffer flag still standing.
+			update_interrupt_state();
 			break;
 
 		case 0x3ffc/2:
@@ -1085,6 +1112,9 @@ void cdicdic_device::regs_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 				m_disc_spinup_counter = 0;
 				m_curr_lba = 0;
 			}
+			// Bit 14 gates the sector interrupt the same way bit 13 of AUDCTL
+			// gates the audio one.
+			update_interrupt_state();
 			break;
 
 		default:
