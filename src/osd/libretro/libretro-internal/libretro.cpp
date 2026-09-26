@@ -750,6 +750,7 @@ void retro_deinit(void)
 {
    printf("RETRO DEINIT\n");
    if(retro_load_ok)retro_finish();
+   retro_load_ok = false;
    mfirst=1;
 }
 
@@ -853,6 +854,38 @@ bool retro_load_game(const struct retro_game_info *info)
     extract_basename(basename, info->path, sizeof(basename));
     extract_directory(g_rom_dir, info->path, sizeof(g_rom_dir));
     strcpy(RPATH,info->path);
+
+    /* Bring MAME up here rather than on the first retro_run().
+     *
+     * Until the machine exists there is nothing registered to save, so
+     * retro_serialize_size() has to answer 0. The frontend sizes its rewind
+     * buffer immediately after this function returns, and a 0 there makes it
+     * give up with "Failed to initialize rewind buffer" and leave rewind
+     * disabled for the whole session however the user sets it. Starting the
+     * machine before returning means the size is already correct by then.
+     *
+     * This also settles the geometry in time for the frontend's first
+     * retro_get_system_av_info(), instead of reporting the 640x480/60Hz
+     * placeholder and changing it a frame later. */
+    if (mfirst == 1)
+    {
+        mfirst++;
+
+        int res = mmain2(1, RPATH);
+        if (log_cb)
+            log_cb(RETRO_LOG_INFO, "RES:%d\n", res);
+
+        if (res != 0)
+        {
+            retro_pause = -1;
+            retro_load_ok = false;
+            return false;
+        }
+
+        retro_load_ok = true;
+        update_runtime_variables();
+    }
+
     return true;
 }
 
