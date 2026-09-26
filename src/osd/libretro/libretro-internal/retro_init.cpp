@@ -319,7 +319,13 @@ static void Set_Default_Option(void)
    /* some hardcoded default options. */
 
    PARAMCOUNT=0;
-   // Add_Option(forcedSystem);
+
+   /* argv[0] is the program name and MAME's option parser skips it, so
+    * something has to occupy that slot. Without this the first real option
+    * below is silently swallowed, which is how -nothrottle went missing and
+    * left the core throttling itself to realtime no matter what the frontend
+    * asked for. */
+   Add_Option("same_cdi");
 
    if(throttle_enable)
       Add_Option("-throttle");
