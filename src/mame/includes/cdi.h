@@ -7,6 +7,7 @@
 #include "machine/scc68070.h"
 #include "machine/cdislavehle.h"
 #include "machine/cdicdic.h"
+#include "machine/cdidvc.h"
 #include "sound/dmadac.h"
 #include "video/mcd212.h"
 #include "cpu/m6805/m68hc05.h"
@@ -28,6 +29,8 @@ public:
 		, m_servo(*this, "servo")
 		, m_slave(*this, "slave")
 		, m_cdic(*this, "cdic")
+		, m_dvc(*this, "dvc")
+		, m_dvc_rom(*this, "dvc")
 		, m_cdrom(*this, "cdrom")
 		, m_mcd212(*this, "mcd212")
 		, m_dmadac(*this, "dac%u", 1U)
@@ -35,6 +38,7 @@ public:
 
 	void cdimono1_base(machine_config &config);
 	void cdimono1(machine_config &config);
+	void cdimono1_dvc(machine_config &config);
 	void cdimono2(machine_config &config);
 	void cdi910(machine_config &config);
 
@@ -54,6 +58,8 @@ protected:
 	optional_device<m68hc05c8_device> m_servo;
 	optional_device<m68hc05c8_device> m_slave;
 	optional_device<cdicdic_device> m_cdic;
+	optional_device<cdidvc_device> m_dvc;
+	optional_region_ptr<uint8_t> m_dvc_rom;
 	required_device<cdrom_image_device> m_cdrom;
 	required_device<mcd212_device> m_mcd212;
 
@@ -63,6 +69,7 @@ protected:
 	virtual void machine_reset() override ATTR_COLD;
 
 	void cdimono1_mem(address_map &map) ATTR_COLD;
+	void cdimono1_dvc_mem(address_map &map) ATTR_COLD;
 
 	void cdi910_mem(address_map &map) ATTR_COLD;
 	void cdimono2_mem(address_map &map) ATTR_COLD;
@@ -75,6 +82,31 @@ protected:
 
 	uint16_t dvc_r(offs_t offset, uint16_t mem_mask = ~0);
 	void dvc_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
+
+	uint16_t dvc_rom_r(offs_t offset);
+	uint16_t dvc_mpeg_ram_r(offs_t offset, uint16_t mem_mask = ~0);
+	void dvc_mpeg_ram_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
+
+	uint32_t dvc_video_r(int x, int y);
+
+	// IRQ level 4 is shared between the CDIC and the DVC; a flip-flop on the
+	// board decides which of them owns the line and therefore which one the
+	// CPU's interrupt acknowledge is routed to.
+	enum irq4_owner : uint8_t
+	{
+		IRQ4_IDLE,
+		IRQ4_CDIC,
+		IRQ4_DVC
+	};
+
+	void cdic_intreq_w(int state);
+	void dvc_intreq_w(int state);
+	void update_irq4();
+	uint8_t iack4_r();
+
+	uint8_t m_irq4_owner = IRQ4_IDLE;
+	bool m_cdic_intreq = false;
+	bool m_dvc_intreq = false;
 
 	uint16_t bus_error_r(offs_t offset);
 	void bus_error_w(offs_t offset, uint16_t data);
