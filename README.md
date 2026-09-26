@@ -7,6 +7,32 @@ SAME_CDI is a ***S***ingle ***A***rcade/***M***achine ***E***mulator for libretr
 =======
 Game files can be either CHD, ISO, or BIN/CUE.  Game support/functionality is whatever the MAME version included supports.
 
+*MULTI-DISC GAMES*
+=======
+Discs can be changed without resetting the running game using RetroArch's
+**Quick Menu > Disc Control**. When loading a single CHD, ISO or CUE, use
+**Load New Disc** to browse to another image (select the CUE for BIN/CUE sets).
+Resume the game and confirm its insert-disc prompt if required.
+
+For a list of selectable discs, load an `.m3u` text file containing one image
+path per line. Relative paths are resolved from the playlist's directory;
+absolute paths, blank lines and `#` comments are also supported. For example,
+place this playlist in the directory containing the two disc folders:
+
+```text
+Creature Shock (Europe) (Disc 1)/Creature Shock (Europe) (Disc 1).cue
+Creature Shock (Europe) (Disc 2)/Creature Shock (Europe) (Disc 2).cue
+```
+
+Use **Eject Disc**, choose **Current Disc Index**, then **Insert Disc**. The
+extended interface supplies disc filenames as labels and supports RetroArch's
+remembered initial disc; older frontends can use the basic interface.
+Loading a save state keeps the currently inserted disc. When restoring an
+insert-disc prompt with the requested disc already mounted, the core reports
+the media change so the game can refresh its disc information. New saves record
+the disc identity; older saves use a conservative sector-buffer check. For
+states taken during gameplay, insert the matching disc before restoring.
+
 *BIOS*
 =======
 BIOS file (cdimono1.zip) is required, and can go either in the same directory as your ```CHD|ISO|CUE``` files or in the ```retroarch_system_dir/same_cdi/bios/``` directory

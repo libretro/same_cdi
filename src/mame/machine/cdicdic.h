@@ -60,6 +60,8 @@ public:
 	uint8_t intack_r();
 	bool intreq() const;
 	void atten_w(uint32_t state);
+	void media_changed(int state);
+	bool legacy_media_mismatch();
 
 protected:
 	// device-level overrides
@@ -206,7 +208,7 @@ private:
 	void process_audio_map();
 
 	void descramble_sector(uint8_t *buffer);
-	bool is_valid_sector(const uint8_t *buffer);
+	static bool is_valid_sector(const uint8_t *buffer, uint32_t lba);
 	bool is_mode2_sector_selected(const uint8_t *buffer);
 	bool is_mode2_audio_selected(const uint8_t *buffer);
 

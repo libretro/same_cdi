@@ -21,6 +21,7 @@ TODO:
 #pragma once
 
 #include "sound/dmadac.h"
+#include "imagedev/chd_cd.h"
 
 //**************************************************************************
 //  TYPE DEFINITIONS
@@ -46,6 +47,7 @@ public:
 	uint16_t slave_r(offs_t offset);
 	void slave_w(offs_t offset, uint16_t data);
 	void slave_w_mouse(offs_t offset, uint16_t data);
+	void media_changed(int state);
 
 protected:
 	// device-level overrides
@@ -62,10 +64,12 @@ private:
 	bool m_pal = true; // Physical SLAVE standard input, not guest-writable state.
 	void prepare_readback(const attotime &delay, uint8_t channel, uint8_t count, uint8_t data0, uint8_t data1, uint8_t data2, uint8_t data3, uint8_t cmd);
 	void set_mouse_position();
+	void disc_status();
 
 	devcb_write_line m_int_callback;
 
 	required_device_array<dmadac_sound_device, 2> m_dmadac;
+	optional_device<cdrom_image_device> m_cdrom;
 	devcb_write32 m_atten_w;
 
 	required_ioport m_mousex;

@@ -31,6 +31,13 @@ public:
 	virtual ~cdrom_image_device();
 
 	void set_interface(const char *interface) { m_interface = interface; }
+	auto media_change_callback() { return m_media_change_cb.bind(); }
+	void notify_media_change()
+	{
+		m_media_change_cb(0);
+		if (m_cdrom_handle)
+			m_media_change_cb(1);
+	}
 
 	// image-level overrides
 	virtual image_init_result call_load() override;
@@ -64,6 +71,7 @@ protected:
 	cdrom_file  *m_cdrom_handle;
 	const char  *m_extension_list;
 	const char  *m_interface;
+	devcb_write_line m_media_change_cb;
 };
 
 // device type definition

@@ -87,6 +87,8 @@ unsigned int videoBuffer[4096*3072];
 retro_video_refresh_t video_cb = NULL;
 retro_environment_t environ_cb = NULL;
 
+#include "disk_control.h"
+
 /* FIXME: re-add way to handle OGL  */
 #if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES)
 #include "retroogl.c"
@@ -630,7 +632,7 @@ void retro_get_system_info(struct retro_system_info *info)
 
    info->library_name     = "SAME_CDI";
    info->library_version  = bare_build_version;
-   info->valid_extensions = "chd|iso|cue";
+   info->valid_extensions = "chd|iso|cue|m3u";
    info->need_fullpath    = true;
    info->block_extract    = true;
 }
@@ -679,6 +681,8 @@ extern int mmain2(int argc, const char *argv[]);
 
 void retro_init (void)
 {
+   disk_control::clear();
+   disk_control::register_interface();
    struct retro_log_callback log;
    const char *system_dir = NULL;
    const char *content_dir = NULL;
@@ -750,6 +754,7 @@ void retro_deinit(void)
 {
    printf("RETRO DEINIT\n");
    if(retro_load_ok)retro_finish();
+   disk_control::clear();
    retro_load_ok = false;
    mfirst=1;
 }
@@ -853,6 +858,18 @@ bool retro_load_game(const struct retro_game_info *info)
 {
     char basename[256];
 
+    if (!info || !disk_control::prepare(info->path))
+    {
+        disk_control::clear();
+        return false;
+    }
+    const std::string &disc_path = disk_control::images[disk_control::index];
+    if (disc_path.size() >= sizeof(RPATH))
+    {
+        disk_control::clear();
+        return false;
+    }
+
     check_variables();
 
 //FIXME: re-add way to handle 16/32 bit
@@ -881,8 +898,8 @@ bool retro_load_game(const struct retro_game_info *info)
 #endif
 
     extract_basename(basename, info->path, sizeof(basename));
-    extract_directory(g_rom_dir, info->path, sizeof(g_rom_dir));
-    strcpy(RPATH,info->path);
+    extract_directory(g_rom_dir, disc_path.c_str(), sizeof(g_rom_dir));
+    strcpy(RPATH, disc_path.c_str());
 
     /* Bring MAME up here rather than on the first retro_run().
      *
@@ -908,6 +925,7 @@ bool retro_load_game(const struct retro_game_info *info)
         {
             retro_pause = -1;
             retro_load_ok = false;
+            disk_control::clear();
             return false;
         }
 
@@ -915,11 +933,13 @@ bool retro_load_game(const struct retro_game_info *info)
         update_runtime_variables();
     }
 
+    disk_control::loaded = true;
     return true;
 }
 
 void retro_unload_game(void)
 {
+   disk_control::clear();
    if ( mame_machine_manager::instance() != NULL && mame_machine_manager::instance()->machine() != NULL &&
 		   mame_machine_manager::instance()->machine()->options().autosave() &&
 		   (mame_machine_manager::instance()->machine()->system().flags & MACHINE_SUPPORTS_SAVE) != 0)
@@ -935,7 +955,7 @@ size_t retro_serialize_size(void)
 			ram_state::get_size(mame_machine_manager::instance()->machine()->save()) > 0)
 		return ram_state::get_size(mame_machine_manager::instance()->machine()->save()) +
 			mame_machine_manager::instance()->machine()->sound().state_size() +
-			mame_machine_manager::instance()->machine()->ioport().state_size();
+			mame_machine_manager::instance()->machine()->ioport().state_size() + disk_control::state_size;
 	return 0;
 }
 bool retro_serialize(void *data, size_t size)
@@ -947,10 +967,11 @@ bool retro_serialize(void *data, size_t size)
 		size_t base = ram_state::get_size(machine.save());
 		size_t audio_size = machine.sound().state_size();
 		size_t input_size = machine.ioport().state_size();
-		if (!data || size < base + audio_size + input_size)
+		if (!data || size < base + audio_size + input_size + disk_control::state_size)
 			return false;
 		// Frontends may provide a larger buffer; initialise its padding too.
 		memset(data, 0, size);
+		disk_control::write_state(static_cast<u8 *>(data) + base + audio_size + input_size);
 		return machine.save().write_buffer(data, base) == STATERR_NONE &&
 			machine.sound().write_state(static_cast<u8 *>(data) + base, audio_size) &&
 			machine.ioport().write_state(static_cast<u8 *>(data) + base + audio_size, input_size);
@@ -970,12 +991,14 @@ bool retro_unserialize(const void *data, size_t size)
 			return false;
 		// A state holding only the MAME save layout comes from an older
 		// build and loads as before. Anything longer carries the audio and
-		// input trailers, which are validated before anything is changed.
+		// input trailers, and then the inserted disc's identity, all of which
+		// are validated before anything is changed.
 		bool has_audio = size >= base + audio_size + input_size;
 		const u8 *audio = static_cast<const u8 *>(data) + base;
 		if ((size != base && !has_audio) ||
 			(has_audio && (!machine.sound().read_state(audio, audio_size, true) ||
-			 !machine.ioport().read_state(audio + audio_size, input_size, true))))
+			 !machine.ioport().read_state(audio + audio_size, input_size, true) ||
+			 !disk_control::valid_state(audio + audio_size + input_size, size - base - audio_size - input_size))))
 			return false;
 		// Restore input before device postload re-baselines the SLAVE pointer.
 		std::vector<u8> previous_input;
@@ -993,7 +1016,16 @@ bool retro_unserialize(const void *data, size_t size)
 		}
 		// Legacy states use the stream postload fallback. New states replace
 		// that approximation with their captured history after device postload.
-		return !has_audio || machine.sound().read_state(audio, audio_size);
+		const bool restored = !has_audio || machine.sound().read_state(audio, audio_size);
+		if (restored)
+		{
+			// Loading a state keeps the disc that is inserted now. If the state
+			// was taken with another disc in the drive, tell the guest the
+			// medium changed so that it rereads the disc it now has.
+			const size_t media_offset = has_audio ? base + audio_size + input_size : base;
+			disk_control::restored(static_cast<const u8 *>(data) + media_offset, size - media_offset);
+		}
+		return restored;
 	}
 	return false;
 }
