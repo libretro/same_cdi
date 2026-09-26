@@ -58,7 +58,15 @@ void mcd212_device::update_matte_arrays()
 	const int num_mattes = BIT(m_image_coding_method, ICM_NM_BIT) ? 2 : 1;
 
 	bool latched_mf[2]{ false, false };
-	uint8_t latched_wf[2] = { m_weight_factor[0][0], m_weight_factor[1][0] };
+	// Seed from the weight-factor registers, never from the array this pass is
+	// about to overwrite. On the MCD212 the weight factor is one register per
+	// plane that both the 0xdb/0xdc writes and the matte commands drive; the
+	// array is only a per-pixel expansion of it. Seeding from element 0 folded
+	// the two together, so the first matte command at x = 0 destroyed the
+	// register value and every later pass re-seeded from the destroyed one -
+	// the register could then never be recovered, only overwritten by another
+	// matte command.
+	uint8_t latched_wf[2] = { m_weight_factor_reg[0], m_weight_factor_reg[1] };
 	int matte_idx[2] = { 0, 4 };
 
 	for (int x = 0; x < width; x++)
@@ -250,7 +258,7 @@ void mcd212_device::set_register(uint8_t reg, uint32_t value)
 			if (Path == 0)
 			{
 				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 0: Weight Factor A = %08x\n", machine().describe_context(), screen().vpos(), value);
-				m_weight_factor[0][0] = (uint8_t)value;
+				m_weight_factor_reg[0] = (uint8_t)(value & 0x3f);
 				update_matte_arrays();
 			}
 			break;
@@ -258,7 +266,7 @@ void mcd212_device::set_register(uint8_t reg, uint32_t value)
 			if (Path == 1)
 			{
 				LOGMASKED(LOG_REGISTERS, "%s: Scanline %d, Path 1: Weight Factor B = %08x\n", machine().describe_context(), screen().vpos(), value);
-				m_weight_factor[1][0] = (uint8_t)value;
+				m_weight_factor_reg[1] = (uint8_t)(value & 0x3f);
 				update_matte_arrays();
 			}
 			break;
@@ -277,6 +285,11 @@ inline ATTR_FORCE_INLINE void mcd212_device::set_vsr(uint32_t value)
 	m_vsr[Path] = value & 0x0000ffff;
 	m_dcr[Path] &= 0xffc0;
 	m_dcr[Path] |= (value >> 16) & 0x003f;
+
+	// An ICA or DCA RELOAD VSR retargets the display immediately, so the
+	// running fetch pointer follows the register. A CPU write to VSR or DCR
+	// does not come through here, and so only takes effect at the next field.
+	m_vsr_pos[Path] = value & 0x003fffff;
 }
 
 template <int Path>
@@ -323,7 +336,12 @@ uint32_t mcd212_device::get_backdrop_plane()
 	if (BIT(m_image_coding_method, ICM_EV_BIT))
 		return 0; // External Video Background. Default to Black since there is no DVC.
 	else
-		return s_4bpp_color[m_backdrop_color];
+	{
+		// Only the low nibble of the register is the colour - intensity, R, G,
+		// B - and the register keeps all 24 bits a title writes to it, so the
+		// index has to be masked or a stray write walks off the end of the table.
+		return s_4bpp_color[m_backdrop_color & 0x0f];
+	}
 }
 
 template <int Path>
@@ -520,10 +538,10 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 	const uint8_t tp_ctrl = get_transparency_control<Path>();
 	const int width = get_screen_width();
 
-	uint32_t vsr = get_vsr<Path>();
-	uint32_t vsr2 = get_vsr<!Path>();
+	uint32_t vsr = m_vsr_pos[Path];
+	uint32_t vsr2 = m_vsr_pos[!Path];
 
-	if (tp_ctrl == TCR_ALWAYS || !icm || !vsr)
+	if (tp_ctrl == TCR_ALWAYS)
 	{
 		std::fill_n(pixels, get_screen_width(), s_4bpp_color[0]);
 		std::fill_n(transparent, get_screen_width(), true);
@@ -553,6 +571,23 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 	const bool is_dyuv_rgb = (icm == ICM_DYUV) || ((icm == ICM_RGB555) && (Path == 1)); // DYUV and RGB do not have access to color key.
 	const bool use_color_key = !is_dyuv_rgb && ((tp_ctrl_type == TCR_KEY) || (tp_ctrl_type == TCR_MF0_KEY1) || (tp_ctrl_type == TCR_MF1_KEY1));
 
+	// A plane whose coding method is OFF is still a plane: it drives black into
+	// the mixer, and whether that black is keyed away is decided by the plane's
+	// own transparency control, exactly as it would be for a real picture. Only
+	// the colour key and the RGB transparency bit fall out of the test, because
+	// there are no pixels to compare. Forcing the plane transparent instead
+	// hands every such line to the backdrop, and titles park the planes far more
+	// often than they mean to show the backdrop: it is what put a red border
+	// around Hotel Mario's Philips logo, where both planes are off and both are
+	// set never-transparent, so the console shows black there.
+	if (!icm || !vsr)
+	{
+		std::fill_n(pixels, width, s_4bpp_color[0]);
+		for (int x = 0; x < width; x++)
+			transparent[x] = tp_always || (use_matte_flag && (matte_flags[x] == tp_check_parity));
+		return;
+	}
+
 	LOGMASKED(LOG_VSR, "Scanline %d: VSR Path %d, ICM (%02x), VSR (%08x)\n", screen().vpos(), Path, icm, vsr);
 
 	for (uint32_t x = 0; x < width; )
@@ -574,10 +609,20 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 
 			color0 = (limit_rgb[m_dyuv_v_to_r[v]] << 16) | (limit_rgb[m_dyuv_u_to_g[u] + m_dyuv_v_to_g[v]] << 8) | limit_rgb[m_dyuv_u_to_b[u]];
 
-			const uint8_t byte2 = data[(vsr & 0x0007ffff) ^ 1]; // Peek ahead, for calculating the half-step.
-			const uint8_t byte3 = data[((vsr + 1) & 0x0007ffff) ^ 1];
-			const uint8_t u8 = u + m_delta_uv_lut[byte2];
-			const uint8_t v8 = v + m_delta_uv_lut[byte3];
+			// DYUV carries chroma at half horizontal resolution, so the odd
+			// pixel of a pair takes the average of this pair's U/V and the next
+			// pair's - which means peeking at the next two bytes. The last pair
+			// of a line has no next pair, and the bytes sitting there belong to
+			// the *following line*, whose deltas are relative to that line's
+			// absolute start rather than to the chroma being held here. Adding
+			// them lands anywhere: on Hotel Mario's Fantasy Factory logo the
+			// right-hand two pixels of most lines came out bright green. With no
+			// next sample to walk towards, the pair's own chroma stands.
+			const bool has_next_pair = (x + 4) < width;
+			const uint8_t byte2 = has_next_pair ? data[(vsr & 0x0007ffff) ^ 1] : 0; // Peek ahead, for calculating the half-step.
+			const uint8_t byte3 = has_next_pair ? data[((vsr + 1) & 0x0007ffff) ^ 1] : 0;
+			const uint8_t u8 = has_next_pair ? uint8_t(u + m_delta_uv_lut[byte2]) : u;
+			const uint8_t v8 = has_next_pair ? uint8_t(v + m_delta_uv_lut[byte3]) : v;
 			const uint8_t u6 = (u >> 1) + (u8 >> 1) + (u & u8 & 1);
 			const uint8_t v6 = (v >> 1) + (v8 >> 1) + (v & v8 & 1);
 
@@ -637,8 +682,8 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 			x = end;
 		}
 	}
-	set_vsr<Path>(vsr);
-	set_vsr<!Path>(vsr2);
+	m_vsr_pos[Path] = vsr;
+	m_vsr_pos[!Path] = vsr2;
 }
 
 const uint32_t mcd212_device::s_4bpp_color[16] =
@@ -701,6 +746,17 @@ void mcd212_device::mix_lines(uint32_t *plane_a, bool *transparent_a, uint32_t *
 		const int32_t plane_b_g = 0xff & (plane_b_cur >> 8);
 		const int32_t plane_b_b = 0xff & plane_b_cur;
 
+		// Weighting keeps the CD-i's 16 black level: each plane is scaled about
+		// 16 and a single 16 is added back to the sum. CDi_MiSTer's WeightCalc
+		// instead scales straight towards zero (value * (wf+1) / 64), which
+		// looks like the more obvious reading - do not "fix" this to match it.
+		// Calibrating the YouTube capture on a frame both show at full weight
+		// gives a linear response with the black point crushed to about 32, and
+		// pushing both candidates through that curve puts this one much closer
+		// to the console on the shadowed patches (mean error 6.8 against 12.4);
+		// MiSTer's would clip the shadow to black. The capture's crushed black
+		// is also why the shadow looks four times too bright if you compare the
+		// two raw.
 		const int32_t weighted_a_r = std::clamp((std::clamp(plane_a_r - 16, 0, 255) * weight_a[x]) >> 6, 0, 255);
 		const int32_t weighted_a_g = std::clamp((std::clamp(plane_a_g - 16, 0, 255) * weight_a[x]) >> 6, 0, 255);
 		const int32_t weighted_a_b = std::clamp((std::clamp(plane_a_b - 16, 0, 255) * weight_a[x]) >> 6, 0, 255);
@@ -912,6 +968,11 @@ TIMER_CALLBACK_MEMBER(mcd212_device::ica_tick)
 {
 	m_csrr[0] &= ~CSR1R_DA;
 
+	// A new field starts fetching from wherever VSR points now. Any RELOAD VSR
+	// in the ICA below overrides this again before the first visible line.
+	m_vsr_pos[0] = get_vsr<0>();
+	m_vsr_pos[1] = get_vsr<1>();
+
 	// Process ICA
 	if (BIT(m_dcr[0], DCR_ICA_BIT))
 		process_ica<0>();
@@ -949,6 +1010,17 @@ TIMER_CALLBACK_MEMBER(mcd212_device::dca_tick)
 	if (BIT(m_dcr[1], DCR_DCA_BIT))
 		process_dca<1>();
 
+	// The DCA is read in the horizontal blanking at the end of each *visible*
+	// line, so a tick at line N configures line N+1 and the run starts at the
+	// first active line, not in vertical blanking. That leaves display line 0
+	// running on whatever the ICA parked - for most titles VSR 0 and both
+	// planes off - and it comes out as a black line across the top of the
+	// picture. That is not a bug to tune away: the MiSTer core does the same
+	// (`dca_read = hblank && !vblank`), and its capture of Hotel Mario has the
+	// same one-line black band at the top and none at the bottom. Moving the
+	// run a line earlier lines the top up but pushes the plane fetch one line
+	// past the end of the display file, which puts a strip of whatever follows
+	// it in RAM along the bottom of the level.
 	int scanline = screen().vpos();
 	if (scanline == m_total_height - 1)
 		m_dca_timer->adjust(screen().time_until_pos(m_ica_height, 784));
@@ -1055,12 +1127,27 @@ int mcd212_device::ram_dtack_cycle_count()
 	if (!BIT(m_dcr[Path], DCR_ICA_BIT))
 		return 2;
 
+	// The two thresholds below are quoted in normal-resolution units: a
+	// 480-clock line carrying 384 active pixels. This driver clocks the screen
+	// at 960 per line with 768 active (cdi.cpp), so taking them as raw hpos
+	// values put the "end of the line" two thirds of the way through the
+	// *visible* picture and handed the CPU uncontended VRAM for half of every
+	// active line. Scale them to whatever the screen is actually configured
+	// with, so they mean what the comments say.
+	//
+	// This is not cosmetic: with contention applied to only half the line the
+	// 68070 runs far enough ahead of itself that Hotel Mario's level-complete
+	// wipe advances every two fields where a console takes three, and the
+	// routine that rewrites the DCA list ends up racing the raster down the
+	// screen - losing on one step, which tears the reveal edge across the
+	// middle of a floor for a frame.
+	const int hscale = screen().width() / 480;
 	const int x = screen().hpos();
 	const int y = screen().vpos();
-	const bool x_outside_active_display = (x >= 408);
+	const bool x_outside_active_display = (x >= 408 * hscale);
 
 	// No contending for Ch.1/Ch.2 timing slots during the final 8-pixel area on all lines
-	if (x >= 472)
+	if (x >= 472 * hscale)
 		return 2;
 
 	// No contending for Ch.1/Ch.2 timing slots during the free-run area of ICA lines
@@ -1087,12 +1174,32 @@ int mcd212_device::rom_dtack_cycle_count()
 	return s_dd_values[(m_csrw[0] & CSR1W_DD2) >> CSR1W_DD2_SHIFT];
 }
 
+void mcd212_device::device_post_load()
+{
+	// m_vsr_pos is deliberately left out of the save state, so rebuild it from
+	// VSR, which is in there. States are written at a frame boundary, where the
+	// pointer is back at the start of a field anyway. Without this the first
+	// field after a load is fetched from address zero and comes out blank.
+	m_vsr_pos[0] = get_vsr<0>();
+	m_vsr_pos[1] = get_vsr<1>();
+
+	// Same treatment for the weight-factor registers: keeping them out of the
+	// state leaves existing save files loadable, and every title that uses them
+	// reloads them from its ICA at the top of the very next field. Reseed from
+	// the saved arrays so the value is a function of the state alone and two
+	// instances loading the same state agree - run-ahead compares them.
+	const int width = get_screen_width();
+	m_weight_factor_reg[0] = m_weight_factor[0][width - 1];
+	m_weight_factor_reg[1] = m_weight_factor[1][width - 1];
+}
+
 void mcd212_device::device_reset()
 {
 	std::fill_n(m_csrr, 2, 0);
 	std::fill_n(m_csrw, 2, 0);
 	std::fill_n(m_dcr, 2, 0);
 	std::fill_n(m_vsr, 2, 0);
+	std::fill_n(m_vsr_pos, 2, 0);
 	std::fill_n(m_ddr, 2, 0);
 	std::fill_n(m_dcp, 2, 0);
 	std::fill_n(m_dca, 2, 0);
@@ -1112,6 +1219,7 @@ void mcd212_device::device_reset()
 	std::fill_n(m_mosaic_hold, 2, 0);
 	std::fill_n(m_weight_factor[0], std::size(m_weight_factor[0]), 0);
 	std::fill_n(m_weight_factor[1], std::size(m_weight_factor[1]), 0);
+	std::fill_n(m_weight_factor_reg, 2, 0);
 	std::fill_n(m_matte_flag[0], std::size(m_matte_flag[0]), false);
 	std::fill_n(m_matte_flag[1], std::size(m_matte_flag[1]), false);
 
