@@ -60,6 +60,7 @@ protected:
 	virtual void device_resolve_objects() override;
 	virtual void device_start() override;
 	virtual void device_reset() override;
+	virtual void device_post_load() override;
 
 	TIMER_CALLBACK_MEMBER(ica_tick);
 	TIMER_CALLBACK_MEMBER(dca_tick);
@@ -235,6 +236,12 @@ protected:
 
 	// internal state
 	bool m_matte_flag[2][768]{};
+
+	// The two weight-factor registers themselves, as distinct from the per-pixel
+	// arrays the matte pass expands them into. Left out of the save state so
+	// that existing states keep loading; device_post_load() reseeds them, and
+	// the next ICA writes them outright.
+	uint8_t m_weight_factor_reg[2]{};
 	int m_ica_height = 0;
 	int m_total_height = 0;
 	emu_timer *m_ica_timer = nullptr;
@@ -253,6 +260,22 @@ protected:
 	int get_screen_width();
 	int get_border_width();
 	uint32_t get_backdrop_plane();
+
+	// The address the display is currently fetching each plane from.
+	//
+	// This is the chip's internal pointer, not the VSR register: VSR (with its
+	// top six bits living in DCR) holds where a field *starts*, and the pointer
+	// is loaded from it once per field and then walks forward as the line is
+	// scanned out. Keeping the running position in the registers themselves
+	// meant a CPU write to DCR part way down a field moved the fetch address
+	// out from under the plane being drawn, because DCR's low six bits are the
+	// high six bits of VSR. Monty Python does exactly that when it swaps
+	// scenery in, and the field caught mid-write came out as bands of garbage.
+	//
+	// Deliberately not in the save state: it is reloaded from VSR at the top of
+	// every field, so a state written at a frame boundary does not need it, and
+	// leaving it out keeps existing save states loadable.
+	uint32_t m_vsr_pos[2] = { 0, 0 };
 
 	template <int Path> void set_vsr(uint32_t value);
 	template <int Path> uint32_t get_vsr();
