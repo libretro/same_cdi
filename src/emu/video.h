@@ -61,6 +61,21 @@ public:
 	void set_fastforward(bool ffwd) { m_fastforward = ffwd; }
 	void set_output_changed() { m_output_changed = true; }
 
+	// Drop the render for the frame about to be emulated.
+	//
+	// The libretro front end tells the core, through
+	// RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, which frames it is going to
+	// throw away - the extra frames run-ahead runs, and the ones rewind runs
+	// on its way back. Rendering those costs about three quarters of a frame's
+	// emulation time here and nothing looks at the result. The screen is
+	// VIDEO_UPDATE_SCANLINE and not VIDEO_ALWAYS_UPDATE, so this makes
+	// update_partial() bail and the MCD212's per-pixel plane mixing never runs;
+	// verified to leave both the emulated state and the audio byte-identical.
+	//
+	// update_frameskip() recomputes the flag at the end of every frame, so this
+	// has to be asserted once per frame, before the emulation of it starts.
+	void force_skip_this_frame() { m_skipping_this_frame = true; }
+
 	// misc
 	void toggle_record_movie(movie_recording::format format);
 	std::error_condition open_next(emu_file &file, const char *extension, uint32_t index = 0);
