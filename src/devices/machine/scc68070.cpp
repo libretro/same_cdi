@@ -880,6 +880,7 @@ uint16_t scc68070_device::dma_r(offs_t offset, uint16_t mem_mask)
 	case 0x46/2:
 		return (m_dma.channel[offset / 32].sequence_control << 8) | m_dma.channel[offset / 32].channel_control;
 	case 0x0a/2:
+	case 0x4a/2:
 		return m_dma.channel[offset / 32].transfer_counter;
 	case 0x0c/2:
 	case 0x4c/2:
@@ -941,7 +942,11 @@ void scc68070_device::dma_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 			m_dma.channel[offset / 32].sequence_control = data >> 8;
 		}
 		break;
+	// Channel 2's transfer counter was missing here, so writes to it were
+	// silently dropped. Nothing noticed while the CDIC, which uses channel 1,
+	// was the only user of the DMA controller.
 	case 0x0a/2:
+	case 0x4a/2:
 		COMBINE_DATA(&m_dma.channel[offset / 32].transfer_counter);
 		break;
 	case 0x0c/2:
