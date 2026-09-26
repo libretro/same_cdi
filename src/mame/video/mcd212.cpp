@@ -1009,6 +1009,23 @@ void mcd212_device::dca2_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 
 TIMER_CALLBACK_MEMBER(mcd212_device::ica_tick)
 {
+	// FD selects the raster height independently of the board's oscillator.
+	// Apply changes at the field boundary so ICA/DCA and display status share
+	// the same geometry. Keep the existing half-line timing approximation.
+	if (BIT(m_dcr[0], DCR_DE_BIT))
+	{
+		const bool ntsc = BIT(m_dcr[0], DCR_FD_BIT);
+		const int total_height = ntsc ? 262 : 312;
+		if (m_total_height != total_height)
+		{
+			m_total_height = total_height;
+			m_ica_height = ntsc ? 22 : 32;
+			const rectangle visible(0, 767, m_ica_height, total_height - 1);
+			const attotime period = attotime::from_hz(double(clock()) / (1920.0 * (total_height + 0.5)));
+			screen().configure(960, total_height, visible, period.as_attoseconds());
+			m_dca_timer->adjust(screen().time_until_pos(m_ica_height, 784));
+		}
+	}
 	m_csrr[0] &= ~CSR1R_DA;
 
 	// A new field starts fetching from wherever VSR points now. Any RELOAD VSR
@@ -1269,8 +1286,8 @@ void mcd212_device::device_reset()
 	std::fill_n(m_matte_flag[0], std::size(m_matte_flag[0]), false);
 	std::fill_n(m_matte_flag[1], std::size(m_matte_flag[1]), false);
 
-	m_ica_height = 32;
-	m_total_height = 312;
+	m_total_height = screen().height();
+	m_ica_height = m_total_height == 262 ? 22 : 32;
 	m_blink_time = 0;
 
 	m_int_callback(CLEAR_LINE);

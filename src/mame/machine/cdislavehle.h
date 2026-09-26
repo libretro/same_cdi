@@ -36,6 +36,7 @@ public:
 
 	auto atten_callback() { return m_atten_w.bind(); }
 	auto int_callback() { return m_int_callback.bind(); }
+	void set_pal(bool pal) { m_pal = pal; }
 
 	// external callbacks
 	DECLARE_INPUT_CHANGED_MEMBER( mouse_update );
@@ -57,6 +58,7 @@ protected:
 	TIMER_CALLBACK_MEMBER( trigger_readback_int );
 
 private:
+	bool m_pal = true; // Physical SLAVE standard input, not guest-writable state.
 	void prepare_readback(const attotime &delay, uint8_t channel, uint8_t count, uint8_t data0, uint8_t data1, uint8_t data2, uint8_t data3, uint8_t cmd);
 	void set_mouse_position();
 
