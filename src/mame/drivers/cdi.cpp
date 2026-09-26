@@ -176,6 +176,19 @@ void cdi_state::machine_reset()
 	memcpy(dst, src, 0x8);
 }
 
+void cdi_state::device_post_load()
+{
+	// These board-level IRQ latches are not part of the legacy save layout.
+	// Rebuild them from the restored devices before running the CPU. Otherwise
+	// a CDIC callback can lower IN4 while the DVC still has a pending request;
+	// the DVC only calls back on an edge, so neither FMV driver runs again
+	// until a later command clears that request.
+	m_cdic_intreq = m_cdic.found() && m_cdic->intreq();
+	m_dvc_intreq = m_dvc.found() && m_dvc->intreq();
+	m_irq4_owner = IRQ4_IDLE;
+	update_irq4();
+}
+
 /***************************
 *  Wait-State Handling     *
 ***************************/

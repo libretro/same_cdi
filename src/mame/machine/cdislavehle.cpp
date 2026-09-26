@@ -477,6 +477,38 @@ void cdislave_hle_device::device_start()
 }
 
 //-------------------------------------------------
+//  device_post_load - re-baseline the pointer
+//  against the host's input after a state load
+//-------------------------------------------------
+
+void cdislave_hle_device::device_post_load()
+{
+	// m_input_mouse_x/y shadow the MOUSEX/MOUSEY port values so that
+	// mouse_update() can difference them into a movement delta. The ports
+	// themselves are fed by analog_field::m_accum in MAME's input layer.
+	// Legacy states don't include it, so their saved origin may differ from
+	// the live accumulator. New libretro states restore both together.
+	//
+	// Loading a state therefore rewinds one half of that subtraction and not
+	// the other, and the next update applies the difference between two
+	// unrelated points in time as a single jump. Run-ahead makes this constant
+	// rather than occasional: it loads a state every time the input changes,
+	// so every direction change teleports the pointer, which is what made
+	// walking around jerk. Re-baselining here means the next update applies
+	// one frame of movement, as it would have without the load.
+	//
+	// Mouse ports have interpolation disabled, so reading them is safe after
+	// machine time moves backwards. New libretro states restore the input
+	// accumulators before device postload; legacy states retain the live ones.
+	// Use that same baseline in either case. This is also needed before the
+	// first host input event. Otherwise loading a state in a fresh session
+	// retains the saved accumulator's unrelated origin, and the first button
+	// press can teleport the emulated pointer.
+	m_input_mouse_x = m_mousex->read();
+	m_input_mouse_y = m_mousey->read();
+}
+
+//-------------------------------------------------
 //  device_reset - device-specific reset
 //-------------------------------------------------
 

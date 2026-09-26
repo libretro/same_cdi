@@ -1323,6 +1323,7 @@ private:
 // live device field information
 class dynamic_field
 {
+	friend class ioport_manager;
 public:
 	// construction/destruction
 	dynamic_field(ioport_field &field);
@@ -1368,6 +1369,15 @@ class ioport_manager
 	DISABLE_COPYING(ioport_manager);
 	friend class device_t;
 	friend class ioport_configurer;
+
+public:
+	// Additional libretro state, kept outside the legacy MAME save layout.
+	size_t state_size();
+	bool write_state(void *data, size_t size);
+	bool read_state(const void *data, size_t size, bool validate_only = false);
+
+private:
+	size_t transfer_state(void *data, bool load, bool validate_only);
 
 public:
 	// construction/destruction

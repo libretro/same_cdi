@@ -52,6 +52,7 @@ protected:
 	virtual void device_resolve_objects() override;
 	virtual void device_start() override;
 	virtual void device_reset() override;
+	virtual void device_post_load() override;
 	virtual ioport_constructor device_input_ports() const override;
 
 	// internal callbacks
