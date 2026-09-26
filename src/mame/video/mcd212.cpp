@@ -1088,6 +1088,28 @@ TIMER_CALLBACK_MEMBER(mcd212_device::dca_tick)
 		m_dca_timer->adjust(screen().time_until_pos(scanline + 1, 784));
 }
 
+// Display Active and frame parity, the only two things the scanline update
+// leaves behind that the 68070 can read back.
+//
+// They live here, on the screen's own scanline callback, rather than inside
+// screen_update(), because the front end can tell the core that it is going to
+// throw this frame's picture away - which is what run-ahead and rewind spend
+// most of their time doing - and screen_update() is then not called at all.
+// The callback fires from the same timer, immediately after the partial update
+// it used to run inside, so nothing about the timing changes.
+void mcd212_device::scanline_update(uint32_t scanline)
+{
+	if (int(scanline) < m_ica_height)
+		return;
+
+	m_csrr[0] |= CSR1R_DA;
+
+	// Toggle frame parity at the end of the visible frame (even in
+	// non-interlaced mode).
+	if (int(scanline) == m_total_height - 1)
+		m_csrr[0] ^= CSR1R_PA;
+}
+
 uint32_t mcd212_device::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {
 	uint32_t plane_a[768];
@@ -1114,7 +1136,7 @@ uint32_t mcd212_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 			}
 		}
 
-		m_csrr[0] |= CSR1R_DA;
+		// CSR1R_DA is set from scanline_update() instead; see there.
 
 		if (draw_line)
 		{
@@ -1165,11 +1187,9 @@ uint32_t mcd212_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 		}
 	}
 
-	// Toggle frame parity at the end of the visible frame (even in non-interlaced mode).
-	if (scanline == (m_total_height - 1))
-	{
-		m_csrr[0] ^= CSR1R_PA;
-	}
+	// Frame parity is toggled at the end of the visible frame (even in
+	// non-interlaced mode) - from scanline_update(), so that it keeps running
+	// when the front end has asked for the render to be skipped.
 
 	return 0;
 }

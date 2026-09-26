@@ -66,6 +66,10 @@ public:
 
 	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
+	// Hook this up with screen.scanline(); see the definition for why the
+	// status bits cannot live in screen_update().
+	void scanline_update(uint32_t scanline);
+
 	void map(address_map &map) ATTR_COLD;
 
 	template <int Path> int ram_dtack_cycle_count();

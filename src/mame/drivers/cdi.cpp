@@ -449,6 +449,9 @@ void cdi_state::cdimono1_base(machine_config &config)
 	}
 	screen.set_video_attributes(VIDEO_UPDATE_SCANLINE);
 	screen.set_screen_update(m_mcd212, FUNC(mcd212_device::screen_update));
+	// The scanline status bits have to keep running even when the front end
+	// has asked for the render to be skipped; see mcd212_device::scanline_update().
+	screen.scanline().set(m_mcd212, FUNC(mcd212_device::scanline_update));
 
 	SCREEN(config, m_lcd, SCREEN_TYPE_RASTER);
 	m_lcd->set_refresh_hz(pal ? 50.0 : double(system_clock) / (1920.0 * 262.5));
@@ -499,6 +502,9 @@ void cdi_state::cdimono2(machine_config &config)
 	screen.set_raw(14976000, 960, 0, 768, 312, 32, 312);
 	screen.set_video_attributes(VIDEO_UPDATE_SCANLINE);
 	screen.set_screen_update(m_mcd212, FUNC(mcd212_device::screen_update));
+	// The scanline status bits have to keep running even when the front end
+	// has asked for the render to be skipped; see mcd212_device::scanline_update().
+	screen.scanline().set(m_mcd212, FUNC(mcd212_device::scanline_update));
 
 	SCREEN(config, m_lcd, SCREEN_TYPE_RASTER);
 	m_lcd->set_refresh_hz(60);
@@ -543,6 +549,9 @@ void cdi_state::cdi910(machine_config &config)
 	screen.set_raw(14976000, 960, 0, 768, 312, 32, 312);
 	screen.set_video_attributes(VIDEO_UPDATE_SCANLINE);
 	screen.set_screen_update(m_mcd212, FUNC(mcd212_device::screen_update));
+	// The scanline status bits have to keep running even when the front end
+	// has asked for the render to be skipped; see mcd212_device::scanline_update().
+	screen.scanline().set(m_mcd212, FUNC(mcd212_device::scanline_update));
 
 	SCREEN(config, m_lcd, SCREEN_TYPE_RASTER);
 	m_lcd->set_refresh_hz(60);

@@ -759,9 +759,38 @@ void retro_reset (void)
    mame_reset = 1;
 }
 
+/* Ask the front end whether it is going to keep this frame's video.
+ *
+ * Run-ahead and rewind run frames whose picture is thrown away - two of every
+ * three with second-instance run-ahead at depth 2, and every frame of a rewind.
+ * Rendering them costs roughly three quarters of the emulation time of a frame
+ * and nothing ever looks at the result, so MAME is told to skip the render for
+ * those. libretro requires that this not disturb emulation, which holds here:
+ * skipping alternate renders through an FMV leaves every drawn frame and the
+ * whole audio stream byte-identical. */
+static void apply_av_enable(void)
+{
+   int flags = 0;
+
+   if (mame_machine_manager::instance() == NULL || mame_machine_manager::instance()->machine() == NULL)
+      return;
+
+   if (!environ_cb(RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, &flags))
+      return;
+
+   /* Audio is deliberately left alone. The front end discards it just the same,
+    * but the cartridge's audio ring is drained by the sound streams, so not
+    * running them would leave the machine in a different state than the frame
+    * this one is standing in for. */
+   if ((flags & RETRO_AV_ENABLE_VIDEO) == 0)
+      mame_machine_manager::instance()->machine()->video().force_skip_this_frame();
+}
+
 void retro_run (void)
 {
    bool updated = false;
+
+   apply_av_enable();
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
    {
