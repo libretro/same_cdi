@@ -552,9 +552,9 @@ void cdicdic_device::descramble_sector(uint8_t *buffer)
 	}
 }
 
-bool cdicdic_device::is_valid_sector(const uint8_t *buffer)
+bool cdicdic_device::is_valid_sector(const uint8_t *buffer, uint32_t lba)
 {
-	const uint32_t real_lba = m_curr_lba + 150;
+	const uint32_t real_lba = lba + 150;
 	const uint8_t mins = real_lba / (60 * 75);
 	const uint8_t secs = (real_lba / 75) % 60;
 	const uint8_t frac = real_lba % 75;
@@ -698,6 +698,14 @@ uint8_t cdicdic_device::get_sector_count_for_coding(uint8_t coding)
 
 void cdicdic_device::process_disc_sector()
 {
+	// The console image device owns this handle and may replace it at runtime.
+	if (m_cdrom_dev)
+		m_cd = m_cdrom_dev->get_cdrom_file();
+	if (!m_cd)
+	{
+		cancel_disc_read();
+		return;
+	}
 	const uint32_t real_lba = m_curr_lba + 150;
 	const uint8_t mins = real_lba / (60 * 75);
 	const uint8_t secs = (real_lba / 75) % 60;
@@ -723,13 +731,13 @@ void cdicdic_device::process_disc_sector()
 		}
 	}
 
-	if (!is_valid_sector(buffer))
+	if (!is_valid_sector(buffer, m_curr_lba))
 	{
 		uint8_t descramble_buffer[2560];
 		memcpy(descramble_buffer, buffer, sizeof(descramble_buffer));
 		descramble_sector(descramble_buffer);
 
-		if (is_valid_sector(descramble_buffer))
+		if (is_valid_sector(descramble_buffer, m_curr_lba))
 			memcpy(buffer, descramble_buffer, sizeof(descramble_buffer));
 	}
 
@@ -1102,6 +1110,15 @@ void cdicdic_device::regs_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 			break;
 
 		case 0x3ffe/2:
+			// Accepting a command must not restart the sector-buffer sequence.
+			// The driver remembers the last delivered bank; seeing it twice
+			// makes it consume the other bank as a missed sector. In particular,
+			// the first volume-descriptor read after a disc swap then returns
+			// stale data and the application asks for the disc a second time.
+			// Keep the bank on command strobes; ordinary writes (including a
+			// stop/reset) retain their existing behaviour.
+			if (data & mem_mask & 0x8000)
+				mem_mask &= ~0x0001;
 			COMBINE_DATA(&m_data_buffer);
 			if (m_data_buffer & 0x8000)
 				handle_cdic_command();
@@ -1143,6 +1160,64 @@ void cdicdic_device::cancel_disc_read()
 	m_disc_mode = 0;
 	m_curr_lba = 0;
 	m_disc_spinup_counter = 0;
+}
+
+void cdicdic_device::media_changed(int state)
+{
+	// Do not reset the machine: multi-disc applications must keep their RAM.
+	// Byte order detection and the outstanding read belong to the old medium.
+	m_cd = m_cdrom_dev->get_cdrom_file();
+	m_cd_byteswap = false;
+	cancel_disc_read();
+}
+
+bool cdicdic_device::legacy_media_mismatch()
+{
+	// Old frontend states have no medium identity. Only infer a mismatch if
+	// both data banks have valid Mode 2 headers and differ from this medium.
+	// A matching bank, writable scratch data, or an unreadable sector is not
+	// sufficient evidence to disturb a restored read or audio playback.
+	if (!m_cdrom_dev || !m_cdrom_dev->get_cdrom_file())
+		return false;
+	auto *cd = m_cdrom_dev->get_cdrom_file();
+	for (unsigned bank = 0; bank < 2; ++bank)
+	{
+		uint8_t saved[2560] = { 0 };
+		std::fill_n(saved + 1, 10, 0xff);
+		const auto *ram = reinterpret_cast<const uint16_t *>(m_ram.get() + bank * 0xa00);
+		for (unsigned i = 0; i < SECTOR_SIZE - SECTOR_HEADER; ++i)
+			saved[SECTOR_HEADER + i] = ram[i / 2] >> ((i & 1) ? 0 : 8);
+		if (saved[SECTOR_MODE] != 2)
+			return false;
+		unsigned msf[3];
+		for (unsigned i = 0; i < 3; ++i)
+		{
+			const uint8_t bcd = saved[SECTOR_HEADER + i];
+			if ((bcd & 15) > 9 || (bcd >> 4) > 9)
+				return false;
+			msf[i] = (bcd >> 4) * 10 + (bcd & 15);
+		}
+		const unsigned frame = (msf[0] * 60 + msf[1]) * 75 + msf[2];
+		if (msf[1] >= 60 || msf[2] >= 75 || frame < 150)
+			return false;
+		const unsigned lba = frame - 150;
+		if (!is_valid_sector(saved, lba))
+			return false;
+		if (lba >= cdrom_get_track_start(cd, 0xaa))
+			continue;
+		uint8_t current[2560] = { 0 };
+		if (!cdrom_read_data(cd, lba, current, CD_TRACK_RAW_DONTCARE))
+			return false;
+		if (current[0] == 0xff && current[1] == 0)
+			for (unsigned i = 0; i < SECTOR_SIZE; i += 2)
+				std::swap(current[i], current[i + 1]);
+		if (!is_valid_sector(current, lba))
+			descramble_sector(current);
+		if (!is_valid_sector(current, lba) ||
+			!memcmp(saved + SECTOR_HEADER, current + SECTOR_HEADER, SECTOR_SIZE - SECTOR_HEADER))
+			return false;
+	}
+	return true;
 }
 
 void cdicdic_device::handle_cdic_command()

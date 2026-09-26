@@ -608,7 +608,10 @@ void cdi_state::cdimono1(machine_config &config)
 
 	cdimono1_dvc(config);
 
-	CDROM(config, "cdrom").set_interface("cdi_cdrom");
+	auto &cdrom = CDROM(config, "cdrom");
+	cdrom.set_interface("cdi_cdrom");
+	cdrom.media_change_callback().set(m_cdic, FUNC(cdicdic_device::media_changed));
+	cdrom.media_change_callback().append(m_slave_hle, FUNC(cdislave_hle_device::media_changed));
 	SOFTWARE_LIST(config, "cd_list").set_original("cdi");
 }
 

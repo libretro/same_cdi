@@ -57,6 +57,29 @@ void cdislave_hle_device::prepare_readback(const attotime &delay, uint8_t channe
 	m_interrupt_timer->adjust(delay);
 }
 
+void cdislave_hle_device::media_changed(int state)
+{
+	if (machine().phase() != machine_phase::RUNNING)
+		return;
+	// Frontends can eject and insert while emulation is paused. The firmware
+	// must see the removal before the new disc, even if no frame ran between
+	// the callbacks. Keep the removal in the existing (saved) response buffer;
+	// slave_r will report the inserted medium after this packet is consumed.
+	if (state && m_channel[3].m_out_count && m_channel[3].m_out_cmd == 0xb0 &&
+		m_channel[3].m_out_buf[2] == 0x03 && m_channel[3].m_out_buf[3] == 0x11)
+		return;
+	prepare_readback(attotime::zero, 3, 4, 0xb0, 0x00, state ? 0x02 : 0x03, state ? 0x15 : 0x11, 0xb0);
+}
+
+void cdislave_hle_device::disc_status()
+{
+	// Do not replace a pending removal with a status query for the new disc.
+	if (m_channel[3].m_out_count && m_channel[3].m_out_cmd == 0xb0)
+		return;
+	const bool present = !m_cdrom || m_cdrom->get_cdrom_file();
+	prepare_readback(attotime::from_hz(4), 3, 4, 0xb0, 0x00, present ? 0x02 : 0x03, present ? 0x15 : 0x11, 0xb0);
+}
+
 INPUT_CHANGED_MEMBER( cdislave_hle_device::mouse_update )
 {
 	const uint8_t button_state = m_mousebtn->read();
@@ -136,11 +159,27 @@ uint16_t cdislave_hle_device::slave_r(offs_t offset)
 		}
 		m_channel[offset].m_out_index++;
 		m_channel[offset].m_out_count--;
+		// All readback channels share the interrupt line. A pointer response
+		// must not acknowledge a simultaneous drive-status response as well.
+		// Reassert for any packet whose first byte has not yet been consumed.
+		for (const auto &channel : m_channel)
+			if (channel.m_out_count && channel.m_out_index == 0)
+				switch (channel.m_out_cmd)
+				{
+					case 0xb0: case 0xb1: case 0xf0:
+					case 0xf3: case 0xf4: case 0xf7:
+						m_interrupt_timer->adjust(attotime::zero);
+						break;
+				}
 		if (!m_channel[offset].m_out_count)
 		{
+			const bool removed = offset == 3 && m_channel[offset].m_out_cmd == 0xb0 &&
+				m_channel[offset].m_out_buf[2] == 0x03 && m_channel[offset].m_out_buf[3] == 0x11;
 			m_channel[offset].m_out_index = 0;
 			m_channel[offset].m_out_cmd = 0;
 			memset(m_channel[offset].m_out_buf, 0, 4);
+			if (removed && m_cdrom && m_cdrom->get_cdrom_file())
+				prepare_readback(attotime::from_hz(10000), 3, 4, 0xb0, 0x00, 0x02, 0x15, 0xb0);
 		}
 		return ret;
 	}
@@ -328,7 +367,7 @@ void cdislave_hle_device::slave_w(offs_t offset, uint16_t data)
 							memset(m_in_buf, 0, 17);
 							m_in_index = 0;
 							m_in_count = 0;
-							prepare_readback(attotime::from_hz(4), 3, 4, 0xb0, 0x00, 0x02, 0x15, 0xb0);
+							disc_status();
 							break;
 						//case 0xb1: // Request Disc Base
 							//memset(m_in_buf, 0, 17);
@@ -403,6 +442,7 @@ cdislave_hle_device::cdislave_hle_device(const machine_config &mconfig, const ch
 	: device_t(mconfig, CDI_SLAVE_HLE, tag, owner, clock)
 	, m_int_callback(*this)
 	, m_dmadac(*this, ":dac%u", 1U)
+	, m_cdrom(*this, ":cdrom")
 	, m_atten_w(*this)
 	, m_mousex(*this, "MOUSEX")
 	, m_mousey(*this, "MOUSEY")

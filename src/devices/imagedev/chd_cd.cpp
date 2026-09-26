@@ -31,7 +31,8 @@ cdrom_image_device::cdrom_image_device(const machine_config &mconfig, device_typ
 		device_image_interface(mconfig, *this),
 		m_cdrom_handle(nullptr),
 		m_extension_list(nullptr),
-		m_interface(nullptr)
+		m_interface(nullptr),
+		m_media_change_cb(*this)
 {
 }
 //-------------------------------------------------
@@ -61,6 +62,7 @@ void cdrom_image_device::device_config_complete()
 
 void cdrom_image_device::device_start()
 {
+	m_media_change_cb.resolve_safe();
 	// try to locate the CHD from a DISK_REGION
 	chd_file *chd = machine().rom_load().get_disk_handle(owner()->tag() );
 	if( chd != nullptr )
@@ -112,6 +114,7 @@ image_init_result cdrom_image_device::call_load()
 	if (!m_cdrom_handle)
 		goto error;
 
+	m_media_change_cb(1);
 	return image_init_result::PASS;
 
 error:
@@ -129,4 +132,5 @@ void cdrom_image_device::call_unload()
 	m_cdrom_handle = nullptr;
 	if( m_self_chd.opened() )
 		m_self_chd.close();
+	m_media_change_cb(0);
 }
