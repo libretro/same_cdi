@@ -331,10 +331,37 @@ int mcd212_device::get_border_width()
 	return width;
 }
 
-uint32_t mcd212_device::get_backdrop_plane()
+// Samples the Digital Video Cartridge's picture across the line about to be
+// drawn.  It is read up-front rather than from get_backdrop_plane() because the
+// plane decoders need to know where the cartridge's picture falls: see the
+// region-flag handling in process_vsr().
+void mcd212_device::update_ext_video_line()
+{
+	m_ext_active = BIT(m_image_coding_method, ICM_EV_BIT) && !m_ext_video_cb.isnull();
+	if (!m_ext_active)
+		return;
+
+	const int width = get_screen_width();
+	for (int x = 0; x < width; x++)
+	{
+		const uint32_t pixel = m_ext_video_cb(x, m_backdrop_scanline);
+		m_ext_present[x] = (pixel & 0xff000000) != 0;
+		m_ext_pixel[x] = pixel & 0x00ffffff;
+	}
+}
+
+uint32_t mcd212_device::get_backdrop_plane(int x)
 {
 	if (BIT(m_image_coding_method, ICM_EV_BIT))
-		return 0; // External Video Background. Default to Black since there is no DVC.
+	{
+		// External Video Background: this is where a Digital Video Cartridge
+		// shows through. With no cartridge, or outside of its display window,
+		// the backdrop is black - the CD-i's black, the same level the border
+		// and a black plane pixel come out at, not zero.
+		if (m_ext_active && m_ext_present[x])
+			return m_ext_pixel[x];
+		return CDI_BLACK;
+	}
 	else
 	{
 		// Only the low nibble of the register is the colour - intensity, R, G,
@@ -571,6 +598,22 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 	const bool is_dyuv_rgb = (icm == ICM_DYUV) || ((icm == ICM_RGB555) && (Path == 1)); // DYUV and RGB do not have access to color key.
 	const bool use_color_key = !is_dyuv_rgb && ((tp_ctrl_type == TCR_KEY) || (tp_ctrl_type == TCR_MF0_KEY1) || (tp_ctrl_type == TCR_MF1_KEY1));
 
+	// With External Video selected, a region flag marks out where a Digital
+	// Video Cartridge is keyed in, rather than keying the plane away outright.
+	// A title that hands the whole line to the cartridge and then relies on the
+	// cartridge only driving its own display window - as Mutant Rampage does for
+	// the border it draws around its MPEG window - needs the plane back outside
+	// that window, or the border disappears and the video is left floating on
+	// black.  Note the test is on the window being open, not on a picture being
+	// available: the window keys the plane away just the same between clips,
+	// which is why a stopped or skipped clip leaves a black void rather than
+	// revealing the artwork the title parks behind it.
+	const bool region_keys_ext = m_ext_active && use_matte_flag;
+	const auto matte_transparent = [&](uint32_t px)
+	{
+		return (matte_flags[px] == tp_check_parity) && (!region_keys_ext || m_ext_present[px]);
+	};
+
 	// A plane whose coding method is OFF is still a plane: it drives black into
 	// the mixer, and whether that black is keyed away is decided by the plane's
 	// own transparency control, exactly as it would be for a real picture. Only
@@ -584,7 +627,7 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 	{
 		std::fill_n(pixels, width, s_4bpp_color[0]);
 		for (int x = 0; x < width; x++)
-			transparent[x] = tp_always || (use_matte_flag && (matte_flags[x] == tp_check_parity));
+			transparent[x] = tp_always || (use_matte_flag && matte_transparent(x));
 		return;
 	}
 
@@ -633,10 +676,10 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 			pixels[x + 1] = color0;
 			pixels[x + 2] = color1;
 			pixels[x + 3] = color1;
-			transparent[x    ] = tp_always || (use_matte_flag && (matte_flags[x    ] == tp_check_parity));
-			transparent[x + 1] = tp_always || (use_matte_flag && (matte_flags[x + 1] == tp_check_parity));
-			transparent[x + 2] = tp_always || (use_matte_flag && (matte_flags[x + 2] == tp_check_parity));
-			transparent[x + 3] = tp_always || (use_matte_flag && (matte_flags[x + 3] == tp_check_parity));
+			transparent[x    ] = tp_always || (use_matte_flag && matte_transparent(x    ));
+			transparent[x + 1] = tp_always || (use_matte_flag && matte_transparent(x + 1));
+			transparent[x + 2] = tp_always || (use_matte_flag && matte_transparent(x + 2));
+			transparent[x + 3] = tp_always || (use_matte_flag && matte_transparent(x + 3));
 			x += 4;
 		}
 		else
@@ -676,8 +719,8 @@ void mcd212_device::process_vsr(uint32_t *pixels, bool *transparent)
 			{
 				pixels[rl_index    ] = color0;
 				pixels[rl_index + 1] = color1;
-				transparent[rl_index    ] = tp_always || rgb_tp_bit || (use_color_key && color_match0) || (use_matte_flag && (matte_flags[rl_index    ] == tp_check_parity));
-				transparent[rl_index + 1] = tp_always || rgb_tp_bit || (use_color_key && color_match1) || (use_matte_flag && (matte_flags[rl_index + 1] == tp_check_parity));
+				transparent[rl_index    ] = tp_always || rgb_tp_bit || (use_color_key && color_match0) || (use_matte_flag && matte_transparent(rl_index    ));
+				transparent[rl_index + 1] = tp_always || rgb_tp_bit || (use_color_key && color_match1) || (use_matte_flag && matte_transparent(rl_index + 1));
 			}
 			x = end;
 		}
@@ -715,7 +758,7 @@ void mcd212_device::mix_lines(uint32_t *plane_a, bool *transparent_a, uint32_t *
 	{
 		if (transparent_a[x] && transparent_b[x])
 		{
-			out[x] = get_backdrop_plane();
+			out[x] = get_backdrop_plane(x);
 			continue;
 		}
 		uint32_t plane_a_cur = MosaicA ? plane_a[x - (x % mosaic_count_a)] : plane_a[x];
@@ -1036,6 +1079,7 @@ uint32_t mcd212_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 	bool transparent_b[768];
 
 	int scanline = screen.vpos();
+	m_backdrop_scanline = scanline - m_ica_height;
 
 	// Process VSR and mix if we're in the visible region
 	if (scanline >= m_ica_height)
@@ -1063,6 +1107,8 @@ uint32_t mcd212_device::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 				std::fill_n(out, 24, s_4bpp_color[0]);
 				out += 24;
 			}
+
+			update_ext_video_line();
 
 			process_vsr<0>(plane_a, transparent_a);
 			process_vsr<1>(plane_b, transparent_b);
@@ -1241,6 +1287,7 @@ mcd212_device::mcd212_device(const machine_config &mconfig, const char *tag, dev
 	: device_t(mconfig, MCD212, tag, owner, clock)
 	, device_video_interface(mconfig, *this)
 	, m_int_callback(*this)
+	, m_ext_video_cb(*this)
 	, m_planea(*this, finder_base::DUMMY_TAG)
 	, m_planeb(*this, finder_base::DUMMY_TAG)
 {
@@ -1255,6 +1302,7 @@ mcd212_device::mcd212_device(const machine_config &mconfig, const char *tag, dev
 void mcd212_device::device_resolve_objects()
 {
 	m_int_callback.resolve_safe();
+	m_ext_video_cb.resolve();
 }
 
 //-------------------------------------------------

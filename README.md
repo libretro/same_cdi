@@ -11,6 +11,19 @@ Game files can be either CHD, ISO, or BIN/CUE.  Game support/functionality is wh
 =======
 BIOS file (cdimono1.zip) is required, and can go either in the same directory as your ```CHD|ISO|CUE``` files or in the ```retroarch_system_dir/same_cdi/bios/``` directory
 
+*DIGITAL VIDEO CARTRIDGE*
+=======
+Titles that need the Digital Video Cartridge for MPEG-1 full motion video,
+such as *The Firm*, *Mutant Rampage: Bodyslam* and *Monty Python's Invasion
+from the Planet Skyron*, also need the cartridge's driver ROM. Add
+`vmpega.rom` (262144 bytes, CRC32 `db264e8b`) to `cdimono1.zip`; the same
+file is part of `cdi490a.zip`, since the CD-i 490 has the hardware built in.
+Without it the core runs as a plain Mono-I with no cartridge fitted, exactly
+as before.
+
+The cartridge is emulated from the reverse engineering done by the
+[CDi_MiSTer](https://github.com/MiSTer-devel/CDi_MiSTer) project.
+
 --------
 
 # **Libretro notice** #
@@ -35,6 +48,15 @@ including core files) are made available under the terms of the
 [3-clause BSD License](http://opensource.org/licenses/BSD-3-Clause), and we
 would encourage new contributors to make their contributions available under the
 terms of this license.
+
+The Digital Video Cartridge emulation (`src/mame/machine/cdidvc.*` and
+`src/mame/machine/mpeg1demux.*`) is a port of the
+[CDi_MiSTer](https://github.com/MiSTer-devel/CDi_MiSTer) VMPEG core and is
+therefore made available under the terms of the
+[GNU General Public License, version 3](https://opensource.org/licenses/GPL-3.0)
+(GPL-3.0), like the project it was ported from. Every other license in the
+tree is compatible with it, and binaries of this core that include those files
+are distributed under GPL-3.0.
 
 Please note that MAME is a registered trademark of Gregory Ember, and permission
 is required to use the "MAME" name, logo, or wordmark.

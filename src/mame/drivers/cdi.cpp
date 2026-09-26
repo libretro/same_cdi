@@ -99,6 +99,35 @@ void cdi_state::cdimono1_mem(address_map &map)
 	map(0xe80000, 0xefffff).ram(); // DVC RAM block 2
 }
 
+// As above, but with a Digital Video Cartridge fitted.  The cartridge decodes
+// its own quarter of the upper address space:
+//
+//   d00000-dfffff  1MB of extra system RAM contributed by the cartridge
+//   e00000-e3ffff  VMPEG register file (address bits 15..1 only, so it mirrors)
+//   e40000-e7ffff  128KB driver ROM, mirrored twice
+//   e80000-efffff  512KB MPEG working RAM, bus-errors until the driver unlocks it
+void cdi_state::cdimono1_dvc_mem(address_map &map)
+{
+	map(0x000000, 0xffffff).rw(FUNC(cdi_state::bus_error_r), FUNC(cdi_state::bus_error_w));
+	map(0x000000, 0x07ffff).rw(FUNC(cdi_state::plane_r<0>), FUNC(cdi_state::plane_w<0>)).share("plane0");
+	map(0x200000, 0x27ffff).rw(FUNC(cdi_state::plane_r<1>), FUNC(cdi_state::plane_w<1>)).share("plane1");
+	map(0x300000, 0x303bff).rw(m_cdic, FUNC(cdicdic_device::ram_r), FUNC(cdicdic_device::ram_w));
+#if ENABLE_UART_PRINTING
+	map(0x301400, 0x301403).r(m_maincpu, FUNC(scc68070_device::uart_loopback_enable));
+#endif
+	map(0x303c00, 0x303fff).rw(m_cdic, FUNC(cdicdic_device::regs_r), FUNC(cdicdic_device::regs_w));
+	map(0x310000, 0x317fff).rw(m_slave_hle, FUNC(cdislave_hle_device::slave_r), FUNC(cdislave_hle_device::slave_w));
+	map(0x318000, 0x31ffff).noprw();
+	map(0x320000, 0x323fff).rw("mk48t08", FUNC(timekeeper_device::read), FUNC(timekeeper_device::write)).umask16(0xff00);
+	map(0x400000, 0x47ffff).r(FUNC(cdi_state::main_rom_r));
+	map(0x4fffe0, 0x4fffff).m(m_mcd212, FUNC(mcd212_device::map));
+	map(0x500000, 0x57ffff).ram();
+	map(0xd00000, 0xdfffff).ram();
+	map(0xe00000, 0xe3ffff).rw(m_dvc, FUNC(cdidvc_device::regs_r), FUNC(cdidvc_device::regs_w));
+	map(0xe40000, 0xe7ffff).r(FUNC(cdi_state::dvc_rom_r));
+	map(0xe80000, 0xefffff).rw(FUNC(cdi_state::dvc_mpeg_ram_r), FUNC(cdi_state::dvc_mpeg_ram_w));
+}
+
 void cdi_state::cdimono2_mem(address_map &map)
 {
 	map(0x000000, 0x07ffff).ram().share("plane0");
@@ -209,6 +238,129 @@ void cdi_state::dvc_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
 }
 
+// The cartridge ROM is a 128KB device that appears twice across the 256KB
+// window.  It is stored in 68000 byte order, so assemble words explicitly
+// rather than relying on host endianness.
+uint16_t cdi_state::dvc_rom_r(offs_t offset)
+{
+	if (!m_dvc_rom.found())
+		return 0;
+
+	const offs_t addr = (offset & 0xffff) * 2;
+	const uint16_t data = (uint16_t(m_dvc_rom[addr]) << 8) | m_dvc_rom[addr + 1];
+
+	LOGMASKED(LOG_DVC, "%s: DVC ROM read %06x = %04x\n", machine().describe_context(), 0xe40000 + addr, data);
+
+	return data;
+}
+
+// The MPEG working RAM is invisible until the driver has unlocked it, so that
+// the OS-9 memory crawler does not claim it as general-purpose system RAM.
+uint16_t cdi_state::dvc_mpeg_ram_r(offs_t offset, uint16_t mem_mask)
+{
+	if (!m_dvc->mpeg_ram_enabled())
+		return bus_error_r(offset + 0xe80000 / 2);
+
+	return m_dvc->mpeg_ram_r(offset, mem_mask);
+}
+
+void cdi_state::dvc_mpeg_ram_w(offs_t offset, uint16_t data, uint16_t mem_mask)
+{
+	if (!m_dvc->mpeg_ram_enabled())
+	{
+		bus_error_w(offset + 0xe80000 / 2, data);
+		return;
+	}
+
+	m_dvc->mpeg_ram_w(offset, data, mem_mask);
+}
+
+uint32_t cdi_state::dvc_video_r(int x, int y)
+{
+	// The cartridge places its picture in the CD-i's normal 384-pixel-wide
+	// display space, which the driver confirms by programming an active area
+	// of 384x280. The MCD212 renders 768 pixels across a line, so every
+	// cartridge pixel covers two of them.
+	if (!m_dvc.found() || !m_dvc->window_covers(x / 2, y))
+		return 0;
+
+	// Inside the window the cartridge owns the pixel even when it has no
+	// picture to show - between clips, or once playback has been stopped or
+	// skipped - and what it puts there is black.  Reporting the window as
+	// unoccupied instead would hand the pixel back to the CD-i plane, and the
+	// artwork the title hides behind the window would show through.
+	//
+	// That black is the CD-i's black, not zero: the cartridge's picture is
+	// carried in the same 16-235 swing as everything else the MCD212 emits (see
+	// display_frame_rgb()), so an empty window has to sit at the same level as
+	// the surrounding planes or it reads as a darker rectangle.
+	uint32_t pixel = mcd212_device::CDI_BLACK;
+	if (!m_dvc->get_pixel(x / 2, y, pixel))
+		pixel = mcd212_device::CDI_BLACK;
+
+	return 0xff000000 | pixel;
+}
+
+/**************************************
+*  IRQ level 4 arbitration            *
+**************************************/
+
+void cdi_state::cdic_intreq_w(int state)
+{
+	m_cdic_intreq = bool(state);
+	update_irq4();
+}
+
+void cdi_state::dvc_intreq_w(int state)
+{
+	m_dvc_intreq = bool(state);
+	update_irq4();
+}
+
+void cdi_state::update_irq4()
+{
+	// Mirrors the 74ACT74 flip-flop on the board: whichever device grabs the
+	// line keeps it until it stops requesting.  If both are idle and both
+	// request at once, the cartridge wins.
+	switch (m_irq4_owner)
+	{
+	case IRQ4_CDIC:
+		if (!m_cdic_intreq)
+			m_irq4_owner = IRQ4_IDLE;
+		break;
+	case IRQ4_DVC:
+		if (!m_dvc_intreq)
+			m_irq4_owner = IRQ4_IDLE;
+		break;
+	default:
+		break;
+	}
+
+	if (m_irq4_owner == IRQ4_IDLE)
+	{
+		if (m_cdic_intreq)
+			m_irq4_owner = IRQ4_CDIC;
+		if (m_dvc_intreq)
+			m_irq4_owner = IRQ4_DVC;
+	}
+
+	const bool line = (m_irq4_owner == IRQ4_CDIC && m_cdic_intreq)
+					|| (m_irq4_owner == IRQ4_DVC && m_dvc_intreq);
+
+	m_maincpu->in4_w(line ? 1 : 0);
+}
+
+uint8_t cdi_state::iack4_r()
+{
+	if (m_irq4_owner == IRQ4_DVC && m_dvc.found())
+		return m_dvc->intack_r();
+
+	if (m_cdic.found())
+		return m_cdic->intack_r();
+
+	return 0;
+}
+
 /*************************
 *       LCD screen       *
 *************************/
@@ -278,7 +430,7 @@ void cdi_state::cdimono1_base(machine_config &config)
 {
 	SCC68070(config, m_maincpu, CLOCK_A);
 	m_maincpu->set_addrmap(AS_PROGRAM, &cdi_state::cdimono1_mem);
-	m_maincpu->iack4_callback().set(m_cdic, FUNC(cdicdic_device::intack_r));
+	m_maincpu->iack4_callback().set(FUNC(cdi_state::iack4_r));
 
 	MCD212(config, m_mcd212, CLOCK_A, m_plane_ram[0], m_plane_ram[1]);
 	m_mcd212->set_screen("screen");
@@ -304,7 +456,7 @@ void cdi_state::cdimono1_base(machine_config &config)
 	// DSP input clock is 7.5264 MHz
 	CDI_CDIC(config, m_cdic, 45.1584_MHz_XTAL / 2);
 	m_cdic->set_clock2(45.1584_MHz_XTAL * 3 / 7); // generated by PLL circuit incorporating 19.3575 MHz XTAL
-	m_cdic->intreq_callback().set(m_maincpu, FUNC(scc68070_device::in4_w));
+	m_cdic->intreq_callback().set(FUNC(cdi_state::cdic_intreq_w));
 
 	CDI_SLAVE_HLE(config, m_slave_hle, 0);
 	m_slave_hle->int_callback().set(m_maincpu, FUNC(scc68070_device::in2_w));
@@ -413,12 +565,35 @@ void cdi_state::cdi910(machine_config &config)
 }
 
 // CD-i Mono-I, with CD-ROM image device (MESS) and Software List (MESS)
+//
+// The Digital Video Cartridge is fitted unconditionally, but its driver ROM is
+// optional.  Without the ROM the cartridge probe performed by the player's
+// boot code finds nothing and the machine behaves exactly like a bare Mono-I,
+// so existing BIOS sets keep working untouched.
 void cdi_state::cdimono1(machine_config &config)
 {
 	cdimono1_base(config);
 
+	cdimono1_dvc(config);
+
 	CDROM(config, "cdrom").set_interface("cdi_cdrom");
-	SOFTWARE_LIST(config, "cd_list").set_original("cdi").set_filter("!DVC");
+	SOFTWARE_LIST(config, "cd_list").set_original("cdi");
+}
+
+// Digital Video Cartridge hookup, shared by the Mono-I and the CD-i 490
+void cdi_state::cdimono1_dvc(machine_config &config)
+{
+	m_maincpu->set_addrmap(AS_PROGRAM, &cdi_state::cdimono1_dvc_mem);
+
+	CDI_DVC(config, m_dvc, 0);
+	// The cartridge needs the screen so that it can swap its picture over
+	// between fields rather than in the middle of one.
+	m_dvc->set_screen("screen");
+	m_dvc->intreq_callback().set(FUNC(cdi_state::dvc_intreq_w));
+	m_dvc->add_route(0, "lspeaker", 1.0);
+	m_dvc->add_route(1, "rspeaker", 1.0);
+
+	m_mcd212->set_ext_video_callback(FUNC(cdi_state::dvc_video_r));
 }
 
 /*************************
@@ -440,6 +615,12 @@ ROM_START( cdimono1 )
 
 	ROM_REGION(0x2000, "slave", 0)
 	ROM_LOAD( "zx405042p__cdi_slave_2.0__b43t__zzmk9213.mc68hc705c8a_withtestrom.7206", 0x0000, 0x2000, CRC(688cda63) SHA1(56d0acd7caad51c7de703247cd6d842b36173079) BAD_DUMP )
+
+	// Digital Video Cartridge driver ROM. Optional: without it the machine
+	// simply comes up as a Mono-I with no cartridge attached. The dump is a
+	// 128KB device recorded twice; either half is the whole ROM.
+	ROM_REGION(0x40000, "dvc", ROMREGION_ERASE00)
+	ROM_LOAD_OPTIONAL( "vmpega.rom", 0x000000, 0x40000, CRC(db264e8b) SHA1(be407fbc102f1731a0862554855e963e5a47c17b) )
 ROM_END
 
 ROM_START( cdi910 )
@@ -476,9 +657,14 @@ ROM_START( cdi490a )
 	ROM_SYSTEM_BIOS( 0, "cdi490", "CD-i 490" )
 	ROMX_LOAD( "cdi490a.rom", 0x000000, 0x80000, CRC(e2f200f6) SHA1(c9bf3c4c7e4fe5cbec3fe3fc993c77a4522ca547), ROM_BIOS(0) | ROM_GROUPWORD | ROM_REVERSE  )
 
-	ROM_REGION(0x40000, "mpegs", 0) // keep these somewhere
-	ROM_LOAD( "impega.rom", 0x0000, 0x40000, CRC(84d6f6aa) SHA1(02526482a0851ea2a7b582d8afaa8ef14a8bd914) )
+	// The 490 has the digital video hardware built in rather than on a
+	// cartridge. Only the VMPEG driver ROM is wired up; the IMPEG one is kept
+	// here because the set contains it, but that chipset is not emulated.
+	ROM_REGION(0x40000, "dvc", ROMREGION_ERASE00)
 	ROM_LOAD( "vmpega.rom", 0x0000, 0x40000, CRC(db264e8b) SHA1(be407fbc102f1731a0862554855e963e5a47c17b) )
+
+	ROM_REGION(0x40000, "impeg", 0)
+	ROM_LOAD( "impega.rom", 0x0000, 0x40000, CRC(84d6f6aa) SHA1(02526482a0851ea2a7b582d8afaa8ef14a8bd914) )
 ROM_END
 
 

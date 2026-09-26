@@ -90,7 +90,11 @@ OBJECTS += $(MESS_OBJS)
 MAME_MESS_SRC_CXX := \
 	$(CORE_DIR)/src/mame/drivers/cdi.cpp \
 	$(CORE_DIR)/src/mame/machine/cdicdic.cpp \
+	$(CORE_DIR)/src/mame/machine/cdidvc.cpp \
 	$(CORE_DIR)/src/mame/machine/cdislavehle.cpp \
+	$(CORE_DIR)/src/mame/machine/mpeg1audio.cpp \
+	$(CORE_DIR)/src/mame/machine/mpeg1demux.cpp \
+	$(CORE_DIR)/src/mame/machine/mpeg1video.cpp \
 	$(CORE_DIR)/src/mame/video/mcd212.cpp
 
 MAME_MESS_OBJS := $(patsubst $(CORE_DIR)/%,$(CORE_OBJ_DIR)/%,$(MAME_MESS_SRC_CXX:.cpp=.o))

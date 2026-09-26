@@ -47,6 +47,23 @@ public:
 
 	auto int_callback() { return m_int_callback.bind(); }
 
+	// The CD-i's black.  Everything this chip emits carries the 16-235 studio
+	// swing: the 4bpp constants below run 0x10 to 0xe6, and mix_lines() takes
+	// the pedestal off each plane before weighting it and puts it back
+	// afterwards.  Anything feeding pixels in from outside - the External Video
+	// backdrop - has to speak the same units, or its black reads as a darker
+	// hole in the picture.
+	static constexpr uint32_t CDI_BLACK = 0x00101010;
+
+	// Supplies the External Video backdrop, i.e. the picture coming from a
+	// Digital Video Cartridge. Called with the active-area pixel position;
+	// returns 0 when the cartridge's display window does not cover that pixel,
+	// or the colour with the alpha byte set when it does. A covered pixel with
+	// no picture behind it comes back CDI_BLACK rather than unoccupied, so that
+	// the window still keys the CD-i plane away between clips.
+	typedef device_delegate<uint32_t (int, int)> ext_video_delegate;
+	template <typename... T> void set_ext_video_callback(T &&... args) { m_ext_video_cb.set(std::forward<T>(args)...); }
+
 	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
 	void map(address_map &map) ATTR_COLD;
@@ -231,6 +248,9 @@ protected:
 	// interrupt callbacks
 	devcb_write_line m_int_callback;
 
+	// External Video source (Digital Video Cartridge)
+	ext_video_delegate m_ext_video_cb;
+
 	required_shared_ptr<uint16_t> m_planea;
 	required_shared_ptr<uint16_t> m_planeb;
 
@@ -259,7 +279,10 @@ protected:
 
 	int get_screen_width();
 	int get_border_width();
-	uint32_t get_backdrop_plane();
+	uint32_t get_backdrop_plane(int x);
+	void update_ext_video_line();
+
+	int m_backdrop_scanline = 0;
 
 	// The address the display is currently fetching each plane from.
 	//
@@ -276,6 +299,14 @@ protected:
 	// every field, so a state written at a frame boundary does not need it, and
 	// leaving it out keeps existing save states loadable.
 	uint32_t m_vsr_pos[2] = { 0, 0 };
+
+	// The external-video picture for the scanline being drawn, sampled once
+	// before the planes are decoded.  m_ext_present marks where the cartridge's
+	// display window is open, not where it happens to have a picture.  Scratch
+	// for one line, so deliberately not part of the save state.
+	uint32_t m_ext_pixel[768]{};
+	bool     m_ext_present[768]{};
+	bool     m_ext_active = false;
 
 	template <int Path> void set_vsr(uint32_t value);
 	template <int Path> uint32_t get_vsr();
