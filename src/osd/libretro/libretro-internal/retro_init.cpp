@@ -327,6 +327,14 @@ static void Set_Default_Option(void)
     * asked for. */
    Add_Option("same_cdi");
 
+   // Latch the physical player's standard when constructing the machine.
+   // Runtime option refreshes must not change hardware underneath a running OS.
+   struct retro_variable standard = { "same_cdi_video_standard", NULL };
+   const bool ntsc = environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &standard) &&
+      standard.value && !strcmp(standard.value, "ntsc");
+   Add_Option("-cdi_video_standard");
+   Add_Option(ntsc ? "ntsc" : "pal");
+
    if(throttle_enable)
       Add_Option("-throttle");
    else

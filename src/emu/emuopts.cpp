@@ -30,6 +30,7 @@ const options_entry emu_options::s_option_entries[] =
 	{ OPTION_SOFTWARENAME,                               nullptr,     OPTION_STRING,     nullptr },
 
 	// config options
+	{ "cdi_video_standard",                             "pal",       OPTION_STRING,     "Mono-I television standard (pal or ntsc)" },
 	{ nullptr,                                           nullptr,     OPTION_HEADER,     "CORE CONFIGURATION OPTIONS" },
 	{ OPTION_READCONFIG ";rc",                           "1",         OPTION_BOOLEAN,    "enable loading of configuration files" },
 	{ OPTION_WRITECONFIG ";wc",                          "0",         OPTION_BOOLEAN,    "write configuration to (driver).ini on exit" },

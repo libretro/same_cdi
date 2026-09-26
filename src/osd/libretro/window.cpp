@@ -366,7 +366,7 @@ int retro_window_info::window_init()
     const screen_device *primary_screen = screen_device_enumerator(machine().root_device()).first();
 
     if (primary_screen != nullptr){
-        retro_fps = ATTOSECONDS_TO_HZ(primary_screen->refresh_attoseconds());
+        retro_fps = ATTOSECONDS_TO_HZ(primary_screen->frame_period().as_attoseconds());
 	}
 
 	if(alternate_renderer==false){
@@ -450,6 +450,20 @@ osd_dim retro_window_info::pick_best_mode()
 void retro_window_info::update()
 {
 	osd_ticks_t     event_wait_ticks;
+
+	// The VDSC can change field duration through DCR1. Publish its current
+	// period, including after a state restore, instead of retaining the
+	// machine configuration's initial rate for the lifetime of the content.
+	const screen_device *primary_screen = screen_device_enumerator(machine().root_device()).first();
+	if (primary_screen)
+	{
+		const float fps = ATTOSECONDS_TO_HZ(primary_screen->frame_period().as_attoseconds());
+		if (fps != retro_fps)
+		{
+			retro_fps = fps;
+			NEWGAME_FROM_OSD = 1;
+		}
+	}
 	
 	// adjust the cursor state
 	//sdlwindow_update_cursor_state(machine, window);

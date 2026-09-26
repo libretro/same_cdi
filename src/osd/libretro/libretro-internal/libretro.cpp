@@ -178,6 +178,7 @@ void retro_set_environment(retro_environment_t cb)
    };
 
    static struct retro_core_option_v2_definition option_defs_v2[] = {
+       {"same_cdi_video_standard", "Video standard (Restart)", NULL, "Select the Mono-I player's television standard. Restart content after changing this option.", NULL, "system", {{"pal", "PAL (50 Hz)"}, {"ntsc", "NTSC (60 Hz)"}, {NULL, NULL}}, "pal"},
        {option_read_config, "Read configuration", NULL, NULL, NULL, "system", {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
        {option_write_config, "Write configuration", NULL, NULL, NULL, "system", {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
        {option_saves, "Save state naming", NULL, NULL, NULL, "system", {{"game", NULL}, {"system", NULL}, {NULL, NULL}}, "game"},
@@ -200,6 +201,7 @@ void retro_set_environment(retro_environment_t cb)
    static struct retro_core_options_v2 options_v2 = {option_categories, option_defs_v2};
 
    static struct retro_core_option_definition option_defs[] = {
+       {"same_cdi_video_standard", "Video standard (Restart)", "Select the Mono-I player's television standard. Restart content after changing this option.", {{"pal", "PAL (50 Hz)"}, {"ntsc", "NTSC (60 Hz)"}, {NULL, NULL}}, "pal"},
        {option_read_config, "Read configuration", NULL, {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
        {option_write_config, "Write configuration", NULL, {{"enabled", NULL}, {"disabled", NULL}, {NULL, NULL}}, "disabled"},
        {option_saves, "Save state naming", NULL, {{"game", NULL}, {"system", NULL}, {NULL, NULL}}, "game"},
@@ -220,6 +222,7 @@ void retro_set_environment(retro_environment_t cb)
    };
 
    static const struct retro_variable vars[] = {
+    { "same_cdi_video_standard", "Video standard (Restart); pal|ntsc" },
     { option_read_config, "Read configuration; disabled|enabled" },
     { option_write_config, "Write configuration; disabled|enabled" },
     { option_saves, "Save state naming; game|system" },
@@ -886,7 +889,7 @@ bool retro_unserialize(const void *data, size_t size)
 	return false;
 }
 
-unsigned retro_get_region (void) { return RETRO_REGION_NTSC; }
+unsigned retro_get_region (void) { return retro_fps < 55.0f ? RETRO_REGION_PAL : RETRO_REGION_NTSC; }
 
 void *find_mame_bank_base(offs_t start, address_space &space)
 {

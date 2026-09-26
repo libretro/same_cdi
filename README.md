@@ -11,6 +11,25 @@ Game files can be either CHD, ISO, or BIN/CUE.  Game support/functionality is wh
 =======
 BIOS file (cdimono1.zip) is required, and can go either in the same directory as your ```CHD|ISO|CUE``` files or in the ```retroarch_system_dir/same_cdi/bios/``` directory
 
+*PAL AND NTSC*
+=======
+Select **Quick Menu > Core Options > System > Video standard (Restart)** to
+choose PAL (the default) or NTSC, then close and reopen the content. Save a
+game options override to keep NTSC for a particular title. The same
+`cdimono1.zip` is used for both standards; `cdimono2.zip` describes a different,
+unfinished motherboard and is not required for NTSC Mono-I playback.
+
+The setting changes the player's SLAVE standard input, CPU/video clock,
+display timing and Digital Video Cartridge standard. NTSC uses a 240-line
+active field at approximately 59.94 Hz. The original Magnavox CD-i 200 BIOS
+boots the unmodified NTSC release of *The Firm* with this setting. PAL and
+NTSC states should be restored with the same video standard selected when
+they were saved.
+
+CD-i has no DVD-style region codes, but some CD-i Digital Video titles require
+one television standard. This setting emulates that player configuration;
+it does not alter disc images.
+
 *DIGITAL VIDEO CARTRIDGE*
 =======
 Titles that need the Digital Video Cartridge for MPEG-1 full motion video,

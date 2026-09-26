@@ -369,7 +369,7 @@ void cdislave_hle_device::slave_w(offs_t offset, uint16_t data)
 						prepare_readback(attotime::from_hz(10000), 2, 2, 0xf4, 0, 0, 0, 0xf4);
 						break;
 					case 0xf6: // Request NTSC/PAL Status
-						prepare_readback(attotime::never, 2, 2, 0xf6, 2, 0, 0, 0xf6);
+						prepare_readback(attotime::never, 2, 2, 0xf6, m_pal ? 2 : 1, 0, 0, 0xf6);
 						m_in_index = 0;
 						break;
 					case 0xf7: // Enable Input Polling

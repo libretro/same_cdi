@@ -48,6 +48,7 @@ TODO:
 *******************************************************************************/
 
 #include "emu.h"
+#include "emuopts.h"
 #include "includes/cdi.h"
 
 #include "cpu/m6805/m6805.h"
@@ -63,7 +64,7 @@ TODO:
 
 #include "cdi.lh"
 
-// TODO: NTSC system clock is 30.2098 MHz; additional 4.9152 MHz XTAL provided for UART
+// The SCC68070 UART already uses its independent 4.9152 MHz timebase.
 #define CLOCK_A 30_MHz_XTAL
 
 #define LOG_DVC             (1 << 1)
@@ -428,21 +429,29 @@ uint32_t cdi_state::screen_update_cdimono1_lcd(screen_device &screen, bitmap_rgb
 // CD-i Mono-I system base
 void cdi_state::cdimono1_base(machine_config &config)
 {
-	SCC68070(config, m_maincpu, CLOCK_A);
+	const bool pal = strcmp(config.options().value("cdi_video_standard"), "ntsc") != 0;
+	const uint32_t system_clock = pal ? 30000000 : 30209800;
+	SCC68070(config, m_maincpu, system_clock);
 	m_maincpu->set_addrmap(AS_PROGRAM, &cdi_state::cdimono1_mem);
 	m_maincpu->iack4_callback().set(FUNC(cdi_state::iack4_r));
 
-	MCD212(config, m_mcd212, CLOCK_A, m_plane_ram[0], m_plane_ram[1]);
+	MCD212(config, m_mcd212, system_clock, m_plane_ram[0], m_plane_ram[1]);
 	m_mcd212->set_screen("screen");
 	m_mcd212->int_callback().set(m_maincpu, FUNC(scc68070_device::int1_w));
 
 	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_RASTER));
 	screen.set_raw(14976000, 960, 0, 768, 312, 32, 312);
+	if (!pal)
+	{
+		screen.set_raw(system_clock / 2, 960, 0, 768, 262, 22, 262);
+		// Fold the half-line into the period, as in the PAL configuration.
+		screen.set_refresh_hz(double(system_clock) / (1920.0 * 262.5));
+	}
 	screen.set_video_attributes(VIDEO_UPDATE_SCANLINE);
 	screen.set_screen_update(m_mcd212, FUNC(mcd212_device::screen_update));
 
 	SCREEN(config, m_lcd, SCREEN_TYPE_RASTER);
-	m_lcd->set_refresh_hz(50);
+	m_lcd->set_refresh_hz(pal ? 50.0 : double(system_clock) / (1920.0 * 262.5));
 	m_lcd->set_vblank_time(ATTOSECONDS_IN_USEC(0));
 	m_lcd->set_size(192, 22);
 	m_lcd->set_visarea(0, 192-1, 0, 22-1);
@@ -459,6 +468,7 @@ void cdi_state::cdimono1_base(machine_config &config)
 	m_cdic->intreq_callback().set(FUNC(cdi_state::cdic_intreq_w));
 
 	CDI_SLAVE_HLE(config, m_slave_hle, 0);
+	m_slave_hle->set_pal(pal);
 	m_slave_hle->int_callback().set(m_maincpu, FUNC(scc68070_device::in2_w));
 	m_slave_hle->atten_callback().set(m_cdic, FUNC(cdicdic_device::atten_w));
 
@@ -586,6 +596,7 @@ void cdi_state::cdimono1_dvc(machine_config &config)
 	m_maincpu->set_addrmap(AS_PROGRAM, &cdi_state::cdimono1_dvc_mem);
 
 	CDI_DVC(config, m_dvc, 0);
+	m_dvc->set_pal(strcmp(config.options().value("cdi_video_standard"), "ntsc") != 0);
 	// The cartridge needs the screen so that it can swap its picture over
 	// between fields rather than in the middle of one.
 	m_dvc->set_screen("screen");
