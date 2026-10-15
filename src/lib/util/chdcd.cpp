@@ -490,21 +490,30 @@ std::error_condition chdcd_parse_nero(const char *tocfname, cdrom_toc &outtoc, c
 	infile->seek(-12, SEEK_END);
 	{ size_t actual; infile->read(buffer, 12, actual); }
 
-	if (memcmp(buffer, "NER5", 4))
+	// Nero 5.5 and later end with "NER5" and a 64-bit chunk offset, earlier
+	// versions with "NERO" and a 32-bit one
+	if (!memcmp(buffer, "NER5", 4))
 	{
-		printf("ERROR: Not a Nero 5.5 or later image!\n");
+		if ((buffer[7] != 0) || (buffer[6] != 0) || (buffer[5] != 0) || (buffer[4] != 0))
+		{
+			printf("ERROR: File size is > 4GB, this version of CHDMAN cannot handle it.");
+			infile.reset();
+			return chd_file::error::UNSUPPORTED_FORMAT;
+		}
+	}
+	else if (memcmp(buffer + 4, "NERO", 4))
+	{
+		printf("ERROR: Not a Nero image!\n");
 		infile.reset();
 		return chd_file::error::UNSUPPORTED_FORMAT;
 	}
 
 	chain_offs = buffer[11] | (buffer[10]<<8) | (buffer[9]<<16) | (buffer[8]<<24);
 
-	if ((buffer[7] != 0) || (buffer[6] != 0) || (buffer[5] != 0) || (buffer[4] != 0))
-	{
-		printf("ERROR: File size is > 4GB, this version of CHDMAN cannot handle it.");
-		infile.reset();
-		return chd_file::error::UNSUPPORTED_FORMAT;
-	}
+	// Track-at-once images have no DAOX; their tracks are listed in a TINF
+	// (Nero before 5.5), ETNF or ETN2 chunk instead
+	struct { uint64_t offset, length; uint32_t mode; } tao[CD_MAX_TRACKS];
+	int tao_tracks = 0;
 
 //  printf("NER5 detected, chain offset: %x\n", chain_offs);
 
@@ -621,6 +630,20 @@ std::error_condition chdcd_parse_nero(const char *tocfname, cdrom_toc &outtoc, c
 			}
 		}
 
+		if (!memcmp(buffer, "TINF", 4) || !memcmp(buffer, "ETNF", 4) || !memcmp(buffer, "ETN2", 4))
+		{
+			const bool etn2 = !memcmp(buffer, "ETN2", 4);
+			const uint32_t entry_size = etn2 ? 32 : (!memcmp(buffer, "ETNF", 4) ? 20 : 12);
+			for (uint32_t pos = 0; pos + entry_size <= chunk_size && tao_tracks < CD_MAX_TRACKS; pos += entry_size)
+			{
+				infile->seek(chain_offs + 8 + pos, SEEK_SET);
+				tao[tao_tracks].offset = etn2 ? read_uint64(*infile) : read_uint32(*infile);
+				tao[tao_tracks].length = etn2 ? read_uint64(*infile) : read_uint32(*infile);
+				tao[tao_tracks].mode = read_uint32(*infile);
+				tao_tracks++;
+			}
+		}
+
 		if (!memcmp(buffer, "END!", 4))
 		{
 			done = 1;
@@ -629,6 +652,65 @@ std::error_condition chdcd_parse_nero(const char *tocfname, cdrom_toc &outtoc, c
 		{
 			chain_offs += chunk_size + 8;
 		}
+	}
+
+	if (outtoc.numtrks == 0)
+	{
+		for (int track = 0; track < tao_tracks; track++)
+		{
+			uint32_t size;
+
+			// The same modes as the high byte of a DAOX track's
+			switch (tao[track].mode)
+			{
+				case 0x00:    // 2048 byte data
+					outtoc.tracks[track].trktype = CD_TRACK_MODE1;
+					outinfo.track[track].swap = false;
+					size = 2048;
+					break;
+
+				case 0x03:    // 2336 byte mode 2
+					outtoc.tracks[track].trktype = CD_TRACK_MODE2_FORM_MIX;
+					outinfo.track[track].swap = false;
+					size = 2336;
+					break;
+
+				case 0x06:    // 2352 byte mode 2 raw
+					outtoc.tracks[track].trktype = CD_TRACK_MODE2_RAW;
+					outinfo.track[track].swap = false;
+					size = 2352;
+					break;
+
+				case 0x07:    // 2352 byte audio
+					outtoc.tracks[track].trktype = CD_TRACK_AUDIO;
+					outinfo.track[track].swap = true;
+					size = 2352;
+					break;
+
+				default:
+					printf("ERROR: Unsupported track-at-once track type %x\n", tao[track].mode);
+					infile.reset();
+					return chd_file::error::UNSUPPORTED_FORMAT;
+			}
+
+			outinfo.track[track].fname.assign(tocfname);
+			outinfo.track[track].offset = uint32_t(tao[track].offset);
+			outinfo.track[track].idx0offs = 0;
+			outinfo.track[track].idx1offs = 0;
+
+			outtoc.tracks[track].datasize = size;
+			outtoc.tracks[track].subtype = CD_SUB_NONE;
+			outtoc.tracks[track].subsize = 0;
+			outtoc.tracks[track].pregap = 0;
+			outtoc.tracks[track].frames = uint32_t(tao[track].length / size);
+			outtoc.tracks[track].postgap = 0;
+			outtoc.tracks[track].pgtype = 0;
+			outtoc.tracks[track].pgsub = CD_SUB_NONE;
+			outtoc.tracks[track].pgdatasize = 0;
+			outtoc.tracks[track].pgsubsize = 0;
+			outtoc.tracks[track].padframes = 0;
+		}
+		outtoc.numtrks = tao_tracks;
 	}
 
 	infile.reset();

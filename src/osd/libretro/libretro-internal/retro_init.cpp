@@ -534,7 +534,7 @@ static int execute_game(char* path)
    Add_Option(forcedSystem);
     // load chd directly
    if (strlen(gameName) >= strlen("chd")){
-           if(!core_stricmp(&gameName[strlen(gameName)-strlen("chd")], "chd") || !core_stricmp(&gameName[strlen(gameName)-strlen("iso")], "iso") || !core_stricmp(&gameName[strlen(gameName)-strlen("cue")], "cue")){
+           if(!core_stricmp(&gameName[strlen(gameName)-strlen("chd")], "chd") || !core_stricmp(&gameName[strlen(gameName)-strlen("iso")], "iso") || !core_stricmp(&gameName[strlen(gameName)-strlen("cue")], "cue") || !core_stricmp(&gameName[strlen(gameName)-strlen("nrg")], "nrg")){
                Add_Option((char*)"-cdrom");
                Add_Option((char*)gameName);
            }
