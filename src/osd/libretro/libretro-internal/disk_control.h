@@ -36,7 +36,8 @@ static bool is_disc(const std::string &path)
    if (dot == std::string::npos)
       return false;
    const char *ext = path.c_str() + dot;
-   return !core_stricmp(ext, ".cue") || !core_stricmp(ext, ".chd") || !core_stricmp(ext, ".iso");
+   return !core_stricmp(ext, ".cue") || !core_stricmp(ext, ".chd") || !core_stricmp(ext, ".iso") ||
+         !core_stricmp(ext, ".nrg");
 }
 
 static cdrom_image_device *drive()

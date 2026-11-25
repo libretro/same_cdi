@@ -632,7 +632,7 @@ void retro_get_system_info(struct retro_system_info *info)
 
    info->library_name     = "SAME_CDI";
    info->library_version  = bare_build_version;
-   info->valid_extensions = "chd|iso|cue|m3u";
+   info->valid_extensions = "chd|iso|cue|nrg|m3u";
    info->need_fullpath    = true;
    info->block_extract    = true;
 }
