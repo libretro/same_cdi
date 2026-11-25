@@ -49,6 +49,26 @@ constexpr int16_t clip_int16(int32_t sample)
 	return int16_t(std::clamp<int32_t>(sample, -32768, 32767));
 }
 
+// Reads a sector as the drive delivers it, 2352 bytes from the sync on.
+// Images that keep only the 2336 bytes after the header (MODE2/2336 cue
+// sheets, Nero and DiscJuggler conversions) get their sync and header back.
+bool read_raw_sector(cdrom_file *cd, uint32_t lba, uint8_t *buffer)
+{
+	const cdrom_toc *const toc = cdrom_get_toc(cd);
+	const uint32_t track = cdrom_get_track(cd, lba);
+	if (!toc || track >= toc->numtrks || toc->tracks[track].datasize != 2336)
+		return cdrom_read_data(cd, lba, buffer, CD_TRACK_RAW_DONTCARE);
+
+	static const uint8_t sync[12] = { 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00 };
+	const uint32_t msf = lba_to_msf(lba + 150);
+	memcpy(buffer, sync, 12);
+	buffer[12] = msf >> 16;
+	buffer[13] = msf >> 8;
+	buffer[14] = msf;
+	buffer[15] = 2;
+	return cdrom_read_data(cd, lba, buffer + 16, toc->tracks[track].trktype);
+}
+
 } // anonymous namespace
 
 
@@ -715,7 +735,7 @@ void cdicdic_device::process_disc_sector()
 	const uint8_t frac_bcd = ((frac / 10) << 4) | (frac % 10);
 
 	uint8_t buffer[2560] = { 0 };
-	cdrom_read_data(m_cd, m_curr_lba, buffer, CD_TRACK_RAW_DONTCARE);
+	read_raw_sector(m_cd, m_curr_lba, buffer);
 
 	// Detect (badly) if we're dealing with a byteswapped loose-bin image
 	if (buffer[0] == 0xff && buffer[1] == 0x00)
@@ -1206,7 +1226,7 @@ bool cdicdic_device::legacy_media_mismatch()
 		if (lba >= cdrom_get_track_start(cd, 0xaa))
 			continue;
 		uint8_t current[2560] = { 0 };
-		if (!cdrom_read_data(cd, lba, current, CD_TRACK_RAW_DONTCARE))
+		if (!read_raw_sector(cd, lba, current))
 			return false;
 		if (current[0] == 0xff && current[1] == 0)
 			for (unsigned i = 0; i < SECTOR_SIZE; i += 2)
