@@ -14,11 +14,13 @@
 #include "corestr.h"
 
 #include "osdcore.h"
+#include "osdfile.h"
 
 #include <cassert>
 #include <cctype>
 #include <cerrno>
 #include <cstdlib>
+#include <string_view>
 
 
 
@@ -111,6 +113,38 @@ static uint64_t get_file_size(const char *filename)
 	osd_file::open(filename, OPEN_FLAG_READ, file, filesize);
 
 	return filesize;
+}
+
+/*-------------------------------------------------
+    find_track_file - find a cue sheet's data file
+-------------------------------------------------*/
+
+// Cue sheets written on Windows often name the data file in a different case
+// from the file itself, or with a DOS path, which only resolves on a
+// case-insensitive filesystem. Fall back to the file in the cue's folder whose
+// name matches case-insensitively.
+
+static std::string find_track_file(const std::string &path, const char *name)
+{
+	std::string const exact = std::string(path).append(name);
+	if (get_file_size(exact.c_str()) != 0)
+		return exact;
+
+	// A suffix of name, so still null-terminated
+	std::string_view const full(name);
+	std::string_view const base = full.substr(full.find_last_of("\\/") + 1);
+
+	osd::directory::ptr const dir = osd::directory::open(path.empty() ? "." : path);
+	if (dir)
+	{
+		for (osd::directory::entry const *entry = dir->read(); entry; entry = dir->read())
+		{
+			if (entry->type == osd::directory::entry::entry_type::FILE && !core_stricmp(entry->name, base.data()))
+				return std::string(path).append(entry->name);
+		}
+	}
+
+	return exact;
 }
 
 
@@ -902,7 +936,7 @@ std::error_condition chdcd_parse_cue(const char *tocfname, cdrom_toc &outtoc, ch
 				TOKENIZE
 
 				/* keep the filename */
-				lastfname.assign(path).append(token);
+				lastfname = find_track_file(path, token);
 
 				/* get the file type */
 				TOKENIZE
@@ -1276,7 +1310,7 @@ std::error_condition chdcd_parse_gdicue(const char *tocfname, cdrom_toc &outtoc,
 				TOKENIZE
 
 				/* keep the filename */
-				lastfname.assign(path).append(token);
+				lastfname = find_track_file(path, token);
 
 				/* get the file type */
 				TOKENIZE
