@@ -701,7 +701,8 @@ std::error_condition chdcd_parse_nero(const char *tocfname, cdrom_toc &outtoc, c
 			outtoc.tracks[track].datasize = size;
 			outtoc.tracks[track].subtype = CD_SUB_NONE;
 			outtoc.tracks[track].subsize = 0;
-			outtoc.tracks[track].pregap = 0;
+			// Each track after the first follows a 150-sector gap that isn't in the image
+			outtoc.tracks[track].pregap = track ? 150 : 0;
 			outtoc.tracks[track].frames = uint32_t(tao[track].length / size);
 			outtoc.tracks[track].postgap = 0;
 			outtoc.tracks[track].pgtype = 0;
@@ -711,6 +712,13 @@ std::error_condition chdcd_parse_nero(const char *tocfname, cdrom_toc &outtoc, c
 			outtoc.tracks[track].padframes = 0;
 		}
 		outtoc.numtrks = tao_tracks;
+	}
+
+	if (outtoc.numtrks == 0)
+	{
+		printf("ERROR: No supported tracks found\n");
+		infile.reset();
+		return chd_file::error::UNSUPPORTED_FORMAT;
 	}
 
 	infile.reset();
